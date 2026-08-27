@@ -2600,6 +2600,50 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   var currentUser = null;
 
+  var PLAYER_NEWS_TABLE = "player_news";
+var livePlayerNews = [];
+
+async function loadLivePlayerNews() {
+  try {
+    var res = await sb.from(PLAYER_NEWS_TABLE)
+      .select("player,status,note,fonte,noteData,updated_at")
+      .order("updated_at", { ascending: false });
+    if (res.error) {
+      console.warn("player_news:", res.error.message);
+      return [];
+    }
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    console.warn("player_news non disponibile:", e);
+    return [];
+  }
+}
+
+function applyLivePlayerNews(rows) {
+  if (!Array.isArray(rows) || !rows.length || !Array.isArray(state.players)) return;
+  var byName = {};
+  rows.forEach(function (r) {
+    var k = String(r.player || "").trim().toLowerCase();
+    if (k) byName[k] = r;
+  });
+  state.players.forEach(function (p) {
+    var n = byName[String(p.name || "").trim().toLowerCase()];
+    if (!n) return;
+    if (n.status) p.status = n.status;
+    if (n.note != null) p.note = n.note;
+    if (n.fonte) p.fonte = n.fonte;
+    if (n.noteData) p.noteData = n.noteData;
+  });
+}
+
+async function refreshLivePlayerNews() {
+  var rows = await loadLivePlayerNews();
+  livePlayerNews = rows;
+  applyLivePlayerNews(rows);
+  return rows;
+}
+
+
   function setSaveStatus(kind, label) {
     var el = document.getElementById("saveStatus");
     el.className = "status-pill " + kind;
@@ -4321,7 +4365,7 @@
   }
 
   // ---------------- wiring ----------------
-  function init() {
+  async function init() {
     var themePref = loadThemePref();
     applyTheme(themePref);
     document.getElementById("themeToggleBtn").addEventListener("click", function () {
@@ -4602,7 +4646,9 @@
         state.meta.votiGiornata1 = true;
         migrated = true;
       }
-      if (migrated) scheduleSave();
+      // Le note giornaliere arrivano da Supabase: non sovrascrivono i dati
+      // fantacalcistici personali, ma solo status/note/fonte/noteData.
+      refreshLivePlayerNews().then(function () { renderSections(); renderResult(); });
       document.getElementById("giornataInput").value = state.meta.giornata || "";
       document.getElementById("primaPartitaInput").value = state.meta.primaPartita || "";
       document.getElementById("moduloSelect").value = state.meta.modulo;
@@ -4616,6 +4662,16 @@
       renderRisultatiCard();
       updateDeadlinePill();
       if (!deadlineTimer) deadlineTimer = setInterval(updateDeadlinePill, 30000);
+      if (!window.liveNewsTimer) {
+        window.liveNewsTimer = setInterval(async function () {
+          var before = JSON.stringify(livePlayerNews);
+          await refreshLivePlayerNews();
+          if (JSON.stringify(livePlayerNews) !== before) {
+            renderSections();
+            renderResult();
+          }
+        }, 15 * 60 * 1000);
+      }
       setSaveStatus("ok", "Pronto — dati locali");
     });
   }
