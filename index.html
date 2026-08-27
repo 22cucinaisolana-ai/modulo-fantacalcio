@@ -1033,6 +1033,7 @@
     <button class="btn btn-small" id="applyCalendarBtn" title="Riempie avversario, difficoltà e casa/trasferta per chi ha la squadra impostata">Applica calendario</button>
     <span class="status-pill" id="deadlinePill" title="Schierabile fino a 45 minuti prima del calcio d'inizio della prima partita della giornata (regola di lega)"><span class="dot"></span><span class="label">—</span></span>
     <span class="status-pill" id="saveStatus"><span class="dot"></span><span class="label">—</span></span>
+    <button class="btn btn-small" id="authBtn" type="button">Accedi</button>
     <button class="btn btn-small" id="themeToggleBtn" type="button" title="Cambia tema: Automatico (segue il sistema) → Chiaro → Scuro"><span id="themeToggleLabel">Tema: Auto</span></button>
     <details class="settings-menu">
       <summary class="btn" title="Modulo, strategia, modificatore difesa, calendario">⚙ Impostazioni</summary>
@@ -1131,9 +1132,26 @@
     <div id="resultContent" style="display:none"></div>
   </div>
 
-  <footer class="credits">Dati salvati automaticamente per questa rosa · nessun collegamento a fonti esterne, i dati vanno aggiornati a mano ogni giornata</footer>
+  <div id="authOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:min(420px,100%);background:var(--panel,#fff);border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <h2 style="margin:0 0 8px">Sincronizzazione cloud</h2>
+    <p id="authHint" style="margin:0 0 18px;opacity:.75">Accedi per salvare la rosa e ritrovarla su PC e telefono.</p>
+    <label style="display:block;margin-bottom:10px">Email<input id="authEmail" type="email" autocomplete="email" style="width:100%;margin-top:5px;padding:10px;border-radius:8px;border:1px solid #bbb"></label>
+    <label style="display:block;margin-bottom:14px">Password<input id="authPassword" type="password" autocomplete="current-password" style="width:100%;margin-top:5px;padding:10px;border-radius:8px;border:1px solid #bbb"></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="loginBtn" type="button">Accedi</button>
+      <button class="btn" id="signupBtn" type="button">Crea account</button>
+      <button class="btn" id="logoutBtn" type="button" style="display:none">Esci</button>
+      <button class="btn" id="closeAuthBtn" type="button">Chiudi</button>
+    </div>
+    <div id="authMessage" style="margin-top:14px;font-size:14px"></div>
+  </div>
 </div>
 
+<footer class="credits">Dati salvati automaticamente per questa rosa · nessun collegamento a fonti esterne, i dati vanno aggiornati a mano ogni giornata</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
   "use strict";
@@ -2576,10 +2594,22 @@
   var state = seedState();
 
   // ---------------- persistence ----------------
+  // Cloud sync via Supabase. The local backup is kept as a fallback.
+  var SUPABASE_URL = "https://kueahvxirppyjhfpmxii.supabase.co";
+  var SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PJDGlXF-hI9u4RnIJrWRw_ROTpo6t1";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  var currentUser = null;
+
   function setSaveStatus(kind, label) {
     var el = document.getElementById("saveStatus");
     el.className = "status-pill " + kind;
     el.querySelector(".label").textContent = label;
+  }
+
+  function updateAuthButton() {
+    var b = document.getElementById("authBtn");
+    b.textContent = currentUser ? "Account" : "Accedi";
+    b.title = currentUser ? (currentUser.email || "Account Supabase") : "Accedi per sincronizzare i dati";
   }
 
   function localSave() {
@@ -2592,38 +2622,126 @@
     } catch (e) { return null; }
   }
 
+  async function cloudLoad() {
+    if (!currentUser) return null;
+    var res = await sb.from("modulo_state").select("state").eq("user_id", currentUser.id).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data ? res.data.state : null;
+  }
+
+  async function cloudSave() {
+    if (!currentUser) return false;
+    var res = await sb.from("modulo_state").upsert({
+      user_id: currentUser.id,
+      state: state,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+    if (res.error) throw res.error;
+    return true;
+  }
+
   function scheduleSave() {
     localSave();
-    setSaveStatus("busy", "Salvataggio…");
+    setSaveStatus("busy", currentUser ? "Salvataggio…" : "Solo questo dispositivo");
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(doSave, 900);
   }
 
-  function doSave() {
-    // Versione web autonoma: i dati vengono salvati nel browser.
-    // Non dipende più dall'API Claude Artifact.
+  async function doSave() {
     localSave();
-    setSaveStatus("ok", "Salvato su questo dispositivo");
+    if (!currentUser) {
+      setSaveStatus("ok", "Salvato localmente");
+      return;
+    }
+    try {
+      await cloudSave();
+      setSaveStatus("ok", "Salvato nel cloud");
+    } catch (e) {
+      console.error(e);
+      setSaveStatus("danger", "Cloud non raggiungibile");
+    }
   }
 
   function setControlsDisabled(disabled) {
     document.querySelectorAll("input, select, button").forEach(function (el) {
-      if (el.id === "computeBtn") return;
+      if (el.id === "computeBtn" || el.id === "authBtn" || el.id === "themeToggleBtn") return;
       el.disabled = disabled;
     });
   }
 
-  function loadState() {
-    return fetch("data/state.json", { cache: "no-store" })
-      .then(function (res) { if (!res.ok) throw new Error("no state yet"); return res.json(); })
-      .then(function (data) {
-        if (data && Array.isArray(data.players)) { state = data; if (!state.meta) state.meta = { giornata: "" }; }
-      })
-      .catch(function () {
-        var backup = localLoad();
-        if (backup && Array.isArray(backup.players)) state = backup;
-      });
+  async function loadState() {
+    try {
+      var sessionRes = await sb.auth.getSession();
+      currentUser = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.user : null;
+      updateAuthButton();
+      if (currentUser) {
+        var cloud = await cloudLoad();
+        if (cloud && Array.isArray(cloud.players)) {
+          state = cloud;
+          if (!state.meta) state.meta = { giornata: "" };
+          setSaveStatus("ok", "Caricato dal cloud");
+          localSave();
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Supabase load:", e);
+    }
+    var backup = localLoad();
+    if (backup && Array.isArray(backup.players)) {
+      state = backup;
+      setSaveStatus("ok", currentUser ? "Locale: cloud vuoto" : "Salvato localmente");
+    } else {
+      setSaveStatus("ok", currentUser ? "Nuova rosa" : "Locale");
+    }
   }
+
+  async function openAuth() {
+    var overlay = document.getElementById("authOverlay");
+    overlay.style.display = "flex";
+    var email = document.getElementById("authEmail");
+    var pass = document.getElementById("authPassword");
+    var msg = document.getElementById("authMessage");
+    document.getElementById("logoutBtn").style.display = currentUser ? "inline-block" : "none";
+    document.getElementById("loginBtn").style.display = currentUser ? "none" : "inline-block";
+    document.getElementById("signupBtn").style.display = currentUser ? "none" : "inline-block";
+    document.getElementById("authHint").textContent = currentUser ? ("Connesso come " + (currentUser.email || "utente") + ".") : "Accedi per salvare la rosa e ritrovarla su PC e telefono.";
+    msg.textContent = "";
+    email.value = currentUser && currentUser.email ? currentUser.email : "";
+    pass.value = "";
+  }
+
+  document.getElementById("authBtn").addEventListener("click", openAuth);
+  document.getElementById("closeAuthBtn").addEventListener("click", function () { document.getElementById("authOverlay").style.display = "none"; });
+  document.getElementById("loginBtn").addEventListener("click", async function () {
+    var msg = document.getElementById("authMessage");
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    if (!email || !password) { msg.textContent = "Inserisci email e password."; return; }
+    msg.textContent = "Accesso…";
+    var r = await sb.auth.signInWithPassword({ email: email, password: password });
+    if (r.error) { msg.textContent = r.error.message; return; }
+    location.reload();
+  });
+  document.getElementById("signupBtn").addEventListener("click", async function () {
+    var msg = document.getElementById("authMessage");
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    if (!email || password.length < 6) { msg.textContent = "Inserisci un'email e una password di almeno 6 caratteri."; return; }
+    msg.textContent = "Creazione account…";
+    var r = await sb.auth.signUp({ email: email, password: password });
+    if (r.error) { msg.textContent = r.error.message; return; }
+    msg.textContent = r.data.session ? "Account creato. Accesso effettuato." : "Account creato. Controlla l'email per confermare l'account.";
+  });
+  document.getElementById("logoutBtn").addEventListener("click", async function () {
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  sb.auth.onAuthStateChange(function (_event, session) {
+    currentUser = session ? session.user : null;
+    updateAuthButton();
+  });
 
   // ---------------- scoring ----------------
   // MODELLO A SCOSTAMENTI (ricalibrato 23/08/2026).
