@@ -1486,17 +1486,18 @@
     margin-top:2px; font-family:var(--font-body); font-size:10.5px; line-height:1.1;
     color:var(--text-muted);
   }
-  .lineup-slot-compact .lineup-picker { min-width:0; }
-  .lineup-slot-compact .lineup-picker-score {
-    font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text-muted);
+  .lineup-slot-compact .lineup-picker-select {
+    position:relative; right:auto; top:auto; width:58px; height:32px; opacity:1; pointer-events:auto; cursor:pointer; z-index:20;
+    flex:none; margin:0; padding:4px 7px; border:1px solid var(--line); border-radius:7px;
+    background:var(--surface-2); color:var(--text); font-family:var(--font-mono); font-size:13px; font-weight:600;
+    text-align:center; appearance:auto;
   }
-  .lineup-slot-compact .lineup-picker-arrow { font-size:12px; }
-  .lineup-slot-compact .lineup-picker-select { right:8px; width:58px; height:38px; }
+  .lineup-slot-compact .lineup-picker-select:focus { outline:2px solid var(--accent); outline-offset:1px; }
   @media(max-width:760px){
     .lineup-slot-compact { grid-template-columns:22px minmax(0,1fr) 52px; gap:6px; padding:6px 7px; }
     .lineup-slot-compact .lineup-player-name { font-size:12.5px; }
     .lineup-slot-compact .lineup-info { font-size:10px; }
-    .lineup-slot-compact .lineup-picker-select { right:7px; width:52px; }
+    .lineup-slot-compact .lineup-picker-select { right:auto; width:58px; }
   }
 
   /* ---------- Lista giocatori: reparti senza riquadro esterno ---------- */
@@ -1520,6 +1521,178 @@
     padding-right: 4px;
   }
   .lineup-slot:first-child { border-top: 1px solid var(--line); }
+
+  /* Mobile: priorita assoluta alla leggibilita del nome in formazione */
+  @media (max-width: 560px) {
+    .lineup-editor-card { padding: 8px; }
+    .lineup-slot-compact {
+      grid-template-columns: 20px minmax(0,1fr) 56px !important;
+      gap: 5px !important;
+      padding: 6px 5px !important;
+      min-width: 0;
+    }
+    .lineup-slot-compact .lineup-player-main { min-width: 0; overflow: hidden; }
+    .lineup-slot-compact .lineup-player-top {
+      min-width: 0;
+      gap: 4px;
+      flex-wrap: nowrap;
+    }
+    .lineup-slot-compact .lineup-player-name {
+      min-width: 0;
+      flex: 1 1 auto;
+      font-size: 13.5px !important;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lineup-slot-compact .lineup-status {
+      flex: 0 0 auto;
+      font-size: 8px;
+      padding: 1px 4px;
+    }
+    .lineup-slot-compact .lineup-info {
+      font-size: 9.5px !important;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lineup-slot-compact .lineup-picker-select {
+      width: 56px !important;
+      min-width: 56px;
+      height: 31px;
+      padding: 3px 4px;
+      font-size: 12px;
+      z-index: 20;
+    }
+    .lineup-slot-compact .lineup-role {
+      font-size: 10px;
+    }
+  }
+  @media (max-width: 380px) {
+    .lineup-slot-compact {
+      grid-template-columns: 18px minmax(0,1fr) 52px !important;
+      gap: 4px !important;
+    }
+    .lineup-slot-compact .lineup-player-name { font-size: 13px !important; }
+    .lineup-slot-compact .lineup-picker-select { width: 52px !important; min-width: 52px; font-size: 11.5px; }
+  }
+
+
+/* MOBILE — lista giocatori: priorità assoluta al nome */
+@media (max-width: 600px) {
+  .player-row { padding: 10px 9px; }
+  .row-main { display:grid; grid-template-columns: minmax(0,1fr) auto; gap:7px 8px; }
+  .row-main .f-name { min-width:0; }
+  .name-row { min-width:0; }
+  .name-input { min-width:0; width:100%; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row-main .f-status, .row-main .f-forma, .row-main .f-fama2-inline, .row-main .matchup-chip { min-width:0; }
+  .matchup-chip { max-width:100%; font-size:11px; padding:5px 8px; }
+  .row-main .f-del { grid-column:2; }
+}
+
+  /* V9 — Lista giocatori: nome sempre in alto, informazioni sotto. */
+  .roster-section .row-main {
+    grid-template-columns:minmax(0,1fr) auto auto 72px 26px;
+    grid-template-areas:
+      "name name name name del"
+      "status forma fama matchup del";
+    column-gap:8px;
+    row-gap:5px;
+    align-items:center;
+  }
+  .roster-section .f-name {
+    grid-area:name;
+    min-width:0;
+  }
+  .roster-section .name-row {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:5px;
+    min-width:0;
+  }
+  .roster-section .name-input {
+    flex:1 1 100%;
+    width:100%;
+    min-width:0;
+    font-weight:800;
+    font-size:15px;
+    box-sizing:border-box;
+  }
+  .roster-section .name-row .pupillo-btn,
+  .roster-section .name-row .rigorista-btn,
+  .roster-section .name-row .piazzati-btn {
+    flex:0 0 auto;
+  }
+  .roster-section .f-status { grid-area:status; }
+  .roster-section .f-forma { grid-area:forma; }
+  .roster-section .f-fama2-inline { grid-area:fama; width:72px; }
+  .roster-section .matchup-chip { grid-area:matchup; justify-self:start; }
+  .roster-section .f-del { grid-area:del; align-self:start; }
+
+  @media (max-width:600px) {
+    .roster-section .row-main {
+      grid-template-columns:minmax(0,1fr) auto auto 72px 26px;
+      grid-template-areas:
+        "name name name name del"
+        "status forma fama matchup del";
+      row-gap:5px;
+    }
+    .roster-section .name-input { font-size:15px; }
+    .roster-section .matchup-chip {
+      max-width:100%;
+      min-width:0;
+      padding:0;
+      font-size:11px;
+    }
+  }
+
+  /* V10 — mobile: il nome del giocatore deve occupare una riga propria.
+     I pulsanti di preferito/rigorista/piazzati passano sotto, senza comprimere il nome. */
+  @media (max-width:600px) {
+    .roster-section .f-name {
+      min-width:0 !important;
+      width:100%;
+    }
+    .roster-section .name-row {
+      display:grid !important;
+      grid-template-columns:minmax(0,1fr) auto auto auto !important;
+      grid-template-rows:auto auto !important;
+      column-gap:5px !important;
+      row-gap:5px !important;
+      width:100% !important;
+      min-width:0 !important;
+      align-items:center !important;
+    }
+    .roster-section .name-row .name-input {
+      grid-column:1 / -1 !important;
+      grid-row:1 !important;
+      display:block !important;
+      width:100% !important;
+      min-width:0 !important;
+      height:34px !important;
+      box-sizing:border-box !important;
+      font-size:16px !important;
+      font-weight:800 !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+      white-space:nowrap !important;
+    }
+    .roster-section .name-row .pupillo-btn,
+    .roster-section .name-row .rigorista-btn,
+    .roster-section .name-row .piazzati-btn {
+      grid-row:2 !important;
+    }
+  }
+
+  @media (max-width:380px) {
+    .roster-section .name-row .name-input {
+      font-size:15px !important;
+    }
+  }
+
 </style>
 
 <script>
@@ -4778,7 +4951,7 @@ async function refreshLivePlayerNews() {
   // buildManualXI/wireLineupEditor per come le scelte vengono applicate.
   function renderLineupEditorHtml(bestResult, shape) {
     var html = '<div class="bench-card lineup-editor-card"><h3><span>Formazione</span><button type="button" class="btn btn-small reset-lineup-btn" id="resetLineupBtn">Ripristina auto</button></h3>';
-    html += '<p class="lineup-summary">Clicca su un giocatore per cambiarlo. Le modifiche vengono salvate automaticamente.</p>';
+    html += '<p class="lineup-summary">Usa il menu a destra per cambiare qualsiasi titolare. Le modifiche vengono salvate automaticamente.</p>';
     var groupLabels = { P:'Portieri', D:'Difensori', C:'Centrocampisti', A:'Attaccanti' };
     var statusShort = {
       titolare: 'TIT',
@@ -4821,7 +4994,6 @@ async function refreshLivePlayerNews() {
             '</div>'+ 
             '<div class="lineup-info"><span>'+escapeHtml(team)+' vs '+escapeHtml(opp)+'</span></div>'+ 
           '</div>'+ 
-          '<div class="lineup-picker"><span class="lineup-picker-score">'+value+'</span><span class="lineup-picker-arrow">⌄</span></div>'+ 
           '<select class="lineup-picker-select" data-role="'+r.key+'" data-slot="'+i+'" aria-label="Cambia giocatore">'+opts+'</select>'+ 
         '</div>';
       }
@@ -4841,12 +5013,6 @@ async function refreshLivePlayerNews() {
         renderResult();
       });
     }
-    host.querySelectorAll(".lineup-picker[data-slot-picker]").forEach(function (picker) {
-      picker.addEventListener("click", function () {
-        var select = picker.parentElement.querySelector("select.lineup-picker-select");
-        if (select) select.click();
-      });
-    });
     host.querySelectorAll(".lineup-slot select").forEach(function (sel) {
       sel.addEventListener("change", function (e) {
         var role = e.target.dataset.role;
@@ -5319,3 +5485,92 @@ async function refreshLivePlayerNews() {
   document.addEventListener("DOMContentLoaded", init);
 })();
 </script>
+<style>
+/* V11 — MOBILE: struttura rigida della scheda giocatore.
+   Il nome occupa sempre la prima riga e non condivide spazio con i controlli. */
+@media (max-width: 900px) {
+  .roster-section .player-row {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) !important;
+    grid-template-areas:
+      "main"
+      "details"
+      "note" !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .roster-section .player-row > .row-main {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto auto auto !important;
+    grid-template-areas:
+      "name name name del"
+      "status forma fama matchup" !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    gap: 6px !important;
+    align-items: center !important;
+  }
+
+  .roster-section .f-name {
+    grid-area: name !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  .roster-section .name-row {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .roster-section .name-row .name-input {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 34px !important;
+    padding: 5px 8px !important;
+    box-sizing: border-box !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: var(--text) !important;
+    background: var(--surface-2) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+  }
+
+  .roster-section .name-row .pupillo-btn,
+  .roster-section .name-row .rigorista-btn,
+  .roster-section .name-row .piazzati-btn {
+    display: none !important;
+  }
+
+  .roster-section .f-status { grid-area: status !important; min-width: 0 !important; }
+  .roster-section .f-forma { grid-area: forma !important; min-width: 0 !important; }
+  .roster-section .f-fama2-inline { grid-area: fama !important; width: 72px !important; min-width: 72px !important; }
+  .roster-section .matchup-chip { grid-area: matchup !important; min-width: 0 !important; max-width: 100% !important; }
+  .roster-section .f-del { grid-area: del !important; align-self: start !important; }
+}
+
+@media (max-width: 600px) {
+  .roster-section .player-row > .row-main {
+    grid-template-columns: minmax(0,1fr) auto auto !important;
+    grid-template-areas:
+      "name name del"
+      "status forma fama"
+      "matchup matchup matchup" !important;
+  }
+  .roster-section .matchup-chip {
+    justify-self: start !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
+</style>
