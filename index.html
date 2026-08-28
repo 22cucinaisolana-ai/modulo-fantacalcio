@@ -1004,6 +1004,522 @@
     font-size: 11.5px;
     text-align: center;
   }
+
+
+  /* ---------- Formazione: vista integrata lista + campetto ---------- */
+  .result-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+    gap: 18px;
+    align-items: start;
+  }
+  .result-grid > .side-col { grid-column: 1; grid-row: 1; }
+  .result-grid > .pitch-card { grid-column: 2; grid-row: 1; position: sticky; top: 82px; }
+  .lineup-editor-card { padding: 12px; }
+  .lineup-editor-card h3 { margin-bottom: 4px; }
+  .lineup-list { gap: 5px; }
+  .lineup-slot {
+    display: grid;
+    grid-template-columns: 24px minmax(0,1fr) 52px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 9px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+  }
+  .lineup-slot .role-tag {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    font-weight: 700;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+  }
+  .lineup-player-main { min-width: 0; }
+  .lineup-info {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 10.5px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lineup-team {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .lineup-player-top {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+  .lineup-player-name {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lineup-status {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    padding: 1px 5px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .lineup-status[data-tone="good"] { color: var(--good); border-color: var(--good); background: var(--good-soft); }
+  .lineup-status[data-tone="warn"] { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+  .lineup-status[data-tone="danger"] { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+  .lineup-status[data-tone="muted"] { color: var(--muted-tone); background: var(--muted-soft); }
+  .lineup-stars { color: var(--gold); letter-spacing: 1px; font-size: 11px; white-space: nowrap; }
+  .lineup-meta {
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  .lineup-meta .flag { font-family: var(--font-mono); font-size: 10px; font-weight: 700; }
+  .lineup-meta .flag.pupillo { color: var(--gold); }
+  .lineup-meta .flag.special { color: var(--accent-strong); }
+  .lineup-score-wrap { display: flex; align-items: center; gap: 5px; }
+  .lineup-slot select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .lineup-picker {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface-2);
+    cursor: pointer;
+  }
+  .lineup-picker:hover { border-color: var(--accent); }
+  .lineup-picker .picker-score { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text); }
+  .lineup-picker .picker-arrow { color: var(--text-muted); }
+  .lineup-picker-select { width: 100%; }
+  .pitch-card { padding: 12px; }
+  .pitch-card::before {
+    content: "CAMPO";
+    display: block;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 9px;
+    color: var(--text);
+  }
+  .pitch {
+    aspect-ratio: 5 / 7.6;
+    background: linear-gradient(180deg, #739d4b 0%, #628e3d 48%, #729b48 100%);
+    border: 1px solid var(--line);
+  }
+  .pitch-dot { width: 92px; gap: 3px; }
+  .pitch-dot .bubble { width: 34px; height: 34px; font-size: 11px; }
+  .pitch-dot .pname {
+    max-width: 90px;
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+  .pitch-dot .pmeta {
+    font-size: 8px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 1px 4px;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,.14);
+  }
+  .bench-item { min-height: 38px; }
+  .bench-item .bname { min-width: 0; flex: 1; }
+  .bench-item .bmeta { display:block; font-size:10.5px; color:var(--text-muted); margin-top:1px; }
+  @media (max-width: 900px) {
+    .result-grid { grid-template-columns: 1fr; }
+    .result-grid > .side-col, .result-grid > .pitch-card { grid-column: 1; grid-row: auto; }
+    .result-grid > .pitch-card { position: static; }
+  }
+  @media (max-width: 560px) {
+    .lineup-slot { grid-template-columns: 22px minmax(0,1fr) 48px; padding: 7px; gap: 6px; }
+    .lineup-meta { font-size: 10px; }
+    .lineup-picker { padding: 4px 5px; }
+    .pitch-dot { width: 72px; }
+    .pitch-dot .pname { max-width: 72px; font-size: 9px; }
+  }
+
+  /* ---------- Enhanced formation UI ---------- */
+  .formation-shortcuts { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .formation-shortcuts .shortcut { border:1px solid var(--line); background:var(--surface); color:var(--text); border-radius:9px; padding:8px 12px; font-family:var(--font-mono); font-weight:700; cursor:pointer; }
+  .formation-shortcuts .shortcut:hover { border-color:var(--accent); }
+  .formation-shortcuts .shortcut.active { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+  .formation-shortcuts-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:0 0 6px; font-weight:700; }
+  .formation-actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .btn-danger-lite { border-color:var(--danger)!important; color:var(--danger)!important; }
+  .lineup-editor-card { padding:14px; }
+  .lineup-editor-card > h3 { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .lineup-group { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--surface); }
+  .lineup-group + .lineup-group { margin-top:9px; }
+  .lineup-group > summary { cursor:pointer; list-style:none; padding:9px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+  .lineup-group > summary::-webkit-details-marker { display:none; }
+  .lineup-group > summary:after { content:'⌄'; font-size:15px; transition:transform .15s; }
+  .lineup-group:not([open]) > summary:after { transform:rotate(-90deg); }
+  .lineup-group-body { border-top:1px solid var(--line); }
+  .lineup-slot { position:relative; display:grid; grid-template-columns:28px minmax(0,1fr) 105px; gap:10px; align-items:center; padding:11px 12px; border-top:1px solid var(--line); }
+  .lineup-slot:first-child { border-top:0; }
+  .lineup-role { width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-strong);font-family:var(--font-mono);font-weight:700;font-size:11px; }
+  .lineup-player-top { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .lineup-player-name { font-family:var(--font-display); font-weight:700; font-size:15px; }
+  .lineup-status { font-size:9.5px; padding:2px 6px; border-radius:999px; background:var(--muted-soft); color:var(--text-muted); text-transform:uppercase; font-weight:700; }
+  .lineup-status[data-tone="good"] { background:var(--good-soft); color:var(--good); }
+  .lineup-status[data-tone="warn"] { background:var(--warn-soft); color:var(--warn); }
+  .lineup-status[data-tone="danger"] { background:var(--danger-soft); color:var(--danger); }
+  .lineup-stars { color:var(--gold); font-size:12px; letter-spacing:1px; }
+  .lineup-info { margin-top:4px; color:var(--text-muted); font-family:var(--font-mono); font-size:11px; display:flex; gap:9px; flex-wrap:wrap; }
+  .lineup-flags { margin-top:5px; display:flex; gap:5px; flex-wrap:wrap; }
+  .lineup-flag { font-size:9px; border:1px solid var(--line); border-radius:5px; padding:2px 5px; color:var(--text-muted); background:var(--bg); font-weight:700; }
+  .lineup-picker { display:flex; align-items:center; justify-content:flex-end; gap:8px; }
+  .lineup-picker-score { font-family:var(--font-mono); font-weight:700; font-size:15px; }
+  .lineup-picker-arrow { color:var(--text-muted); }
+  .lineup-picker-select { position:absolute; right:12px; width:105px; height:38px; opacity:0; cursor:pointer; }
+  .lineup-note { grid-column:2 / 4; display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,.75fr); gap:8px; margin-top:2px; }
+  .lineup-note-box { border:1px solid var(--line); border-radius:8px; padding:7px 9px; background:var(--bg); min-width:0; }
+  .lineup-note-box label { display:block; font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin-bottom:2px; font-weight:700; }
+  .lineup-note-text { font-size:11px; color:var(--text); line-height:1.3; }
+  .lineup-note-empty { color:var(--text-muted); }
+  .lineup-summary { font-size:11px; color:var(--text-muted); margin:0 0 9px; }
+  @media(max-width:760px){ .lineup-slot{grid-template-columns:26px minmax(0,1fr) 82px}.lineup-picker-select{right:12px;width:82px}.lineup-note{grid-template-columns:1fr;grid-column:2/4}.formation-shortcuts{overflow:auto;flex-wrap:nowrap}.formation-shortcuts .shortcut{white-space:nowrap} }
+
+
+  /* --- Lista giocatori: reparti richiudibili + card compatte --- */
+  .roster-section { overflow:hidden; }
+  .roster-section > summary { list-style:none; }
+  .roster-section > summary::-webkit-details-marker { display:none; }
+  .section-summary { cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .section-title-wrap, .section-head-actions { display:flex; align-items:center; gap:9px; }
+  .section-title-wrap h2 { margin:0; }
+  .section-chevron { font-size:17px; color:var(--text-muted); transition:transform .15s ease; }
+  .roster-section:not([open]) .section-chevron { transform:rotate(-90deg); }
+  .roster-section .roster { padding:0 10px 10px; }
+  .roster-section .player-row { margin:8px 0; border-radius:12px; }
+  .roster-section .row-main { min-height:72px; padding:10px 12px; }
+  .roster-section .name-input { font-weight:800; }
+  .roster-section .f-name { min-width:180px; }
+  .roster-section .row-details { margin:0 12px 10px; }
+  .roster-section .row-details[open] { margin-top:0; }
+
+  /* Lista giocatori: scheda pulita a due colonne.
+     Sinistra = identità + stato + dati sintetici; destra = note. */
+  .roster-section .player-row {
+    display:grid;
+    grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr);
+    grid-template-areas:
+      "main note"
+      "details note";
+    column-gap:18px;
+    align-items:start;
+    padding:12px 14px;
+  }
+  .roster-section .player-row > .row-main { grid-area:main; }
+  .roster-section .player-row > .row-details {
+    grid-area:details;
+    margin:7px 0 0;
+    border-top:1px dashed var(--line);
+  }
+  .roster-section .row-main {
+    display:grid;
+    grid-template-columns:minmax(180px,1.6fr) 118px 86px 72px minmax(150px,1fr) 26px;
+    grid-template-areas:
+      "name status forma fama matchup del";
+    gap:8px;
+    align-items:center;
+    min-height:48px;
+    padding:0;
+  }
+  .roster-section .f-name { grid-area:name; min-width:0; }
+  .roster-section .f-status { grid-area:status; }
+  .roster-section .f-forma { grid-area:forma; }
+  .roster-section .f-fama2-inline { grid-area:fama; }
+  .roster-section .matchup-chip { grid-area:matchup; min-width:0; }
+  .roster-section .f-del { grid-area:del; }
+  .roster-section .name-input { font-weight:800; }
+  .roster-section .row-details summary { padding-top:7px; }
+  .roster-section .row-details-body { padding-top:9px; }
+  .roster-section .row-details-grid {
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:8px;
+  }
+  .roster-section .player-row > .row-note {
+    grid-area:note;
+    border:0;
+    border-left:1px solid var(--line);
+    margin:0;
+    padding:0 0 0 18px;
+    min-width:0;
+  }
+  .roster-section .row-note-head {
+    display:grid;
+    grid-template-columns:auto max-content;
+    grid-template-areas:
+      "label source"
+      "date source";
+    gap:3px 8px;
+    align-items:center;
+    margin-bottom:7px;
+  }
+  .roster-section .row-note-head .field-label {
+    grid-area:label;
+    margin:0;
+    font-size:10px;
+    line-height:1.2;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .roster-section .row-note-head .fonte-select { grid-area:source; }
+  .roster-section .row-note-head .note-date { grid-area:date; }
+  .roster-section .row-note textarea {
+    min-height:82px;
+    max-height:150px;
+  }
+
+  @media (max-width:900px) {
+    .section-summary { align-items:flex-start; }
+    .section-head-actions .add-btn { font-size:11px; }
+    .roster-section .player-row {
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "main"
+        "details"
+        "note";
+    }
+    .roster-section .row-main {
+      grid-template-columns:minmax(0,1fr) 108px 78px 26px;
+      grid-template-areas:
+        "name status forma del"
+        "matchup matchup fama del";
+    }
+    .roster-section .player-row > .row-note {
+      border-left:0;
+      border-top:1px dashed var(--line);
+      margin-top:10px;
+      padding:10px 0 0;
+    }
+  }
+
+  /* --- Lista giocatori: riga compatta e note realmente separate --- */
+  .roster-section .player-row {
+    display:grid;
+    grid-template-columns:minmax(0,1.35fr) minmax(320px,.85fr);
+    grid-template-areas:
+      "main note"
+      "details note";
+    column-gap:24px;
+    align-items:start;
+    padding:10px 14px;
+    overflow:hidden;
+  }
+  .roster-section .player-row > .row-main {
+    grid-area:main;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto 72px 22px;
+    grid-template-areas:
+      "name status forma fama del"
+      "matchup matchup matchup matchup del";
+    column-gap:8px;
+    row-gap:4px;
+    align-items:center;
+    min-width:0;
+    min-height:54px;
+    padding:0;
+  }
+  .roster-section .f-name { grid-area:name; min-width:0; }
+  .roster-section .f-status { grid-area:status; }
+  .roster-section .f-forma { grid-area:forma; }
+  .roster-section .f-fama2-inline { grid-area:fama; width:72px; }
+  .roster-section .f-fama2-inline input { width:72px; box-sizing:border-box; }
+  .roster-section .matchup-chip {
+    grid-area:matchup;
+    justify-self:start;
+    min-width:0;
+    max-width:100%;
+    border:0;
+    background:transparent;
+    padding:0;
+    font-size:11px;
+    color:var(--text-muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .roster-section .f-del { grid-area:del; align-self:start; }
+  .roster-section .name-input { font-weight:800; min-width:0; }
+  .roster-section .name-row { min-width:0; }
+  .roster-section .player-row > .row-details {
+    grid-area:details;
+    margin:7px 0 0;
+    border-top:1px dashed var(--line);
+  }
+  .roster-section .player-row > .row-note {
+    grid-area:note;
+    min-width:0;
+    border:0;
+    border-left:1px solid var(--line);
+    margin:0;
+    padding:0 0 0 18px;
+    overflow:hidden;
+  }
+  .roster-section .row-note-head {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:
+      "label source"
+      "date source";
+    gap:2px 10px;
+    align-items:center;
+    margin-bottom:7px;
+    min-width:0;
+  }
+  .roster-section .row-note-head .field-label {
+    grid-area:label;
+    margin:0;
+    font-size:10px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .roster-section .row-note-head .fonte-select {
+    grid-area:source;
+    width:130px;
+    min-width:130px;
+  }
+  .roster-section .row-note-head .note-date {
+    grid-area:date;
+    font-size:10px;
+    color:var(--text-muted);
+    white-space:nowrap;
+  }
+  .roster-section .row-note textarea {
+    display:block;
+    width:100%;
+    box-sizing:border-box;
+    min-height:76px;
+    max-height:120px;
+  }
+
+  @media (max-width:900px) {
+    .roster-section .player-row {
+      grid-template-columns:1fr;
+      grid-template-areas:"main" "details" "note";
+    }
+    .roster-section .player-row > .row-note {
+      border-left:0;
+      border-top:1px dashed var(--line);
+      margin-top:10px;
+      padding:10px 0 0;
+    }
+  }
+
+  /* --- Formazione: nessun reparto richiudibile --- */
+  .lineup-group-flat { border:0; border-radius:0; background:transparent; overflow:visible; margin:0; }
+  .lineup-group-flat + .lineup-group-flat { margin-top:8px; }
+  .lineup-group-title { padding:7px 12px; border:1px solid var(--line); border-bottom:0; border-radius:12px 12px 0 0; background:var(--surface); color:var(--text-muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+  .lineup-group-flat .lineup-group-body { border:1px solid var(--line); border-radius:0 0 12px 12px; overflow:hidden; }
+  .lineup-group-flat .lineup-slot { border-top:0; border-bottom:1px solid var(--line); }
+  .lineup-group-flat .lineup-slot:last-child { border-bottom:0; }
+
+  @media (max-width:900px) {
+    .section-summary { align-items:flex-start; }
+    .section-head-actions .add-btn { font-size:11px; }
+    .roster-section .player-row {
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "main"
+        "details"
+        "note";
+    }
+    .roster-section .row-main { grid-template-columns: 1fr auto; }
+    .roster-section .f-status, .roster-section .f-forma, .roster-section .f-fama2-inline, .roster-section .matchup-chip { grid-column:auto; }
+    .roster-section .player-row > .row-note { border-left:0; border-top:1px dashed var(--line); margin-top:10px; padding:10px 0 0; }
+  }
+
+
+  /* Lista formazione: versione compatta richiesta */
+  /* Lista formazione: tipografia allineata alle Riserve consigliate */
+  .lineup-slot-compact {
+    grid-template-columns:24px minmax(0,1fr) 58px;
+    min-height:48px;
+    padding:6px 8px;
+    gap:7px;
+  }
+  .lineup-slot-compact .lineup-role {
+    width:auto; height:auto; border-radius:0;
+    display:block; background:transparent; color:var(--text-muted);
+    font-family:var(--font-mono); font-size:10.5px; font-weight:600;
+    text-align:left;
+  }
+  .lineup-slot-compact .lineup-player-top { gap:6px; flex-wrap:nowrap; align-items:baseline; }
+  .lineup-slot-compact .lineup-player-name {
+    font-family:var(--font-body); font-size:13px; font-weight:600; line-height:1.15;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .lineup-slot-compact .lineup-status {
+    flex:none; font-size:9px; padding:1px 5px; border-radius:5px;
+  }
+  .lineup-slot-compact .lineup-info {
+    margin-top:2px; font-family:var(--font-body); font-size:10.5px; line-height:1.1;
+    color:var(--text-muted);
+  }
+  .lineup-slot-compact .lineup-picker { min-width:0; }
+  .lineup-slot-compact .lineup-picker-score {
+    font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--text-muted);
+  }
+  .lineup-slot-compact .lineup-picker-arrow { font-size:12px; }
+  .lineup-slot-compact .lineup-picker-select { right:8px; width:58px; height:38px; }
+  @media(max-width:760px){
+    .lineup-slot-compact { grid-template-columns:22px minmax(0,1fr) 52px; gap:6px; padding:6px 7px; }
+    .lineup-slot-compact .lineup-player-name { font-size:12.5px; }
+    .lineup-slot-compact .lineup-info { font-size:10px; }
+    .lineup-slot-compact .lineup-picker-select { right:7px; width:52px; }
+  }
+
+  /* ---------- Lista giocatori: reparti senza riquadro esterno ---------- */
+  .lineup-group {
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+  .lineup-group + .lineup-group { margin-top: 12px; }
+  .lineup-group > summary {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .lineup-group-body {
+    border-top: 0 !important;
+  }
+  .lineup-slot {
+    border-top: 1px solid var(--line);
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  .lineup-slot:first-child { border-top: 1px solid var(--line); }
 </style>
 
 <script>
@@ -1031,8 +1547,12 @@
       <input type="number" min="1" max="38" id="giornataInput" placeholder="1" />
     </label>
     <button class="btn btn-small" id="applyCalendarBtn" title="Riempie avversario, difficoltà e casa/trasferta per chi ha la squadra impostata">Applica calendario</button>
+    <button class="btn btn-small" id="refreshNewsBtn" type="button" title="Cerca ora le ultime notizie dei 25 giocatori e aggiorna Supabase">↻ Aggiorna news</button>
+    <button class="btn btn-small" id="downloadNewsBtn" type="button" title="Scarica le ultime news dei 25 giocatori in CSV">↓ Scarica news</button>
+    <span class="status-pill" id="newsStatus" title="Stato dell'ultimo aggiornamento delle news"><span class="dot"></span><span class="label">News —</span></span>
     <span class="status-pill" id="deadlinePill" title="Schierabile fino a 45 minuti prima del calcio d'inizio della prima partita della giornata (regola di lega)"><span class="dot"></span><span class="label">—</span></span>
     <span class="status-pill" id="saveStatus"><span class="dot"></span><span class="label">—</span></span>
+    <button class="btn btn-small" id="authBtn" type="button">Accedi</button>
     <button class="btn btn-small" id="themeToggleBtn" type="button" title="Cambia tema: Automatico (segue il sistema) → Chiaro → Scuro"><span id="themeToggleLabel">Tema: Auto</span></button>
     <details class="settings-menu">
       <summary class="btn" title="Modulo, strategia, modificatore difesa, calendario">⚙ Impostazioni</summary>
@@ -1086,6 +1606,27 @@
 
   <div class="calendar-msg" id="calendarMsg"></div>
 
+
+
+  <!-- 1. DOPO LA GIORNATA -->
+  <div id="historyCardHost"></div>
+
+  <!-- 2. FORMAZIONE -->
+  <div class="result" id="resultSection">
+    <div class="result-empty" id="resultEmpty">Aggiungi la tua rosa qui sopra, poi premi <b>Calcola formazione</b> per vedere l'undici consigliato.</div>
+    <div id="resultContent" style="display:none"></div>
+  </div>
+
+  <!-- 3. RISULTATI DI GIORNATA -->
+  <div id="risultatiCardHost"></div>
+
+  <!-- 4. AVVERSARIO DI GIORNATA -->
+  <div id="legaCardHost"></div>
+
+  <!-- 5. LISTA GIOCATORI: reparti richiudibili -->
+  <div id="sections"></div>
+
+  <!-- 6. COME FUNZIONA L'ALGORITMO -->
   <details class="intro" id="introBox">
     <summary>Come funziona l'algoritmo</summary>
     <div class="intro-body">
@@ -1105,7 +1646,7 @@
       <p><b>Modulo</b>: in alto puoi lasciare "Auto" (scelgo io il migliore tra i moduli candidati della Strategia attiva, in base al valore atteso) oppure forzare uno qualsiasi dei 7 moduli disponibili (3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-3-2, 5-4-1) — utile se hai già deciso il modulo per altri motivi e vuoi solo vedere l'11 migliore in quello schema. La tabella di confronto sotto ai risultati mostra il totale atteso per tutti e 7.</p>
       <p><b>Strategia</b>: tre profili che influenzano sia i moduli candidati per "Auto" sia i criteri con cui scelgo i giocatori. <b>Equilibrato</b> (default) confronta 4-4-2/4-5-1, i moduli preferiti del progetto, con le probabilità di gioco (ballottaggio 75/55/35 secondo il grado) e i pesi di difficoltà standard descritti sopra. <b>Aggressivo</b> confronta moduli più offensivi (4-3-3/3-4-3/4-4-2), dà più fiducia ai ballottaggi e ai panchinari ad alto potenziale (ballottaggio 82/65/45) e amplifica il peso di difficoltà avversario/casa-trasferta (×1,25) — premia il rischio quando la fantamedia o il fattore campo sono favorevoli. <b>Prudente</b> confronta moduli più coperti (4-5-1/5-3-2/5-4-1), penalizza di più ballottaggi e panchinari (ballottaggio 68/45/25) e attenua il peso di difficoltà avversario/casa-trasferta (×0,75) — preferisce titolari certi e punteggi più stabili, meno sbalzi legati al calendario.</p>
       <p><b>Modificatore</b>: l'interruttore "Modificatore" in alto è UNICO per tutta la rosa (non per singolo giocatore) e riproduce esattamente la regola "Modificatore difesa" della tua lega: un bonus/malus <b>una tantum</b> sul totale squadra (non sui singoli giocatori), calcolato sulla media voto dei migliori 3 difensori + il portiere (oppure dei migliori 4 difensori, se disattivi "Includi portiere" per rispecchiare l'opzione della tua lega). Attenzione a un dettaglio che conta: la regola parla di <b>voto senza bonus/malus</b>, che non è la fantamedia. Per un portiere il divario è enorme (ogni gol subito vale −1: Carnesecchi ha fantamedia 5,19 ma in pagella prende circa 6,2), per un difensore che segna è al contrario leggermente positivo — e le fasce del bonus sono larghe solo 0,25, quindi usare la fantamedia grezza poteva sbagliare di un intero gradino. Per ogni difensore/portiere uso quindi, in ordine: la media dei suoi ultimi voti reali se ce ne sono, altrimenti il campo "Voto reale", altrimenti la fantamedia corretta per ruolo come stima — che si autocorregge da sola appena inserisci i primi voti veri. Il riquadro del risultato indica sempre quanti dei voti usati nella media sono reali e quanti stimati. La media si traduce in bonus secondo la tabella della tua lega: sotto 6 → 0, 6–6.24 → 1, 6.25–6.49 → 2, 6.5–6.74 → 3, 6.75–6.99 → 4.5, 7 o più → 6. Il modificatore si applica solo schierando almeno 4 difensori: con il Modificatore attivo la difesa resta sempre a 4, "Auto" propone solo moduli con 4 difensori e non puoi selezionarne a mano uno con 3 o 5 (i moduli con difesa diversa tornano selezionabili disattivando il Modificatore); se scegli un modulo con difesa diversa da 4 il bonus semplicemente non si applica (lo vedi indicato sotto il totale e nella tabella di confronto). Il bonus/malus è mostrato separatamente nel totale "con bonus/malus"; il totale "senza bonus/malus" non lo include mai, così puoi vedere l'impatto esatto del Modificatore sulla tua formazione.</p>
-      <p><b>Note, Fonte e Voto reale</b>: ogni giocatore ha un campo Note libero, sotto la riga principale — pensato per appuntarci cose che numeri e calendario da soli non catturano (fiducia dell'allenatore, un ballottaggio aperto, la squadra in un buon/cattivo momento). Accanto compare un'etichetta <b>Fonte</b> (Ufficiale/Probabile): "Ufficiale" significa che la nota/stato viene da una formazione già uscita o da una comunicazione ufficiale del club; "Probabile" che è ancora un'anteprima/previsione, da prendere con più cautela finché non esce la formazione ufficiale — e una data "Aggiornato: gg/mm/aaaa" che si aggiorna da sola ogni volta che modifichi la nota, così vedi sempre quanto è fresca l'informazione. Per portieri e difensori c'è anche un campo <b>Voto reale (ultima giornata giocata)</b>: se lo compili dopo che la partita è stata giocata, da quel momento entra al posto della fantamedia nel calcolo del Modificatore per quel giocatore, rendendo la stima del bonus/malus via via più precisa giornata dopo giornata. Il tool è una pagina pubblicata: non può collegarsi da solo a internet quando premi un pulsante, quindi non cerca queste notizie in automatico. Per aggiornarle, scrivimi in chat (es. "aggiorna le notizie prima della giornata") — io cerco in rete le informazioni sui tuoi giocatori e le loro squadre, aggiorno Stato/Fonte/Note qui nel tool e lo ripubblico allo stesso link. Ho anche impostato un controllo automatico <b>giornaliero</b>: ogni giorno cerco formazioni, infortuni e ballottaggi dei tuoi 25, aggiorno Stato/Fonte/Note e, quando manca poco alla scadenza (45 minuti prima del calcio d'inizio della prima partita, regola della tua lega), ti avviso se c'è qualcosa che cambia la formazione. Così non devi chiedermelo tu, e la cosa non dipende da un giorno fisso della settimana: copre anche i turni infrasettimanali.</p>
+      <p><b>Note, Fonte e Voto reale</b>: ogni giocatore ha un campo Note libero, sotto la riga principale — pensato per appuntarci cose che numeri e calendario da soli non catturano (fiducia dell'allenatore, un ballottaggio aperto, la squadra in un buon/cattivo momento). Accanto compare un'etichetta <b>Fonte</b> (Ufficiale/Probabile): "Ufficiale" significa che la nota/stato viene da una formazione già uscita o da una comunicazione ufficiale del club; "Probabile" che è ancora un'anteprima/previsione, da prendere con più cautela finché non esce la formazione ufficiale — e una data "Aggiornato: gg/mm/aaaa" che si aggiorna da sola ogni volta che modifichi la nota, così vedi sempre quanto è fresca l'informazione. Per portieri e difensori c'è anche un campo <b>Voto reale (ultima giornata giocata)</b>: se lo compili dopo che la partita è stata giocata, da quel momento entra al posto della fantamedia nel calcolo del Modificatore per quel giocatore, rendendo la stima del bonus/malus via via più precisa giornata dopo giornata. Il tool legge le news aggiornate da Supabase. Usa <b>↻ Aggiorna news</b> per ricaricare subito le ultime informazioni disponibili; il controllo automatico quotidiano aggiorna la base delle news quando eseguito. Le note modificano solo Stato/Fonte/Note/Data e non toccano i dati fantacalcistici personali.</p>
       <p><b>1ª partita e scadenza di schieramento</b>: in alto puoi impostare data e ora del calcio d'inizio della prima partita della giornata (lo tengo aggiornato anche io con il controllo automatico) — il tool calcola e mostra in tempo reale la scadenza vera (45 minuti prima, regola della tua lega) con un countdown che cambia colore quando si avvicina (verde con largo anticipo, giallo sotto le 2 ore, rosso se già scaduta). È solo un promemoria visivo: non blocca nulla nel tool, la responsabilità di schierare in tempo resta tua, ma ti aiuta a non perdere la finestra.</p>
       <p><b>Pupillo/preferito d'asta</b>: accanto al nome di ogni giocatore c'è una piccola stella cliccabile — usala per segnare i giocatori su cui hai puntato particolarmente in asta (scommesse, pupilli). Non è un override: aggiunge solo un piccolo bonus fisso (+0,15) al valore atteso di quel giocatore, prima della probabilità di scendere in campo — abbastanza per farlo prevalere nei casi dubbi o di parità (due panchinari simili, un ballottaggio equilibrato), ma non abbastanza per far preferire un pupillo chiaramente più debole a un titolare chiaramente più forte. I pupilli scelti nell'11 sono segnati con una ★ anche sul campetto e tra le riserve consigliate.</p>
       <p><b>Rigorista e Piazzati</b>: accanto alla stella pupillo ci sono altri due pulsanti — un pallone per <b>Rigorista</b> (chi tira i rigori della sua squadra) e un tiro a giro per <b>Piazzati</b> (chi è tra gli specialisti di punizioni/corner) — che segnalano chi ha più occasioni concrete di bonus a parità di fantamedia. Anche questi sono piccoli bonus fissi al valore atteso, non override: +0,15 per Rigorista, +0,08 per Piazzati (cumulabili tra loro e con il pupillo). Sono volutamente contenuti perché la fantamedia di un rigorista contiene <i>già</i> i rigori che tira — il 7,18 di Dybala non è un caso — quindi il flag aggiunge solo il residuo, cioè il fatto che il ruolo è confermato o appena acquisito rispetto a quanto la media storica lascia intendere. Ho già impostato questi flag per i giocatori della tua rosa in base alle gerarchie rigori/punizioni/corner 2026/27 che ho trovato in rete (restano comunque modificabili a mano riga per riga, e vanno tenuti d'occhio perché le gerarchie possono cambiare in corso di stagione). Anche questi compaiono con una lettera (R/P) accanto al nome sul campetto e tra le riserve.</p>
@@ -1117,23 +1658,26 @@
     </div>
   </details>
 
-  <div id="historyCardHost"></div>
-
-  <div id="risultatiCardHost"></div>
-
-  <div id="legaCardHost"></div>
-
-  <!-- Role sections injected by JS -->
-  <div id="sections"></div>
-
-  <div class="result" id="resultSection">
-    <div class="result-empty" id="resultEmpty">Aggiungi la tua rosa qui sopra, poi premi <b>Calcola formazione</b> per vedere l'undici consigliato.</div>
-    <div id="resultContent" style="display:none"></div>
+  <div id="authOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:min(420px,100%);background:var(--panel,#fff);border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <h2 style="margin:0 0 8px">Sincronizzazione cloud</h2>
+    <p id="authHint" style="margin:0 0 18px;opacity:.75">Accedi per salvare la rosa e ritrovarla su PC e telefono.</p>
+    <label style="display:block;margin-bottom:10px">Email<input id="authEmail" type="email" autocomplete="email" style="width:100%;margin-top:5px;padding:10px;border-radius:8px;border:1px solid #bbb"></label>
+    <label style="display:block;margin-bottom:14px">Password<input id="authPassword" type="password" autocomplete="current-password" style="width:100%;margin-top:5px;padding:10px;border-radius:8px;border:1px solid #bbb"></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="loginBtn" type="button">Accedi</button>
+      <button class="btn" id="signupBtn" type="button">Crea account</button>
+      <button class="btn" id="logoutBtn" type="button" style="display:none">Esci</button>
+      <button class="btn" id="closeAuthBtn" type="button">Chiudi</button>
+    </div>
+    <div id="authMessage" style="margin-top:14px;font-size:14px"></div>
   </div>
-
-  <footer class="credits">Dati salvati automaticamente per questa rosa · nessun collegamento a fonti esterne, i dati vanno aggiornati a mano ogni giornata</footer>
 </div>
 
+<footer class="credits">Dati salvati automaticamente per questa rosa · nessun collegamento a fonti esterne, i dati vanno aggiornati a mano ogni giornata</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
   "use strict";
@@ -1167,7 +1711,8 @@
   function matchupText(p) {
     var team = p.team ? p.team + " · " : "";
     if (!p.avversario) return team ? team + "avversario da impostare" : "avversario da impostare";
-    return team + "vs " + p.avversario + " · " + (p.casa ? "casa" : "trasf.");
+    var attesa = (p.fantamediaAttesa != null && p.fantamediaAttesa !== "") ? Number(p.fantamediaAttesa).toFixed(1) : "—";
+    return team + "vs " + p.avversario + " · " + (p.casa ? "casa" : "trasf.") + " · Voto atteso " + attesa;
   }
   // Fonte della nota/stato (aggiunto 23/08/2026, su richiesta dell'utente di
   // essere "molto più preciso"): distingue una formazione ufficiale già uscita
@@ -1295,7 +1840,6 @@
 
   // ---------------- state ----------------
   var readOnly = false;
-  var artifactApi = null;
   var saveTimer = null;
   // Regola di lega (corretta 25/08/2026: erano 5 minuti, sono 45): la formazione
   // si può schierare fino a 45 minuti prima del calcio d'inizio della prima
@@ -1444,11 +1988,6 @@
   };
 
   // ---------------- listone 26/27 (caricato 25/08/2026) ----------------
-  // IMPORTANTE: se il listone originale contiene colonne aggiuntive come
-  // "Obiettivo" e "Fascia", sono puramente informative e NON entrano mai
-  // nell'algoritmo. Il motore usa esclusivamente:
-  // [0] nome, [1] ruolo, [2] squadra, [3] fantamedia attesa,
-  // [4] media voto storica, [5] titolarità, [6] flag.
   // Il file d'asta completo della lega (501 giocatori di Serie A): fantamedia
   // attesa, media voto storica, titolarità e i tag rigorista/tiratore. Serve a
   // due cose: dare alle rose avversarie lo stesso trattamento che riservo alla
@@ -2582,10 +3121,66 @@
   var state = seedState();
 
   // ---------------- persistence ----------------
+  // Cloud sync via Supabase. The local backup is kept as a fallback.
+  var SUPABASE_URL = "https://kueahvxirppyjhfpmxii.supabase.co";
+  var SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PJDGlXFH-iT9u4RnIJrWRw_ROTpo6t1";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  var currentUser = null;
+
+  var PLAYER_NEWS_TABLE = "player_news";
+var livePlayerNews = [];
+
+async function loadLivePlayerNews() {
+  try {
+    var res = await sb.from(PLAYER_NEWS_TABLE)
+      .select("player,status,note,fonte,noteData,updated_at")
+      .order("updated_at", { ascending: false });
+    if (res.error) {
+      console.warn("player_news:", res.error.message);
+      return [];
+    }
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    console.warn("player_news non disponibile:", e);
+    return [];
+  }
+}
+
+function applyLivePlayerNews(rows) {
+  if (!Array.isArray(rows) || !rows.length || !Array.isArray(state.players)) return;
+  var byName = {};
+  rows.forEach(function (r) {
+    var k = String(r.player || "").trim().toLowerCase();
+    if (k) byName[k] = r;
+  });
+  state.players.forEach(function (p) {
+    var n = byName[String(p.name || "").trim().toLowerCase()];
+    if (!n) return;
+    if (n.status) p.status = n.status;
+    if (n.note != null) p.note = n.note;
+    if (n.fonte) p.fonte = n.fonte;
+    if (n.noteData) p.noteData = n.noteData;
+  });
+}
+
+async function refreshLivePlayerNews() {
+  var rows = await loadLivePlayerNews();
+  livePlayerNews = rows;
+  applyLivePlayerNews(rows);
+  return rows;
+}
+
+
   function setSaveStatus(kind, label) {
     var el = document.getElementById("saveStatus");
     el.className = "status-pill " + kind;
     el.querySelector(".label").textContent = label;
+  }
+
+  function updateAuthButton() {
+    var b = document.getElementById("authBtn");
+    b.textContent = currentUser ? "Account" : "Accedi";
+    b.title = currentUser ? (currentUser.email || "Account Supabase") : "Accedi per sincronizzare i dati";
   }
 
   function localSave() {
@@ -2598,54 +3193,126 @@
     } catch (e) { return null; }
   }
 
+  async function cloudLoad() {
+    if (!currentUser) return null;
+    var res = await sb.from("modulo_state").select("state").eq("user_id", currentUser.id).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data ? res.data.state : null;
+  }
+
+  async function cloudSave() {
+    if (!currentUser) return false;
+    var res = await sb.from("modulo_state").upsert({
+      user_id: currentUser.id,
+      state: state,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+    if (res.error) throw res.error;
+    return true;
+  }
+
   function scheduleSave() {
     localSave();
-    setSaveStatus("busy", "Salvataggio…");
+    setSaveStatus("busy", currentUser ? "Salvataggio…" : "Solo questo dispositivo");
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(doSave, 900);
   }
 
-  function doSave() {
-    if (!artifactApi) {
-      setSaveStatus("warn", "Solo su questo dispositivo");
+  async function doSave() {
+    localSave();
+    if (!currentUser) {
+      setSaveStatus("ok", "Salvato localmente");
       return;
     }
-    artifactApi.publish({ "data/state.json": JSON.stringify(state) })
-      .then(function () { setSaveStatus("ok", "Salvato"); })
-      .catch(function (err) {
-        var code = err && err.code;
-        if (code === "not_writer" || code === "not_granted") {
-          readOnly = true;
-          document.getElementById("readOnlyBanner").classList.add("show");
-          setSaveStatus("warn", "Sola lettura");
-          setControlsDisabled(true);
-        } else if (code === "conflict") {
-          // the shell reloads other views; this view keeps its own state
-          setSaveStatus("ok", "Salvato");
-        } else {
-          setSaveStatus("warn", "Errore salvataggio");
-        }
-      });
+    try {
+      await cloudSave();
+      setSaveStatus("ok", "Salvato nel cloud");
+    } catch (e) {
+      console.error(e);
+      setSaveStatus("danger", "Cloud non raggiungibile");
+    }
   }
 
   function setControlsDisabled(disabled) {
     document.querySelectorAll("input, select, button").forEach(function (el) {
-      if (el.id === "computeBtn") return;
+      if (el.id === "computeBtn" || el.id === "authBtn" || el.id === "themeToggleBtn") return;
       el.disabled = disabled;
     });
   }
 
-  function loadState() {
-    return fetch("data/state.json", { cache: "no-store" })
-      .then(function (res) { if (!res.ok) throw new Error("no state yet"); return res.json(); })
-      .then(function (data) {
-        if (data && Array.isArray(data.players)) { state = data; if (!state.meta) state.meta = { giornata: "" }; }
-      })
-      .catch(function () {
-        var backup = localLoad();
-        if (backup && Array.isArray(backup.players)) state = backup;
-      });
+  async function loadState() {
+    try {
+      var sessionRes = await sb.auth.getSession();
+      currentUser = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.user : null;
+      updateAuthButton();
+      if (currentUser) {
+        var cloud = await cloudLoad();
+        if (cloud && Array.isArray(cloud.players)) {
+          state = cloud;
+          if (!state.meta) state.meta = { giornata: "" };
+          setSaveStatus("ok", "Caricato dal cloud");
+          localSave();
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Supabase load:", e);
+    }
+    var backup = localLoad();
+    if (backup && Array.isArray(backup.players)) {
+      state = backup;
+      setSaveStatus("ok", currentUser ? "Locale: cloud vuoto" : "Salvato localmente");
+    } else {
+      setSaveStatus("ok", currentUser ? "Nuova rosa" : "Locale");
+    }
   }
+
+  async function openAuth() {
+    var overlay = document.getElementById("authOverlay");
+    overlay.style.display = "flex";
+    var email = document.getElementById("authEmail");
+    var pass = document.getElementById("authPassword");
+    var msg = document.getElementById("authMessage");
+    document.getElementById("logoutBtn").style.display = currentUser ? "inline-block" : "none";
+    document.getElementById("loginBtn").style.display = currentUser ? "none" : "inline-block";
+    document.getElementById("signupBtn").style.display = currentUser ? "none" : "inline-block";
+    document.getElementById("authHint").textContent = currentUser ? ("Connesso come " + (currentUser.email || "utente") + ".") : "Accedi per salvare la rosa e ritrovarla su PC e telefono.";
+    msg.textContent = "";
+    email.value = currentUser && currentUser.email ? currentUser.email : "";
+    pass.value = "";
+  }
+
+  document.getElementById("authBtn").addEventListener("click", openAuth);
+  document.getElementById("closeAuthBtn").addEventListener("click", function () { document.getElementById("authOverlay").style.display = "none"; });
+  document.getElementById("loginBtn").addEventListener("click", async function () {
+    var msg = document.getElementById("authMessage");
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    if (!email || !password) { msg.textContent = "Inserisci email e password."; return; }
+    msg.textContent = "Accesso…";
+    var r = await sb.auth.signInWithPassword({ email: email, password: password });
+    if (r.error) { msg.textContent = r.error.message; return; }
+    location.reload();
+  });
+  document.getElementById("signupBtn").addEventListener("click", async function () {
+    var msg = document.getElementById("authMessage");
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    if (!email || password.length < 6) { msg.textContent = "Inserisci un'email e una password di almeno 6 caratteri."; return; }
+    msg.textContent = "Creazione account…";
+    var r = await sb.auth.signUp({ email: email, password: password });
+    if (r.error) { msg.textContent = r.error.message; return; }
+    msg.textContent = r.data.session ? "Account creato. Accesso effettuato." : "Account creato. Controlla l'email per confermare l'account.";
+  });
+  document.getElementById("logoutBtn").addEventListener("click", async function () {
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  sb.auth.onAuthStateChange(function (_event, session) {
+    currentUser = session ? session.user : null;
+    updateAuthButton();
+  });
 
   // ---------------- scoring ----------------
   // MODELLO A SCOSTAMENTI (ricalibrato 23/08/2026).
@@ -2814,9 +3481,6 @@
   }
   var MOD_NO_RESULT = { bonus: 0, avg: null, eligible: false, realCount: 0, totalCount: 0 };
   function teamModificatoreBonus(chosen, shapeD) {
-    // Regola di lega: con 4 difensori obbligatori in campo, il Modificatore
-    // prende SOLO i migliori 3 DIFENSORI per VOTO PURO + il VOTO PURO del P.
-    // Nessun fantavoto, bonus/malus, Obiettivo o Fascia può alterare l'ordine.
     if (!state.meta.modificatore || shapeD !== 4) return MOD_NO_RESULT;
     var defPlayers = (chosen.D || []).map(function (x) { return x.p; })
       .sort(function (a, b) { return effectiveVotoModificatore(b) - effectiveVotoModificatore(a); });
@@ -3113,11 +3777,15 @@
     host.innerHTML = "";
     ROLES.forEach(function (role) {
       var list = state.players.filter(function (p) { return p.role === role.key; });
-      var section = document.createElement("div");
-      section.className = "section";
+      var section = document.createElement("details");
+      section.className = "section roster-section";
+      // I reparti della lista giocatori sono richiudibili; di default resta
+      // aperto solo il primo reparto non vuoto per evitare una pagina enorme.
+      var firstOpen = !host.querySelector('.roster-section[open]') && list.length > 0;
+      if (firstOpen) section.open = true;
       section.innerHTML =
-        '<div class="section-head"><h2>' + role.label + '</h2><span class="count">' + list.length + '</span>' +
-        '<button class="btn btn-small add-btn" data-add="' + role.key + '">+ aggiungi ' + role.singular + '</button></div>' +
+        '<summary class="section-head section-summary"><span class="section-title-wrap"><h2>' + role.label + '</h2><span class="count">' + list.length + '</span></span>' +
+        '<span class="section-head-actions"><span class="section-chevron">⌄</span><button type="button" class="btn btn-small add-btn" data-add="' + role.key + '">+ aggiungi ' + role.singular + '</button></span></summary>' +
         '<div class="roster" id="roster-' + role.key + '"></div>';
       host.appendChild(section);
       var rosterEl = section.querySelector(".roster");
@@ -3126,6 +3794,8 @@
       } else {
         list.forEach(function (p) { rosterEl.appendChild(renderRow(p)); });
       }
+      var add = section.querySelector('.add-btn');
+      add.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); state.players.push(defaultPlayer(role.key)); renderSections(); scheduleSave(); });
     });
   }
 
@@ -3165,7 +3835,7 @@
       '<span class="matchup-chip" data-tone="' + (p.avversario ? diffByKey(p.difficolta).tone : "") + '" title="Avversario/sede: modificabili nei Dettagli sotto">' + escapeHtml(matchupText(p)) + '</span>' +
       '<div class="f-del"><button class="del-btn" data-del="1" title="Rimuovi">×</button></div>' +
       '</div>' +
-      '<details class="row-details" open>' +
+      '<details class="row-details">' +
         '<summary>Dettagli' + (hasNote ? '<span class="note-flag" data-tone="' + fonteByKey(p.fonte).tone + '"></span>' : '') + '</summary>' +
         '<div class="row-details-body">' +
         '<div class="row-details-grid">' +
@@ -3186,17 +3856,17 @@
             '<div class="toggle-casa"><button type="button" data-casa="1" class="' + (p.casa ? "active" : "") + '">Casa</button>' +
             '<button type="button" data-casa="0" class="' + (!p.casa ? "active" : "") + '">Trasf.</button></div></div>' +
         '</div>' +
-        '<div class="row-note">' +
-          '<div class="row-note-head">' +
-            '<span class="field-label">Note (allenatore, ballottaggio, andamento squadra — aggiornale chiedendomelo in chat)</span>' +
-            '<select class="fonte-select" data-field="fonte" data-tone="' + fonteByKey(p.fonte).tone + '" title="Fonte della nota/stato: formazione ufficiale già uscita, o probabile formazione/anteprima ancora da confermare">' + fonteOpts + '</select>' +
-            '<span class="note-date" data-field="noteDataLabel">' + (p.noteData ? "Aggiornato: " + escapeHtml(p.noteData) : "") + '</span>' +
-          '</div>' +
-          '<textarea data-field="note" placeholder="es. titolare inamovibile per il tecnico; ballottaggio con X; squadra in forma dopo 3 vittorie...">' + escapeHtml(p.note || "") + '</textarea>' +
-          (showVoto ? '<div class="row-note-foot"><label>Voto reale (ultima giornata giocata) ' + campoDecimale("", 'data-field="votoReale" placeholder="—" title="Voto reale dell\'ultima giornata giocata: se compilato, sostituisce la fantamedia nel calcolo del Modificatore per questo giocatore"', p.votoReale) + '</label></div>' : '') +
         '</div>' +
+      '</details>' +
+      '<div class="row-note">' +
+        '<div class="row-note-head">' +
+          '<span class="field-label">NOTE</span>' +
+          '<select class="fonte-select" data-field="fonte" data-tone="' + fonteByKey(p.fonte).tone + '" title="Fonte della nota/stato: formazione ufficiale già uscita, o probabile formazione/anteprima ancora da confermare">' + fonteOpts + '</select>' +
+          '<span class="note-date" data-field="noteDataLabel">' + (p.noteData ? "Aggiornato: " + escapeHtml(p.noteData) : "") + '</span>' +
         '</div>' +
-      '</details>';
+        '<textarea data-field="note" placeholder="es. titolare inamovibile per il tecnico; ballottaggio con X; squadra in forma dopo 3 vittorie...">' + escapeHtml(p.note || "") + '</textarea>' +
+        (showVoto ? '<div class="row-note-foot"><label>Voto reale (ultima giornata giocata) ' + campoDecimale("", 'data-field="votoReale" placeholder="—" title="Voto reale dell\'ultima giornata giocata: se compilato, sostituisce la fantamedia nel calcolo del Modificatore per questo giocatore"', p.votoReale) + '</label></div>' : '') +
+      '</div>';
 
     var starsHost = row.querySelector('[data-field="forma"]');
     buildStars(starsHost, p.forma);
@@ -3586,13 +4256,7 @@
     }
     return LISTONE_INDEX;
   }
-  function listoneGet(nome) {
-    var raw = listoneIndex()[normalizeNameKey(nome)] || null;
-    if (!raw) return null;
-    // Normalizza sempre il record alle sole 7 colonne utilizzate dal motore:
-    // eventuali colonne extra (es. Obiettivo/Fascia) vengono ignorate.
-    return [raw[0], raw[1], raw[2], raw[3], raw[4], raw[5], raw[6]];
-  }
+  function listoneGet(nome) { return listoneIndex()[normalizeNameKey(nome)] || null; }
   // La titolarità serve solo a ORDINARE la rosa avversaria, non a scontarne il
   // valore (corretto 25/08/2026). Scontare ogni giocatore per la titolarità era
   // un tentativo di essere onesti su un dato che non ho — chi schiereranno — ma
@@ -4040,57 +4704,71 @@
     var totalSenzaTxt = bestResult.totalSenzaBonus.toFixed(1);
     var modInfoTxt = bestResult.modEligible
       ? ('modificatore: media voto migliori difensori ' + bestResult.modAvg.toFixed(2) + ' → bonus +' + bestResult.modBonus.toFixed(1) +
-         (bestResult.modRealCount > 0
-           ? ' (' + bestResult.modRealCount + '/' + bestResult.modTotalCount + ' su voto reale)'
-           : ' (stima da fantamedia, nessun voto reale ancora inserito)'))
+         (bestResult.modRealCount > 0 ? ' (' + bestResult.modRealCount + '/' + bestResult.modTotalCount + ' su voto reale)' : ' (stima)'))
       : (state.meta.modificatore ? 'modificatore: non applicabile a questo modulo (serve difesa a 4)' : 'modificatore disattivato');
 
     var html = '';
+    html += '<div class="formation-shortcuts-label">Moduli consigliati · almeno 4 difensori</div>';
+    html += '<div class="formation-shortcuts">';
+    ["4-4-2","4-3-3","5-3-2","4-5-1","5-4-1"].forEach(function(name){
+      var allowed = !(state.meta.modificatore && SHAPES[name] && SHAPES[name].D !== 4);
+      if (!allowed) return;
+      var rr = data.results[name];
+      var active = name === data.best ? ' active' : '';
+      html += '<button type="button" class="shortcut'+active+'" data-formation-shortcut="'+name+'">'+name+(rr ? ' · '+rr.total.toFixed(1) : '')+'</button>';
+    });
+    html += '</div>';
+
     html += '<div class="result-head"><h2>' + (data.forced ? "Formazione (modulo scelto)" : "Formazione consigliata") + '</h2>' +
       '<span class="formation-badge">' + data.best + '</span>' +
       '<span class="total-score">strategia: <b>' + strategyProfile().label + '</b></span>' +
       (data.forced ? '<span class="total-score">modulo impostato manualmente</span>' : '') +
       (bestResult.overridden ? '<span class="total-score total-score-note">formazione modificata a mano</span>' : '') +
-      '<span class="total-score">valore atteso senza bonus/malus: <b>' + totalSenzaTxt + '</b></span>' +
-      '<span class="total-score">valore atteso con bonus/malus: <b>' + totalConTxt + '</b></span>' +
-      '<span class="total-score total-score-note">' + modInfoTxt + '</span></div>';
+      '<span class="total-score">senza bonus/malus: <b>' + totalSenzaTxt + '</b></span>' +
+      '<span class="total-score">con bonus/malus: <b>' + totalConTxt + '</b></span>' +
+      '<span class="total-score total-score-note">' + modInfoTxt + '</span>' +
+      '</div>';
 
     var pitchData = { results: {}, best: data.best, captain: bestResult.captain, vice: bestResult.vice };
     pitchData.results[data.best] = bestResult;
-    html += '<div class="result-grid"><div class="pitch-card"><div class="pitch">' + pitchLinesSvg() + pitchDots(pitchData, bestShape) + '</div></div>';
-
-    html += '<div class="side-col">';
+    html += '<div class="result-grid"><div class="side-col">';
     html += '<div class="callout-row">' + calloutHtml("captain", "Capitano", bestResult.captain) + calloutHtml("vice", "Vice capitano", bestResult.vice) + '</div>';
-
+    html += '<div class="formation-actions"><button type="button" class="btn btn-danger-lite" id="cancelFormationBtn">Annulla formazione manuale</button></div>';
     html += renderLineupEditorHtml(bestResult, bestShape);
 
     html += '<div class="bench-card"><h3>Riserve consigliate</h3><div class="bench-list">';
-    if (bestResult.bench.length === 0) {
-      html += '<div class="empty-row">Nessuna riserva disponibile.</div>';
-    } else {
-      bestResult.bench.forEach(function (x) {
-        html += '<div class="bench-item"><span class="role-tag">' + x.p.role + '</span><span class="bname">' + specialistTags(x.p) + escapeHtml(x.p.name || "(senza nome)") + '</span><span class="bscore">' + x.s.adj.toFixed(1) + '</span></div>';
-      });
-    }
+    if (!bestResult.bench.length) html += '<div class="empty-row">Nessuna riserva disponibile.</div>';
+    else bestResult.bench.forEach(function (x) {
+      html += '<div class="bench-item"><span class="role-tag">' + x.p.role + '</span><span class="bname">' + specialistTags(x.p) + escapeHtml(x.p.name || "(senza nome)") + '</span><span class="bscore">' + x.s.adj.toFixed(1) + '</span></div>';
+    });
     html += '</div></div>';
 
     html += '<table class="compare-table"><thead><tr><th>Modulo</th><th>Senza bonus/malus</th><th>Con bonus/malus</th><th>Reparti</th></tr></thead><tbody>';
     Object.keys(SHAPES).forEach(function (name) {
-      var r = data.results[name];
-      var isWinner = name === data.best;
-      var mark = isWinner ? (data.forced ? " ●" : " ✓") : "";
-      html += '<tr class="' + (isWinner ? "winner" : "") + '"><td>' + name + mark + '</td><td class="num">' + r.totalSenzaBonus.toFixed(1) + '</td><td class="num">' + r.total.toFixed(1) + '</td><td>' +
-        Object.keys(SHAPES[name]).map(function (k) { return k + SHAPES[name][k]; }).join(" · ") +
+      var r = data.results[name], isWinner = name === data.best;
+      html += '<tr class="' + (isWinner ? 'winner' : '') + '"><td>' + name + (isWinner ? (data.forced ? ' ●' : ' ✓') : '') + '</td><td class="num">' + r.totalSenzaBonus.toFixed(1) + '</td><td class="num">' + r.total.toFixed(1) + '</td><td>' +
+        Object.keys(SHAPES[name]).map(function(k){return k+SHAPES[name][k];}).join(' · ') +
         (r.modEligible ? '<div class="warn-note">modificatore +' + r.modBonus.toFixed(1) + ' (media ' + r.modAvg.toFixed(2) + ')</div>' : '') +
         (r.shortage ? '<div class="warn-note">rosa incompleta per questo modulo</div>' : '') + '</td></tr>';
     });
-    html += '</tbody></table>';
-    html += '<p class="lineup-hint">La tabella di confronto sopra mostra sempre la scelta pura dell\'algoritmo per ogni modulo, senza le tue sostituzioni manuali.</p>';
-
-    html += '</div></div>'; // side-col, result-grid
+    html += '</tbody></table><p class="lineup-hint">La tabella resta sempre la scelta pura dell’algoritmo, senza sostituzioni manuali.</p>';
+    html += '</div><div class="pitch-card"><div class="pitch">' + pitchLinesSvg() + pitchDots(pitchData, bestShape) + '</div></div></div>';
 
     host.innerHTML = html;
     wireLineupEditor(data, bestResult);
+    var cancel = document.getElementById('cancelFormationBtn');
+    if (cancel) cancel.addEventListener('click', function(){ state.meta.manualLineup = null; scheduleSave(); renderResult(); });
+    host.querySelectorAll('[data-formation-shortcut]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var val = btn.dataset.formationShortcut;
+        if (state.meta.modificatore && SHAPES[val] && SHAPES[val].D !== 4) return;
+        state.meta.modulo = val;
+        document.getElementById('moduloSelect').value = val;
+        state.meta.manualLineup = null;
+        scheduleSave();
+        renderResult();
+      });
+    });
     snapshotPrevisione(data.best, bestResult.totalSenzaBonus, bestResult.total);
     renderHistoryCard();
     scheduleSave();
@@ -4099,27 +4777,57 @@
   // Elenco selezionabile per ogni slot titolare del modulo vincente — vedi
   // buildManualXI/wireLineupEditor per come le scelte vengono applicate.
   function renderLineupEditorHtml(bestResult, shape) {
-    var html = '<div class="bench-card lineup-editor-card"><h3>Formazione (modificabile)' +
-      '<button type="button" class="btn btn-small reset-lineup-btn" id="resetLineupBtn">Ripristina auto</button></h3>' +
-      '<p class="lineup-hint">Cambia chi scende in campo in ogni ruolo: totale, campetto e capitano si aggiornano subito.</p>' +
-      '<div class="lineup-list">';
-    ROLES.forEach(function (r) {
+    var html = '<div class="bench-card lineup-editor-card"><h3><span>Formazione</span><button type="button" class="btn btn-small reset-lineup-btn" id="resetLineupBtn">Ripristina auto</button></h3>';
+    html += '<p class="lineup-summary">Clicca su un giocatore per cambiarlo. Le modifiche vengono salvate automaticamente.</p>';
+    var groupLabels = { P:'Portieri', D:'Difensori', C:'Centrocampisti', A:'Attaccanti' };
+    var statusShort = {
+      titolare: 'TIT',
+      ballottaggio_fav: 'BAL+',
+      ballottaggio: 'BAL',
+      ballottaggio_sfav: 'BAL-',
+      panchina: 'PCH',
+      assente: 'ASS'
+    };
+    function opponentCode(name) {
+      if (!name) return '—';
+      var n = String(name).trim().toLowerCase();
+      for (var i=0;i<TEAM_LIST.length;i++) {
+        if (String(TEAM_LIST[i].name).toLowerCase() === n) return TEAM_LIST[i].code;
+        if (String(TEAM_LIST[i].code).toLowerCase() === n) return TEAM_LIST[i].code;
+      }
+      return String(name).trim();
+    }
+    ROLES.forEach(function(r){
       var need = shape[r.key] || 0;
+      if (!need) return;
       var chosenSlots = bestResult.chosen[r.key] || [];
       var pool = eligiblePlayersForRole(r.key);
-      for (var i = 0; i < need; i++) {
-        var current = chosenSlots[i];
-        var opts = pool.map(function (x) {
-          var label = specialistTags(x.p) + (x.p.name || "(senza nome)") + " — " + x.s.adj.toFixed(1);
-          var sel = current && current.p.id === x.p.id ? " selected" : "";
-          return '<option value="' + x.p.id + '"' + sel + '>' + escapeAttr(label) + '</option>';
-        }).join("");
-        html += '<div class="lineup-slot"><span class="role-tag">' + r.key + '</span>' +
-          '<select data-role="' + r.key + '" data-slot="' + i + '">' + opts + '</select>' +
-          '<span class="lscore">' + (current ? current.s.adj.toFixed(1) : "—") + '</span></div>';
+      html += '<div class="lineup-group lineup-group-flat"><div class="lineup-group-title"><span>'+groupLabels[r.key]+' · '+need+'</span></div><div class="lineup-group-body">';
+      for (var i=0;i<need;i++) {
+        var current=chosenSlots[i], p=current?current.p:null, sc=current?current.s:null, st=p?statusByKey(p.status):null;
+        var opts=pool.map(function(x){
+          var sel=current&&current.p.id===x.p.id?' selected':'';
+          return '<option value="'+x.p.id+'"'+sel+'>'+escapeHtml(specialistTags(x)+(x.p.name||'(senza nome)')+' — '+x.s.adj.toFixed(1))+'</option>';
+        }).join('');
+        var opp = p ? opponentCode(p.avversario) : '—';
+        var team = p && p.team ? p.team : '—';
+        var value = sc ? sc.adj.toFixed(1).replace('.', ',') : '—';
+        var shortStatus = p ? (statusShort[p.status] || String(st ? st.label : '').toUpperCase()) : '';
+        html += '<div class="lineup-slot lineup-slot-compact">'+
+          '<span class="lineup-role">'+r.key+'.</span>'+ 
+          '<div class="lineup-player-main">'+
+            '<div class="lineup-player-top"><span class="lineup-player-name">'+escapeHtml(p?(p.name||'(senza nome)'):'—')+'</span>'+ 
+            (shortStatus?'<span class="lineup-status" data-tone="'+st.tone+'">'+escapeHtml(shortStatus)+'</span>':'')+
+            '</div>'+ 
+            '<div class="lineup-info"><span>'+escapeHtml(team)+' vs '+escapeHtml(opp)+'</span></div>'+ 
+          '</div>'+ 
+          '<div class="lineup-picker"><span class="lineup-picker-score">'+value+'</span><span class="lineup-picker-arrow">⌄</span></div>'+ 
+          '<select class="lineup-picker-select" data-role="'+r.key+'" data-slot="'+i+'" aria-label="Cambia giocatore">'+opts+'</select>'+ 
+        '</div>';
       }
+      html += '</div></div>';
     });
-    html += '</div></div>';
+    html += '</div>';
     return html;
   }
 
@@ -4133,6 +4841,12 @@
         renderResult();
       });
     }
+    host.querySelectorAll(".lineup-picker[data-slot-picker]").forEach(function (picker) {
+      picker.addEventListener("click", function () {
+        var select = picker.parentElement.querySelector("select.lineup-picker-select");
+        if (select) select.click();
+      });
+    });
     host.querySelectorAll(".lineup-slot select").forEach(function (sel) {
       sel.addEventListener("change", function (e) {
         var role = e.target.dataset.role;
@@ -4184,7 +4898,8 @@
         var isVice = data.vice && data.vice.p.id === x.p.id;
         html += '<div class="pitch-dot" style="left:' + left + '%; top:' + top + '%;">' +
           '<div class="bubble">' + (isCap ? '<span class="badge">C</span>' : (isVice ? '<span class="badge">V</span>' : "")) + initials(x.p.name || roleKey) + '</div>' +
-          '<div class="pname">' + specialistTags(x.p) + escapeHtml(shortName(x.p.name) || roleKey) + '</div></div>';
+          '<div class="pname">' + specialistTags(x.p) + escapeHtml(shortName(x.p.name) || roleKey) + '</div>' +
+          '<div class="pmeta">' + escapeHtml(x.p.avversario ? ('vs ' + x.p.avversario) : 'avversario —') + ' · ' + x.s.adj.toFixed(1) + '</div></div>';
       });
     });
     return html;
@@ -4234,7 +4949,7 @@
   }
 
   // ---------------- wiring ----------------
-  function init() {
+  async function init() {
     var themePref = loadThemePref();
     applyTheme(themePref);
     document.getElementById("themeToggleBtn").addEventListener("click", function () {
@@ -4265,7 +4980,10 @@
         return;
       }
       state.meta.modulo = val;
+      state.meta.manualLineup = null;
       scheduleSave();
+      var resultContent = document.getElementById("resultContent");
+      if (resultContent && resultContent.style.display !== "none" && resultContent.innerHTML.trim()) renderResult();
     });
     document.getElementById("modificatoreToggle").addEventListener("change", function (e) {
       state.meta.modificatore = e.target.checked;
@@ -4291,9 +5009,9 @@
     document.getElementById("sections").addEventListener("click", function (e) {
       var btn = e.target.closest("[data-add]");
       if (!btn) return;
-      state.players.push(defaultPlayer(btn.dataset.add));
-      renderSections();
-      scheduleSave();
+      // Gestito dal listener del reparto: qui blocco solo la propagazione.
+      e.preventDefault();
+      e.stopPropagation();
     });
     document.getElementById("computeBtn").addEventListener("click", function () {
       renderResult();
@@ -4515,7 +5233,9 @@
         state.meta.votiGiornata1 = true;
         migrated = true;
       }
-      if (migrated) scheduleSave();
+      // Le note giornaliere arrivano da Supabase: non sovrascrivono i dati
+      // fantacalcistici personali, ma solo status/note/fonte/noteData.
+      refreshLivePlayerNews().then(function () { renderSections(); renderResult(); });
       document.getElementById("giornataInput").value = state.meta.giornata || "";
       document.getElementById("primaPartitaInput").value = state.meta.primaPartita || "";
       document.getElementById("moduloSelect").value = state.meta.modulo;
@@ -4528,14 +5248,73 @@
       renderLegaCard();
       renderRisultatiCard();
       updateDeadlinePill();
+      var refreshNewsBtn = document.getElementById("refreshNewsBtn");
+      if (refreshNewsBtn && !refreshNewsBtn.dataset.bound) {
+        refreshNewsBtn.dataset.bound = "1";
+        refreshNewsBtn.addEventListener("click", manualRefreshNews);
+      }
       if (!deadlineTimer) deadlineTimer = setInterval(updateDeadlinePill, 30000);
-      setSaveStatus("ok", artifactApi ? "Salvato" : "Solo su questo dispositivo");
+      if (!window.liveNewsTimer) {
+        window.liveNewsTimer = setInterval(async function () {
+          var before = JSON.stringify(livePlayerNews);
+          await refreshLivePlayerNews();
+          if (JSON.stringify(livePlayerNews) !== before) {
+            renderSections();
+            renderResult();
+          }
+        }, 15 * 60 * 1000);
+      }
+      setSaveStatus("ok", "Pronto — dati locali");
     });
+  }
 
-    if (window.claude && typeof window.claude.use === "function") {
-      window.claude.use("artifact").then(function (api) { artifactApi = api; }).catch(function () { artifactApi = null; });
+  async function manualRefreshNews() {
+    var btn = document.getElementById("refreshNewsBtn");
+    var pill = document.getElementById("newsStatus");
+    if (btn) { btn.disabled = true; btn.textContent = "↻ Aggiorno…"; }
+    if (pill) { pill.className = "status-pill busy"; pill.querySelector(".label").textContent = "News — aggiornamento"; }
+    try {
+      var fn = await sb.functions.invoke("update-player-news", { body: { force: true } });
+      if (fn.error) throw fn.error;
+      var rows = await refreshLivePlayerNews();
+      renderSections();
+      renderResult();
+      var latest = rows && rows.length ? rows[0].updated_at : null;
+      var label = latest ? new Date(latest).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "nessuna news";
+      if (pill) { pill.className = "status-pill ok"; pill.querySelector(".label").textContent = "News " + label; }
+      setSaveStatus("ok", rows.length ? "News aggiornate" : "News già aggiornate");
+    } catch (e) {
+      console.error(e);
+      if (pill) { pill.className = "status-pill danger"; pill.querySelector(".label").textContent = "News — errore"; }
+      setSaveStatus("warn", "Impossibile aggiornare le news");
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "↻ Aggiorna news"; }
     }
   }
+
+  async function downloadPlayerNewsCsv() {
+    var rows = await loadLivePlayerNews();
+    var headers = ["Giocatore","Status","Nota","Fonte","Data","Aggiornato"];
+    var csv = [headers].concat((rows || []).map(function (r) {
+      return [r.player || "", r.status || "", r.note || "", r.fonte || "", r.noteData || "", r.updated_at || ""];
+    })).map(function (row) {
+      return row.map(function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }).join(";");
+    }).join("\r\n");
+    var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "modulo-news-" + formatDateIt(new Date()).replace(/\//g, "-") + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var b = document.getElementById("downloadNewsBtn");
+    if (b) b.addEventListener("click", downloadPlayerNewsCsv);
+  });
 
   document.addEventListener("DOMContentLoaded", init);
 })();
