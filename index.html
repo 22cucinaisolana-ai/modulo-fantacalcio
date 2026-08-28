@@ -1031,12 +1031,8 @@
       <input type="number" min="1" max="38" id="giornataInput" placeholder="1" />
     </label>
     <button class="btn btn-small" id="applyCalendarBtn" title="Riempie avversario, difficoltà e casa/trasferta per chi ha la squadra impostata">Applica calendario</button>
-    <button class="btn btn-small" id="refreshNewsBtn" type="button" title="Cerca ora le ultime notizie dei 25 giocatori e aggiorna Supabase">↻ Aggiorna news</button>
-    <button class="btn btn-small" id="downloadNewsBtn" type="button" title="Scarica le ultime news dei 25 giocatori in CSV">↓ Scarica news</button>
-    <span class="status-pill" id="newsStatus" title="Stato dell'ultimo aggiornamento delle news"><span class="dot"></span><span class="label">News —</span></span>
     <span class="status-pill" id="deadlinePill" title="Schierabile fino a 45 minuti prima del calcio d'inizio della prima partita della giornata (regola di lega)"><span class="dot"></span><span class="label">—</span></span>
     <span class="status-pill" id="saveStatus"><span class="dot"></span><span class="label">—</span></span>
-    <button class="btn btn-small" id="authBtn" type="button">Accedi</button>
     <button class="btn btn-small" id="themeToggleBtn" type="button" title="Cambia tema: Automatico (segue il sistema) → Chiaro → Scuro"><span id="themeToggleLabel">Tema: Auto</span></button>
     <details class="settings-menu">
       <summary class="btn" title="Modulo, strategia, modificatore difesa, calendario">⚙ Impostazioni</summary>
@@ -1109,7 +1105,7 @@
       <p><b>Modulo</b>: in alto puoi lasciare "Auto" (scelgo io il migliore tra i moduli candidati della Strategia attiva, in base al valore atteso) oppure forzare uno qualsiasi dei 7 moduli disponibili (3-4-3, 3-5-2, 4-3-3, 4-4-2, 4-5-1, 5-3-2, 5-4-1) — utile se hai già deciso il modulo per altri motivi e vuoi solo vedere l'11 migliore in quello schema. La tabella di confronto sotto ai risultati mostra il totale atteso per tutti e 7.</p>
       <p><b>Strategia</b>: tre profili che influenzano sia i moduli candidati per "Auto" sia i criteri con cui scelgo i giocatori. <b>Equilibrato</b> (default) confronta 4-4-2/4-5-1, i moduli preferiti del progetto, con le probabilità di gioco (ballottaggio 75/55/35 secondo il grado) e i pesi di difficoltà standard descritti sopra. <b>Aggressivo</b> confronta moduli più offensivi (4-3-3/3-4-3/4-4-2), dà più fiducia ai ballottaggi e ai panchinari ad alto potenziale (ballottaggio 82/65/45) e amplifica il peso di difficoltà avversario/casa-trasferta (×1,25) — premia il rischio quando la fantamedia o il fattore campo sono favorevoli. <b>Prudente</b> confronta moduli più coperti (4-5-1/5-3-2/5-4-1), penalizza di più ballottaggi e panchinari (ballottaggio 68/45/25) e attenua il peso di difficoltà avversario/casa-trasferta (×0,75) — preferisce titolari certi e punteggi più stabili, meno sbalzi legati al calendario.</p>
       <p><b>Modificatore</b>: l'interruttore "Modificatore" in alto è UNICO per tutta la rosa (non per singolo giocatore) e riproduce esattamente la regola "Modificatore difesa" della tua lega: un bonus/malus <b>una tantum</b> sul totale squadra (non sui singoli giocatori), calcolato sulla media voto dei migliori 3 difensori + il portiere (oppure dei migliori 4 difensori, se disattivi "Includi portiere" per rispecchiare l'opzione della tua lega). Attenzione a un dettaglio che conta: la regola parla di <b>voto senza bonus/malus</b>, che non è la fantamedia. Per un portiere il divario è enorme (ogni gol subito vale −1: Carnesecchi ha fantamedia 5,19 ma in pagella prende circa 6,2), per un difensore che segna è al contrario leggermente positivo — e le fasce del bonus sono larghe solo 0,25, quindi usare la fantamedia grezza poteva sbagliare di un intero gradino. Per ogni difensore/portiere uso quindi, in ordine: la media dei suoi ultimi voti reali se ce ne sono, altrimenti il campo "Voto reale", altrimenti la fantamedia corretta per ruolo come stima — che si autocorregge da sola appena inserisci i primi voti veri. Il riquadro del risultato indica sempre quanti dei voti usati nella media sono reali e quanti stimati. La media si traduce in bonus secondo la tabella della tua lega: sotto 6 → 0, 6–6.24 → 1, 6.25–6.49 → 2, 6.5–6.74 → 3, 6.75–6.99 → 4.5, 7 o più → 6. Il modificatore si applica solo schierando almeno 4 difensori: con il Modificatore attivo la difesa resta sempre a 4, "Auto" propone solo moduli con 4 difensori e non puoi selezionarne a mano uno con 3 o 5 (i moduli con difesa diversa tornano selezionabili disattivando il Modificatore); se scegli un modulo con difesa diversa da 4 il bonus semplicemente non si applica (lo vedi indicato sotto il totale e nella tabella di confronto). Il bonus/malus è mostrato separatamente nel totale "con bonus/malus"; il totale "senza bonus/malus" non lo include mai, così puoi vedere l'impatto esatto del Modificatore sulla tua formazione.</p>
-      <p><b>Note, Fonte e Voto reale</b>: ogni giocatore ha un campo Note libero, sotto la riga principale — pensato per appuntarci cose che numeri e calendario da soli non catturano (fiducia dell'allenatore, un ballottaggio aperto, la squadra in un buon/cattivo momento). Accanto compare un'etichetta <b>Fonte</b> (Ufficiale/Probabile): "Ufficiale" significa che la nota/stato viene da una formazione già uscita o da una comunicazione ufficiale del club; "Probabile" che è ancora un'anteprima/previsione, da prendere con più cautela finché non esce la formazione ufficiale — e una data "Aggiornato: gg/mm/aaaa" che si aggiorna da sola ogni volta che modifichi la nota, così vedi sempre quanto è fresca l'informazione. Per portieri e difensori c'è anche un campo <b>Voto reale (ultima giornata giocata)</b>: se lo compili dopo che la partita è stata giocata, da quel momento entra al posto della fantamedia nel calcolo del Modificatore per quel giocatore, rendendo la stima del bonus/malus via via più precisa giornata dopo giornata. Il tool legge le news aggiornate da Supabase. Usa <b>↻ Aggiorna news</b> per ricaricare subito le ultime informazioni disponibili; il controllo automatico quotidiano aggiorna la base delle news quando eseguito. Le note modificano solo Stato/Fonte/Note/Data e non toccano i dati fantacalcistici personali.</p>
+      <p><b>Note, Fonte e Voto reale</b>: ogni giocatore ha un campo Note libero, sotto la riga principale — pensato per appuntarci cose che numeri e calendario da soli non catturano (fiducia dell'allenatore, un ballottaggio aperto, la squadra in un buon/cattivo momento). Accanto compare un'etichetta <b>Fonte</b> (Ufficiale/Probabile): "Ufficiale" significa che la nota/stato viene da una formazione già uscita o da una comunicazione ufficiale del club; "Probabile" che è ancora un'anteprima/previsione, da prendere con più cautela finché non esce la formazione ufficiale — e una data "Aggiornato: gg/mm/aaaa" che si aggiorna da sola ogni volta che modifichi la nota, così vedi sempre quanto è fresca l'informazione. Per portieri e difensori c'è anche un campo <b>Voto reale (ultima giornata giocata)</b>: se lo compili dopo che la partita è stata giocata, da quel momento entra al posto della fantamedia nel calcolo del Modificatore per quel giocatore, rendendo la stima del bonus/malus via via più precisa giornata dopo giornata. Il tool è una pagina pubblicata: non può collegarsi da solo a internet quando premi un pulsante, quindi non cerca queste notizie in automatico. Per aggiornarle, scrivimi in chat (es. "aggiorna le notizie prima della giornata") — io cerco in rete le informazioni sui tuoi giocatori e le loro squadre, aggiorno Stato/Fonte/Note qui nel tool e lo ripubblico allo stesso link. Ho anche impostato un controllo automatico <b>giornaliero</b>: ogni giorno cerco formazioni, infortuni e ballottaggi dei tuoi 25, aggiorno Stato/Fonte/Note e, quando manca poco alla scadenza (45 minuti prima del calcio d'inizio della prima partita, regola della tua lega), ti avviso se c'è qualcosa che cambia la formazione. Così non devi chiedermelo tu, e la cosa non dipende da un giorno fisso della settimana: copre anche i turni infrasettimanali.</p>
       <p><b>1ª partita e scadenza di schieramento</b>: in alto puoi impostare data e ora del calcio d'inizio della prima partita della giornata (lo tengo aggiornato anche io con il controllo automatico) — il tool calcola e mostra in tempo reale la scadenza vera (45 minuti prima, regola della tua lega) con un countdown che cambia colore quando si avvicina (verde con largo anticipo, giallo sotto le 2 ore, rosso se già scaduta). È solo un promemoria visivo: non blocca nulla nel tool, la responsabilità di schierare in tempo resta tua, ma ti aiuta a non perdere la finestra.</p>
       <p><b>Pupillo/preferito d'asta</b>: accanto al nome di ogni giocatore c'è una piccola stella cliccabile — usala per segnare i giocatori su cui hai puntato particolarmente in asta (scommesse, pupilli). Non è un override: aggiunge solo un piccolo bonus fisso (+0,15) al valore atteso di quel giocatore, prima della probabilità di scendere in campo — abbastanza per farlo prevalere nei casi dubbi o di parità (due panchinari simili, un ballottaggio equilibrato), ma non abbastanza per far preferire un pupillo chiaramente più debole a un titolare chiaramente più forte. I pupilli scelti nell'11 sono segnati con una ★ anche sul campetto e tra le riserve consigliate.</p>
       <p><b>Rigorista e Piazzati</b>: accanto alla stella pupillo ci sono altri due pulsanti — un pallone per <b>Rigorista</b> (chi tira i rigori della sua squadra) e un tiro a giro per <b>Piazzati</b> (chi è tra gli specialisti di punizioni/corner) — che segnalano chi ha più occasioni concrete di bonus a parità di fantamedia. Anche questi sono piccoli bonus fissi al valore atteso, non override: +0,15 per Rigorista, +0,08 per Piazzati (cumulabili tra loro e con il pupillo). Sono volutamente contenuti perché la fantamedia di un rigorista contiene <i>già</i> i rigori che tira — il 7,18 di Dybala non è un caso — quindi il flag aggiunge solo il residuo, cioè il fatto che il ruolo è confermato o appena acquisito rispetto a quanto la media storica lascia intendere. Ho già impostato questi flag per i giocatori della tua rosa in base alle gerarchie rigori/punizioni/corner 2026/27 che ho trovato in rete (restano comunque modificabili a mano riga per riga, e vanno tenuti d'occhio perché le gerarchie possono cambiare in corso di stagione). Anche questi compaiono con una lettera (R/P) accanto al nome sul campetto e tra le riserve.</p>
@@ -1135,26 +1131,9 @@
     <div id="resultContent" style="display:none"></div>
   </div>
 
-  <div id="authOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:20px;">
-  <div style="width:min(420px,100%);background:var(--panel,#fff);border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25);">
-    <h2 style="margin:0 0 8px">Sincronizzazione cloud</h2>
-    <p id="authHint" style="margin:0 0 18px;opacity:.75">Accedi per salvare la rosa e ritrovarla su PC e telefono.</p>
-    <label style="display:block;margin-bottom:10px">Email<input id="authEmail" type="email" autocomplete="email" style="width:100%;margin-top:5px;padding:10px;border-radius:8px;border:1px solid #bbb"></label>
-    <label style="display:block;margin-bottom:14px">Password<input id="authPassword" type="password" autocomplete="current-password" style="width:100%;margin-top:5px;padding:10px;border-radius:8px;border:1px solid #bbb"></label>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" id="loginBtn" type="button">Accedi</button>
-      <button class="btn" id="signupBtn" type="button">Crea account</button>
-      <button class="btn" id="logoutBtn" type="button" style="display:none">Esci</button>
-      <button class="btn" id="closeAuthBtn" type="button">Chiudi</button>
-    </div>
-    <div id="authMessage" style="margin-top:14px;font-size:14px"></div>
-  </div>
+  <footer class="credits">Dati salvati automaticamente per questa rosa · nessun collegamento a fonti esterne, i dati vanno aggiornati a mano ogni giornata</footer>
 </div>
 
-<footer class="credits">Dati salvati automaticamente per questa rosa · nessun collegamento a fonti esterne, i dati vanno aggiornati a mano ogni giornata</footer>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
   "use strict";
@@ -1316,6 +1295,7 @@
 
   // ---------------- state ----------------
   var readOnly = false;
+  var artifactApi = null;
   var saveTimer = null;
   // Regola di lega (corretta 25/08/2026: erano 5 minuti, sono 45): la formazione
   // si può schierare fino a 45 minuti prima del calcio d'inizio della prima
@@ -1464,6 +1444,11 @@
   };
 
   // ---------------- listone 26/27 (caricato 25/08/2026) ----------------
+  // IMPORTANTE: se il listone originale contiene colonne aggiuntive come
+  // "Obiettivo" e "Fascia", sono puramente informative e NON entrano mai
+  // nell'algoritmo. Il motore usa esclusivamente:
+  // [0] nome, [1] ruolo, [2] squadra, [3] fantamedia attesa,
+  // [4] media voto storica, [5] titolarità, [6] flag.
   // Il file d'asta completo della lega (501 giocatori di Serie A): fantamedia
   // attesa, media voto storica, titolarità e i tag rigorista/tiratore. Serve a
   // due cose: dare alle rose avversarie lo stesso trattamento che riservo alla
@@ -2597,66 +2582,10 @@
   var state = seedState();
 
   // ---------------- persistence ----------------
-  // Cloud sync via Supabase. The local backup is kept as a fallback.
-  var SUPABASE_URL = "https://kueahvxirppyjhfpmxii.supabase.co";
-  var SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PJDGlXFH-iT9u4RnIJrWRw_ROTpo6t1";
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-  var currentUser = null;
-
-  var PLAYER_NEWS_TABLE = "player_news";
-var livePlayerNews = [];
-
-async function loadLivePlayerNews() {
-  try {
-    var res = await sb.from(PLAYER_NEWS_TABLE)
-      .select("player,status,note,fonte,noteData,updated_at")
-      .order("updated_at", { ascending: false });
-    if (res.error) {
-      console.warn("player_news:", res.error.message);
-      return [];
-    }
-    return Array.isArray(res.data) ? res.data : [];
-  } catch (e) {
-    console.warn("player_news non disponibile:", e);
-    return [];
-  }
-}
-
-function applyLivePlayerNews(rows) {
-  if (!Array.isArray(rows) || !rows.length || !Array.isArray(state.players)) return;
-  var byName = {};
-  rows.forEach(function (r) {
-    var k = String(r.player || "").trim().toLowerCase();
-    if (k) byName[k] = r;
-  });
-  state.players.forEach(function (p) {
-    var n = byName[String(p.name || "").trim().toLowerCase()];
-    if (!n) return;
-    if (n.status) p.status = n.status;
-    if (n.note != null) p.note = n.note;
-    if (n.fonte) p.fonte = n.fonte;
-    if (n.noteData) p.noteData = n.noteData;
-  });
-}
-
-async function refreshLivePlayerNews() {
-  var rows = await loadLivePlayerNews();
-  livePlayerNews = rows;
-  applyLivePlayerNews(rows);
-  return rows;
-}
-
-
   function setSaveStatus(kind, label) {
     var el = document.getElementById("saveStatus");
     el.className = "status-pill " + kind;
     el.querySelector(".label").textContent = label;
-  }
-
-  function updateAuthButton() {
-    var b = document.getElementById("authBtn");
-    b.textContent = currentUser ? "Account" : "Accedi";
-    b.title = currentUser ? (currentUser.email || "Account Supabase") : "Accedi per sincronizzare i dati";
   }
 
   function localSave() {
@@ -2669,126 +2598,54 @@ async function refreshLivePlayerNews() {
     } catch (e) { return null; }
   }
 
-  async function cloudLoad() {
-    if (!currentUser) return null;
-    var res = await sb.from("modulo_state").select("state").eq("user_id", currentUser.id).maybeSingle();
-    if (res.error) throw res.error;
-    return res.data ? res.data.state : null;
-  }
-
-  async function cloudSave() {
-    if (!currentUser) return false;
-    var res = await sb.from("modulo_state").upsert({
-      user_id: currentUser.id,
-      state: state,
-      updated_at: new Date().toISOString()
-    }, { onConflict: "user_id" });
-    if (res.error) throw res.error;
-    return true;
-  }
-
   function scheduleSave() {
     localSave();
-    setSaveStatus("busy", currentUser ? "Salvataggio…" : "Solo questo dispositivo");
+    setSaveStatus("busy", "Salvataggio…");
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(doSave, 900);
   }
 
-  async function doSave() {
-    localSave();
-    if (!currentUser) {
-      setSaveStatus("ok", "Salvato localmente");
+  function doSave() {
+    if (!artifactApi) {
+      setSaveStatus("warn", "Solo su questo dispositivo");
       return;
     }
-    try {
-      await cloudSave();
-      setSaveStatus("ok", "Salvato nel cloud");
-    } catch (e) {
-      console.error(e);
-      setSaveStatus("danger", "Cloud non raggiungibile");
-    }
+    artifactApi.publish({ "data/state.json": JSON.stringify(state) })
+      .then(function () { setSaveStatus("ok", "Salvato"); })
+      .catch(function (err) {
+        var code = err && err.code;
+        if (code === "not_writer" || code === "not_granted") {
+          readOnly = true;
+          document.getElementById("readOnlyBanner").classList.add("show");
+          setSaveStatus("warn", "Sola lettura");
+          setControlsDisabled(true);
+        } else if (code === "conflict") {
+          // the shell reloads other views; this view keeps its own state
+          setSaveStatus("ok", "Salvato");
+        } else {
+          setSaveStatus("warn", "Errore salvataggio");
+        }
+      });
   }
 
   function setControlsDisabled(disabled) {
     document.querySelectorAll("input, select, button").forEach(function (el) {
-      if (el.id === "computeBtn" || el.id === "authBtn" || el.id === "themeToggleBtn") return;
+      if (el.id === "computeBtn") return;
       el.disabled = disabled;
     });
   }
 
-  async function loadState() {
-    try {
-      var sessionRes = await sb.auth.getSession();
-      currentUser = sessionRes.data && sessionRes.data.session ? sessionRes.data.session.user : null;
-      updateAuthButton();
-      if (currentUser) {
-        var cloud = await cloudLoad();
-        if (cloud && Array.isArray(cloud.players)) {
-          state = cloud;
-          if (!state.meta) state.meta = { giornata: "" };
-          setSaveStatus("ok", "Caricato dal cloud");
-          localSave();
-          return;
-        }
-      }
-    } catch (e) {
-      console.error("Supabase load:", e);
-    }
-    var backup = localLoad();
-    if (backup && Array.isArray(backup.players)) {
-      state = backup;
-      setSaveStatus("ok", currentUser ? "Locale: cloud vuoto" : "Salvato localmente");
-    } else {
-      setSaveStatus("ok", currentUser ? "Nuova rosa" : "Locale");
-    }
+  function loadState() {
+    return fetch("data/state.json", { cache: "no-store" })
+      .then(function (res) { if (!res.ok) throw new Error("no state yet"); return res.json(); })
+      .then(function (data) {
+        if (data && Array.isArray(data.players)) { state = data; if (!state.meta) state.meta = { giornata: "" }; }
+      })
+      .catch(function () {
+        var backup = localLoad();
+        if (backup && Array.isArray(backup.players)) state = backup;
+      });
   }
-
-  async function openAuth() {
-    var overlay = document.getElementById("authOverlay");
-    overlay.style.display = "flex";
-    var email = document.getElementById("authEmail");
-    var pass = document.getElementById("authPassword");
-    var msg = document.getElementById("authMessage");
-    document.getElementById("logoutBtn").style.display = currentUser ? "inline-block" : "none";
-    document.getElementById("loginBtn").style.display = currentUser ? "none" : "inline-block";
-    document.getElementById("signupBtn").style.display = currentUser ? "none" : "inline-block";
-    document.getElementById("authHint").textContent = currentUser ? ("Connesso come " + (currentUser.email || "utente") + ".") : "Accedi per salvare la rosa e ritrovarla su PC e telefono.";
-    msg.textContent = "";
-    email.value = currentUser && currentUser.email ? currentUser.email : "";
-    pass.value = "";
-  }
-
-  document.getElementById("authBtn").addEventListener("click", openAuth);
-  document.getElementById("closeAuthBtn").addEventListener("click", function () { document.getElementById("authOverlay").style.display = "none"; });
-  document.getElementById("loginBtn").addEventListener("click", async function () {
-    var msg = document.getElementById("authMessage");
-    var email = document.getElementById("authEmail").value.trim();
-    var password = document.getElementById("authPassword").value;
-    if (!email || !password) { msg.textContent = "Inserisci email e password."; return; }
-    msg.textContent = "Accesso…";
-    var r = await sb.auth.signInWithPassword({ email: email, password: password });
-    if (r.error) { msg.textContent = r.error.message; return; }
-    location.reload();
-  });
-  document.getElementById("signupBtn").addEventListener("click", async function () {
-    var msg = document.getElementById("authMessage");
-    var email = document.getElementById("authEmail").value.trim();
-    var password = document.getElementById("authPassword").value;
-    if (!email || password.length < 6) { msg.textContent = "Inserisci un'email e una password di almeno 6 caratteri."; return; }
-    msg.textContent = "Creazione account…";
-    var r = await sb.auth.signUp({ email: email, password: password });
-    if (r.error) { msg.textContent = r.error.message; return; }
-    msg.textContent = r.data.session ? "Account creato. Accesso effettuato." : "Account creato. Controlla l'email per confermare l'account.";
-  });
-  document.getElementById("logoutBtn").addEventListener("click", async function () {
-    await sb.auth.signOut();
-    location.reload();
-  });
-
-  sb.auth.onAuthStateChange(function (_event, session) {
-    currentUser = session ? session.user : null;
-    updateAuthButton();
-  });
 
   // ---------------- scoring ----------------
   // MODELLO A SCOSTAMENTI (ricalibrato 23/08/2026).
@@ -2957,6 +2814,9 @@ async function refreshLivePlayerNews() {
   }
   var MOD_NO_RESULT = { bonus: 0, avg: null, eligible: false, realCount: 0, totalCount: 0 };
   function teamModificatoreBonus(chosen, shapeD) {
+    // Regola di lega: con 4 difensori obbligatori in campo, il Modificatore
+    // prende SOLO i migliori 3 DIFENSORI per VOTO PURO + il VOTO PURO del P.
+    // Nessun fantavoto, bonus/malus, Obiettivo o Fascia può alterare l'ordine.
     if (!state.meta.modificatore || shapeD !== 4) return MOD_NO_RESULT;
     var defPlayers = (chosen.D || []).map(function (x) { return x.p; })
       .sort(function (a, b) { return effectiveVotoModificatore(b) - effectiveVotoModificatore(a); });
@@ -3726,7 +3586,13 @@ async function refreshLivePlayerNews() {
     }
     return LISTONE_INDEX;
   }
-  function listoneGet(nome) { return listoneIndex()[normalizeNameKey(nome)] || null; }
+  function listoneGet(nome) {
+    var raw = listoneIndex()[normalizeNameKey(nome)] || null;
+    if (!raw) return null;
+    // Normalizza sempre il record alle sole 7 colonne utilizzate dal motore:
+    // eventuali colonne extra (es. Obiettivo/Fascia) vengono ignorate.
+    return [raw[0], raw[1], raw[2], raw[3], raw[4], raw[5], raw[6]];
+  }
   // La titolarità serve solo a ORDINARE la rosa avversaria, non a scontarne il
   // valore (corretto 25/08/2026). Scontare ogni giocatore per la titolarità era
   // un tentativo di essere onesti su un dato che non ho — chi schiereranno — ma
@@ -4368,7 +4234,7 @@ async function refreshLivePlayerNews() {
   }
 
   // ---------------- wiring ----------------
-  async function init() {
+  function init() {
     var themePref = loadThemePref();
     applyTheme(themePref);
     document.getElementById("themeToggleBtn").addEventListener("click", function () {
@@ -4649,9 +4515,7 @@ async function refreshLivePlayerNews() {
         state.meta.votiGiornata1 = true;
         migrated = true;
       }
-      // Le note giornaliere arrivano da Supabase: non sovrascrivono i dati
-      // fantacalcistici personali, ma solo status/note/fonte/noteData.
-      refreshLivePlayerNews().then(function () { renderSections(); renderResult(); });
+      if (migrated) scheduleSave();
       document.getElementById("giornataInput").value = state.meta.giornata || "";
       document.getElementById("primaPartitaInput").value = state.meta.primaPartita || "";
       document.getElementById("moduloSelect").value = state.meta.modulo;
@@ -4664,73 +4528,14 @@ async function refreshLivePlayerNews() {
       renderLegaCard();
       renderRisultatiCard();
       updateDeadlinePill();
-      var refreshNewsBtn = document.getElementById("refreshNewsBtn");
-      if (refreshNewsBtn && !refreshNewsBtn.dataset.bound) {
-        refreshNewsBtn.dataset.bound = "1";
-        refreshNewsBtn.addEventListener("click", manualRefreshNews);
-      }
       if (!deadlineTimer) deadlineTimer = setInterval(updateDeadlinePill, 30000);
-      if (!window.liveNewsTimer) {
-        window.liveNewsTimer = setInterval(async function () {
-          var before = JSON.stringify(livePlayerNews);
-          await refreshLivePlayerNews();
-          if (JSON.stringify(livePlayerNews) !== before) {
-            renderSections();
-            renderResult();
-          }
-        }, 15 * 60 * 1000);
-      }
-      setSaveStatus("ok", "Pronto — dati locali");
+      setSaveStatus("ok", artifactApi ? "Salvato" : "Solo su questo dispositivo");
     });
-  }
 
-  async function manualRefreshNews() {
-    var btn = document.getElementById("refreshNewsBtn");
-    var pill = document.getElementById("newsStatus");
-    if (btn) { btn.disabled = true; btn.textContent = "↻ Aggiorno…"; }
-    if (pill) { pill.className = "status-pill busy"; pill.querySelector(".label").textContent = "News — aggiornamento"; }
-    try {
-      var fn = await sb.functions.invoke("update-player-news", { body: { force: true } });
-      if (fn.error) throw fn.error;
-      var rows = await refreshLivePlayerNews();
-      renderSections();
-      renderResult();
-      var latest = rows && rows.length ? rows[0].updated_at : null;
-      var label = latest ? new Date(latest).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "nessuna news";
-      if (pill) { pill.className = "status-pill ok"; pill.querySelector(".label").textContent = "News " + label; }
-      setSaveStatus("ok", rows.length ? "News aggiornate" : "News già aggiornate");
-    } catch (e) {
-      console.error(e);
-      if (pill) { pill.className = "status-pill danger"; pill.querySelector(".label").textContent = "News — errore"; }
-      setSaveStatus("warn", "Impossibile aggiornare le news");
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = "↻ Aggiorna news"; }
+    if (window.claude && typeof window.claude.use === "function") {
+      window.claude.use("artifact").then(function (api) { artifactApi = api; }).catch(function () { artifactApi = null; });
     }
   }
-
-  async function downloadPlayerNewsCsv() {
-    var rows = await loadLivePlayerNews();
-    var headers = ["Giocatore","Status","Nota","Fonte","Data","Aggiornato"];
-    var csv = [headers].concat((rows || []).map(function (r) {
-      return [r.player || "", r.status || "", r.note || "", r.fonte || "", r.noteData || "", r.updated_at || ""];
-    })).map(function (row) {
-      return row.map(function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }).join(";");
-    }).join("\r\n");
-    var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "modulo-news-" + formatDateIt(new Date()).replace(/\//g, "-") + ".csv";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    var b = document.getElementById("downloadNewsBtn");
-    if (b) b.addEventListener("click", downloadPlayerNewsCsv);
-  });
 
   document.addEventListener("DOMContentLoaded", init);
 })();
