@@ -393,7 +393,7 @@
   .pl-class small { opacity: .75; }
   .old-scale { color: var(--text-muted); cursor: help; }
   .scale-note { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; }
-  .history-table-wrap { overflow-x: auto; margin-top: 12px; }
+  .history-table-wrap { overflow-x: auto; min-width: 0; max-width: 100%; margin-top: 12px; }
   .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .history-table th {
     text-align: left;
@@ -806,6 +806,9 @@
     gap: 24px;
     align-items: start;
   }
+  /* Senza questo le due colonne non scendono sotto la loro larghezza minima e
+     su telefono la pagina scorre in orizzontale. */
+  .result-grid > * { min-width: 0; }
   @media (max-width: 760px) {
     .result-grid { grid-template-columns: 1fr; }
   }
@@ -914,6 +917,9 @@
   .callout .v { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin-top: 4px; }
   .callout .sub { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
 
+  /* La tabella dei moduli ha 4 colonne: su telefono scorre dentro il suo
+     riquadro invece di allargare tutta la pagina. */
+  .compare-wrap { overflow-x: auto; min-width: 0; max-width: 100%; }
   .compare-table {
     width: 100%;
     border-collapse: collapse;
@@ -1944,67 +1950,20 @@
     opt.textContent = "Auto (migliore tra " + autoCandidates().join("/") + ")";
   }
 
-  // Squadre Serie A 26/27 + stima di forza (1 = fortissima/avversario più difficile,
-  // 5 = più debole/avversario più facile). Stima ricavata dalla densità di giocatori
-  // Top/Semi-Top nel listone fornito: è un proxy approssimativo, non un giudizio
-  // definitivo — modificabile a mano riga per riga dopo aver applicato il calendario.
-  var TEAM_LIST = [
-    { code: "ATA", name: "Atalanta", tier: 3 }, { code: "BOL", name: "Bologna", tier: 3 },
-    { code: "CAG", name: "Cagliari", tier: 5 }, { code: "COM", name: "Como", tier: 2 },
-    { code: "FIO", name: "Fiorentina", tier: 3 }, { code: "FRO", name: "Frosinone", tier: 5 },
-    { code: "GEN", name: "Genoa", tier: 4 }, { code: "INT", name: "Inter", tier: 1 },
-    { code: "JUV", name: "Juventus", tier: 1 }, { code: "LAZ", name: "Lazio", tier: 3 },
-    { code: "LEC", name: "Lecce", tier: 5 }, { code: "MIL", name: "Milan", tier: 2 },
-    { code: "MON", name: "Monza", tier: 4 }, { code: "NAP", name: "Napoli", tier: 2 },
-    { code: "PAR", name: "Parma", tier: 4 }, { code: "ROM", name: "Roma", tier: 2 },
-    { code: "SAS", name: "Sassuolo", tier: 5 }, { code: "TOR", name: "Torino", tier: 4 },
-    { code: "UDI", name: "Udinese", tier: 3 }, { code: "VEN", name: "Venezia", tier: 5 }
-  ];
+  // ---------------- dati di riferimento ----------------
+  // Questi cinque contenitori partono vuoti: non sono più scritti nel codice.
+  // Vivono nelle tabelle Supabase (serie_a_squadre, serie_a_calendario, listone,
+  // lega_squadre, lega_rose, lega_calendario) e li riempie caricaRiferimenti()
+  // all'avvio, prima di qualunque calcolo. Aggiornare i dati non richiede più
+  // di ripubblicare l'app né di scrivere una migrazione nello stato salvato.
 
-  // Calendario Serie A 26/27, 38 giornate, [squadra_in_casa, squadra_in_trasferta].
-  // Trascritto dal calendario ufficiale caricato dall'utente. G27: la partita
-  // Genoa-Monza non era leggibile nell'immagine ed è stata dedotta per completare
-  // il turno (unica coppia mancante) — da verificare.
-  var FIXTURES = [
-    [["ATA","SAS"],["BOL","LAZ"],["FRO","JUV"],["GEN","NAP"],["INT","MON"],["PAR","CAG"],["ROM","FIO"],["TOR","MIL"],["UDI","COM"],["VEN","LEC"]],
-    [["ATA","BOL"],["CAG","INT"],["FIO","FRO"],["JUV","PAR"],["LAZ","GEN"],["LEC","ROM"],["MIL","VEN"],["MON","UDI"],["NAP","COM"],["SAS","TOR"]],
-    [["BOL","SAS"],["CAG","LEC"],["FIO","TOR"],["FRO","VEN"],["GEN","COM"],["INT","NAP"],["JUV","MIL"],["PAR","MON"],["ROM","ATA"],["UDI","LAZ"]],
-    [["ATA","CAG"],["COM","PAR"],["GEN","FRO"],["INT","UDI"],["LAZ","MIL"],["LEC","MON"],["NAP","BOL"],["SAS","JUV"],["TOR","ROM"],["VEN","FIO"]],
-    [["BOL","TOR"],["FIO","NAP"],["FRO","COM"],["JUV","ATA"],["MIL","LEC"],["MON","SAS"],["PAR","GEN"],["ROM","INT"],["UDI","CAG"],["VEN","LAZ"]],
-    [["ATA","VEN"],["CAG","JUV"],["COM","ROM"],["GEN","FIO"],["INT","PAR"],["LAZ","MON"],["LEC","BOL"],["NAP","FRO"],["SAS","MIL"],["TOR","UDI"]],
-    [["BOL","INT"],["FIO","COM"],["FRO","SAS"],["JUV","LAZ"],["MIL","ATA"],["MON","CAG"],["PAR","TOR"],["ROM","GEN"],["UDI","LEC"],["VEN","NAP"]],
-    [["ATA","FRO"],["CAG","BOL"],["COM","SAS"],["GEN","VEN"],["INT","FIO"],["LAZ","PAR"],["LEC","JUV"],["NAP","ROM"],["TOR","MON"],["UDI","MIL"]],
-    [["FIO","ATA"],["FRO","LEC"],["GEN","JUV"],["MIL","BOL"],["MON","NAP"],["PAR","UDI"],["ROM","CAG"],["SAS","LAZ"],["TOR","COM"],["VEN","INT"]],
-    [["ATA","PAR"],["BOL","MON"],["COM","VEN"],["FRO","TOR"],["JUV","NAP"],["LAZ","CAG"],["LEC","GEN"],["MIL","INT"],["SAS","FIO"],["UDI","ROM"]],
-    [["CAG","FRO"],["FIO","JUV"],["GEN","MIL"],["INT","COM"],["MON","ATA"],["NAP","LAZ"],["PAR","BOL"],["ROM","SAS"],["TOR","LEC"],["VEN","UDI"]],
-    [["ATA","INT"],["BOL","UDI"],["COM","CAG"],["JUV","VEN"],["LAZ","LEC"],["MIL","FRO"],["MON","FIO"],["NAP","TOR"],["PAR","ROM"],["SAS","GEN"]],
-    [["CAG","MIL"],["COM","JUV"],["FRO","PAR"],["INT","GEN"],["LEC","ATA"],["ROM","MON"],["SAS","NAP"],["TOR","LAZ"],["UDI","FIO"],["VEN","BOL"]],
-    [["BOL","ROM"],["FIO","CAG"],["FRO","INT"],["GEN","TOR"],["JUV","UDI"],["LAZ","ATA"],["MIL","PAR"],["MON","COM"],["NAP","LEC"],["VEN","SAS"]],
-    [["ATA","GEN"],["CAG","VEN"],["COM","BOL"],["INT","TOR"],["JUV","MON"],["LAZ","ROM"],["LEC","SAS"],["NAP","MIL"],["PAR","FIO"],["UDI","FRO"]],
-    [["ATA","NAP"],["FIO","BOL"],["FRO","LAZ"],["GEN","UDI"],["LEC","INT"],["MIL","COM"],["ROM","JUV"],["SAS","PAR"],["TOR","CAG"],["VEN","MON"]],
-    [["BOL","JUV"],["CAG","GEN"],["COM","LEC"],["FIO","LAZ"],["INT","SAS"],["MON","MIL"],["PAR","NAP"],["ROM","FRO"],["TOR","VEN"],["UDI","ATA"]],
-    [["ATA","COM"],["FRO","BOL"],["GEN","MON"],["JUV","TOR"],["LAZ","INT"],["LEC","PAR"],["MIL","FIO"],["NAP","CAG"],["SAS","UDI"],["VEN","ROM"]],
-    [["BOL","GEN"],["CAG","SAS"],["COM","LAZ"],["FIO","LEC"],["INT","JUV"],["MON","FRO"],["PAR","VEN"],["ROM","MIL"],["TOR","ATA"],["UDI","NAP"]],
-    [["ATA","ROM"],["CAG","COM"],["JUV","GEN"],["LAZ","BOL"],["LEC","UDI"],["MIL","TOR"],["NAP","FIO"],["PAR","INT"],["SAS","MON"],["VEN","FRO"]],
-    [["BOL","ATA"],["COM","NAP"],["FIO","SAS"],["FRO","MIL"],["GEN","PAR"],["INT","VEN"],["JUV","CAG"],["LEC","TOR"],["MON","LAZ"],["ROM","UDI"]],
-    [["ATA","FIO"],["CAG","PAR"],["GEN","LEC"],["LAZ","VEN"],["MIL","JUV"],["MON","ROM"],["NAP","INT"],["SAS","COM"],["TOR","FRO"],["UDI","BOL"]],
-    [["ATA","LAZ"],["BOL","MIL"],["COM","MON"],["FIO","UDI"],["INT","CAG"],["JUV","SAS"],["LEC","NAP"],["PAR","FRO"],["ROM","TOR"],["VEN","GEN"]],
-    [["BOL","COM"],["CAG","LAZ"],["FRO","FIO"],["GEN","ATA"],["INT","MIL"],["MON","LEC"],["NAP","JUV"],["ROM","PAR"],["TOR","SAS"],["UDI","VEN"]],
-    [["ATA","MON"],["COM","TOR"],["FIO","INT"],["JUV","BOL"],["LAZ","NAP"],["LEC","FRO"],["MIL","GEN"],["SAS","ROM"],["UDI","PAR"],["VEN","CAG"]],
-    [["BOL","LEC"],["CAG","UDI"],["COM","MIL"],["FRO","NAP"],["GEN","LAZ"],["INT","ATA"],["MON","JUV"],["PAR","SAS"],["ROM","VEN"],["TOR","FIO"]],
-    [["ATA","TOR"],["FIO","VEN"],["JUV","ROM"],["LAZ","FRO"],["LEC","COM"],["MIL","CAG"],["NAP","PAR"],["SAS","BOL"],["UDI","INT"],["GEN","MON"]],
-    [["BOL","NAP"],["CAG","FIO"],["COM","UDI"],["FRO","MON"],["GEN","ROM"],["LAZ","JUV"],["MIL","SAS"],["PAR","LEC"],["TOR","INT"],["VEN","ATA"]],
-    [["ATA","MIL"],["FIO","GEN"],["INT","FRO"],["JUV","COM"],["MON","BOL"],["NAP","VEN"],["PAR","LAZ"],["ROM","LEC"],["SAS","CAG"],["UDI","TOR"]],
-    [["CAG","NAP"],["COM","FIO"],["FRO","UDI"],["GEN","INT"],["LEC","LAZ"],["MIL","MON"],["ROM","BOL"],["SAS","ATA"],["TOR","JUV"],["VEN","PAR"]],
-    [["BOL","VEN"],["CAG","ATA"],["FIO","MIL"],["FRO","GEN"],["INT","ROM"],["JUV","LEC"],["LAZ","TOR"],["NAP","SAS"],["PAR","COM"],["UDI","MON"]],
-    [["ATA","UDI"],["BOL","CAG"],["COM","FRO"],["FIO","PAR"],["MIL","NAP"],["MON","INT"],["ROM","LAZ"],["SAS","LEC"],["TOR","GEN"],["VEN","JUV"]],
-    [["CAG","MON"],["FRO","ROM"],["GEN","SAS"],["INT","BOL"],["JUV","FIO"],["LAZ","COM"],["LEC","MIL"],["NAP","UDI"],["PAR","ATA"],["VEN","TOR"]],
-    [["ATA","JUV"],["BOL","FIO"],["COM","INT"],["LEC","CAG"],["MIL","LAZ"],["MON","VEN"],["ROM","NAP"],["SAS","FRO"],["TOR","PAR"],["UDI","GEN"]],
-    [["FIO","ROM"],["FRO","ATA"],["GEN","CAG"],["INT","LEC"],["LAZ","SAS"],["NAP","MON"],["PAR","MIL"],["TOR","BOL"],["UDI","JUV"],["VEN","COM"]],
-    [["BOL","FRO"],["CAG","TOR"],["COM","ATA"],["JUV","INT"],["LAZ","UDI"],["LEC","FIO"],["MIL","ROM"],["MON","PAR"],["NAP","GEN"],["SAS","VEN"]],
-    [["ATA","LEC"],["FIO","MON"],["FRO","CAG"],["GEN","BOL"],["INT","LAZ"],["PAR","JUV"],["ROM","COM"],["TOR","NAP"],["UDI","SAS"],["VEN","MIL"]],
-    [["BOL","PAR"],["CAG","ROM"],["COM","GEN"],["JUV","FRO"],["LEC","VEN"],["MIL","UDI"],["MON","TOR"],["NAP","ATA"],["SAS","INT"],["FIO","LAZ"]]
-  ];
+  // TEAM_LIST: { code, name, tier } — tier 1 = squadra fortissima (avversario
+  // più difficile), 5 = più debole. Tabella serie_a_squadre.
+  var TEAM_LIST = [];
+
+  // FIXTURES: 38 giornate, ognuna un elenco di [casa, trasferta].
+  // Tabella serie_a_calendario.
+  var FIXTURES = [];
 
   function teamByCode(code) { for (var i = 0; i < TEAM_LIST.length; i++) if (TEAM_LIST[i].code === code) return TEAM_LIST[i]; return null; }
   function diffFromTier(tier) { if (tier <= 2) return "difficile"; if (tier === 3) return "media"; return "facile"; }
@@ -2142,1118 +2101,150 @@
     { role: "A", name: "Davis K.", team: "UDI", fantamediaAttesa: 7.28, forma: 3, avversario: "Como", difficolta: "difficile", casa: true, rigorista: true, status: "assente", fonte: "ufficiale", noteData: "23/08/2026", note: "Escluso dai convocati per Udinese-Como (22/08, 1-1) per un risentimento muscolare rimediato in amichevole precampionato contro il Padova: scelta precauzionale del tecnico Runjaic (\"Davis ha preso delle botte contro il Padova, non vogliamo correre rischi\"), non un infortunio grave. Atteso disponibile per la prossima gara (trasferta a Monza) — corretto da 'titolare' dopo verifica più approfondita." }
   ];
 
-  // Rigoristi/specialisti piazzati 2026/27 per i giocatori già in rosa,
-  // ricavati da ricerca web (fonti fantacalcio, agosto 2026) — usata sia per
-  // i SEED_PLAYERS sopra sia per riapplicare i flag a chi ha già una rosa
-  // salvata nel browser (vedi migrazione campiSpecialistiAggiunti in init()).
-  var SPECIALISTI_2026 = {
-    "Valeri": { rigorista: true, piazzati: true },
-    "Cambiaso": { piazzati: true },
-    "Bernardeschi": { piazzati: true },
-    "Vlasic": { rigorista: true, piazzati: true },
-    "Mastantuono": { piazzati: true },
-    "Locatelli": { rigorista: true, piazzati: true },
-    "Samardzic": { piazzati: true },
-    "Ekkelenkamp": { piazzati: true },
-    "Dybala": { rigorista: true, piazzati: true },
-    "Nkunku": { piazzati: true },
-    "Davis K.": { rigorista: true }
-  };
 
-  // ---------------- listone 26/27 (caricato 25/08/2026) ----------------
-  // Il file d'asta completo della lega (501 giocatori di Serie A): fantamedia
-  // attesa, media voto storica, titolarità e i tag rigorista/tiratore. Serve a
-  // due cose: dare alle rose avversarie lo stesso trattamento che riservo alla
-  // mia (previsione dei punti con il motore vero, non il prezzo pagato all'asta),
-  // e sostituire la stima per ruolo della media voto con il dato reale dove c'è.
+  // LISTONE: il file d'asta completo della lega, una riga per giocatore.
   // [nome, ruolo, squadra, FMV Exp., MV storica, Titolarità 1-5, flag (1=rigorista, 2=tiratore)]
-  var LISTONE = [["Svilar","P","ROM",5.34,6.26,5,0],["Maignan","P","MIL",5.3,6.26,5,0],["Vicario","P","JUV",5.27,null,5,0],["Martinez Jo.","P","INT",5.28,6,3,0],["Butez","P","COM",5.18,6.07,5,0],["Meret","P","NAP",5.23,6.23,3,0],["Carnesecchi","P","ATA",5.19,6.36,5,0],["De Gea","P","FIO",5.07,6.24,5,0],["Mandas","P","LAZ",5.13,null,4,0],["Skorupski","P","BOL",5.12,6.19,4,0],["Falcone","P","LEC",5.12,6.41,5,0],["Okoye","P","UDI",4.96,6.07,5,0],["Caprile","P","CAG",4.94,6.29,5,0],["Bijlow","P","GEN",4.81,6.06,4,0],["Muric","P","SAS",4.83,6.08,4,0],["Stankovic F.","P","VEN",4.84,null,4,0],["Corvi","P","PAR",4.76,6.18,4,0],["Thiam","P","MON",4.77,null,4,0],["Mascardi","P","TOR",4.76,null,4,0],["Palmisani","P","FRO",4.73,null,4,0],["Provedel","P","INT",5.2,6.26,3,0],["Milinkovic-Savic V.","P","NAP",5.25,6.2,3,0],["Perin","P","JUV",5,6.11,2,0],["Di Gregorio","P","JUV",5,6.08,2,0],["Paleari","P","TOR",4.7,6.09,2,0],["Montipò","P","VEN",4.7,6.2,2,0],["Motta","P","LAZ",4.75,6,2,0],["Daffara","P","PAR",4.5,null,2,0],["Desplanches","P","FRO",4.7,null,2,0],["Pessina Mas.","P","BOL",4.75,6.13,2,0],["Pizzignacco","P","MON",4.25,null,2,0],["Turati","P","SAS",4.7,6.17,2,0],["Satalino","P","SAS",4.5,null,1,0],["Bleve","P","LEC",4.5,null,1,0],["Christensen O.","P","FIO",4.5,7.5,1,0],["Contini","P","NAP",4.5,null,1,0],["De Marzi","P","ROM",4.5,null,1,0],["Di Gennaro","P","INT",4.5,6,1,0],["Gollini","P","ROM",4.5,null,1,0],["Grandi","P","VEN",4.5,null,1,0],["Happonen","P","BOL",4.5,null,1,0],["Lezzerini","P","FIO",4.5,null,1,0],["Lolic","P","FRO",4.5,null,1,0],["Padelli","P","UDI",4.7,6.25,1,0],["Penev","P","LEC",4.5,null,1,0],["Piana","P","UDI",4.5,null,1,0],["Pinsoglio","P","JUV",4.7,null,1,0],["Pisseri","P","FRO",4.5,null,1,0],["Pozzi","P","VEN",4.5,null,1,0],["Radunovic","P","CAG",4.5,null,1,0],["Renzetti","P","LAZ",4.5,null,1,0],["Russo A.","P","SAS",4.5,null,1,0],["Sherri","P","CAG",4.5,null,1,0],["Siviero","P","TOR",4.5,null,1,0],["Sommariva","P","GEN",4.5,5.75,1,0],["Sportiello","P","ATA",4.5,5.5,1,0],["Stolz","P","GEN",4.5,null,1,0],["Strajnar","P","MON",4.5,null,1,0],["Terracciano","P","MIL",4.75,6,1,0],["Tornqvist","P","COM",4.5,null,1,0],["Torriani","P","MIL",4.5,null,1,0],["Vigorito","P","COM",4.5,null,1,0],["Vismara","P","ATA",4.5,null,1,0],["Dimarco","D","INT",7.36,6.6,5,2],["Wesley","D","ROM",6.57,6.12,5,0],["Molina N.","D","ROM",6.63,null,4,0],["Mancini","D","ROM",6.52,6.25,5,0],["Rrahmani","D","NAP",6.51,6.24,5,0],["Solet","D","UDI",6.46,6.18,5,0],["Akanji","D","INT",6.39,6.28,5,0],["Bremer","D","JUV",6.69,6.33,5,0],["Bastoni","D","INT",6.45,6.2,5,0],["Pavlovic","D","MIL",6.53,6.24,5,0],["Spence","D","INT",6.54,null,3,0],["Kalulu","D","JUV",6.32,6.14,5,0],["N'Dicka","D","ROM",6.35,6.08,5,0],["Jimenez A.","D","FIO",6.31,5.5,3,0],["Spinazzola","D","NAP",6.43,6.17,4,0],["Bisseck","D","INT",6.38,6.22,3,0],["Ramon","D","COM",6.18,6.16,4,0],["Di Lorenzo","D","NAP",6.44,6.08,5,0],["Ostigard","D","GEN",6.42,6.13,5,0],["Kempf","D","COM",6.28,6.12,3,0],["Scalvini","D","ATA",6.24,6.06,5,0],["Cambiaso","D","JUV",6.16,5.81,5,0],["Rensch","D","ROM",6.19,6.16,3,0],["Chalobah T.","D","COM",6.27,null,4,0],["Bartesaghi","D","MIL",6.09,5.97,3,0],["Gila","D","MIL",6.09,6.03,5,0],["Vasquez","D","GEN",6.11,6.08,5,0],["Miranda J.","D","BOL",6.09,6,5,0],["Zappacosta","D","ATA",6.22,6.06,4,0],["Carlos Augusto","D","INT",6.13,6.13,3,0],["Dragusin","D","FIO",6.02,null,4,0],["Koulierakis","D","ROM",6.03,null,3,0],["Bernasconi","D","ATA",6.12,6.09,5,0],["Norton-Cuffy","D","GEN",6.1,5.93,5,0],["Valeri","D","PAR",6.2,6.06,5,0],["Gabbia","D","MIL",6.08,5.91,5,0],["Marcandalli","D","GEN",5.94,5.87,5,0],["Marin R.","D","NAP",5.94,null,4,0],["Romagnoli","D","LAZ",5.99,6.03,2,0],["Hainaut","D","VEN",6.06,null,3,0],["Haps","D","VEN",6.04,null,4,0],["Vojvoda","D","UDI",6.11,6.02,4,0],["Delprato","D","PAR",6.22,5.91,5,0],["Doekhi","D","LAZ",5.94,null,3,0],["Kabasele","D","UDI",6.12,5.98,4,0],["Kristensen T.","D","ATA",6.08,5.98,3,0],["Birindelli","D","MON",6.27,null,5,0],["Ismajli","D","TOR",6.08,5.92,4,0],["Mina","D","CAG",6.21,6,5,0],["Idzes","D","SAS",6.02,5.94,5,0],["Mangas","D","MON",5.91,null,5,0],["Obert","D","CAG",6.01,5.88,5,0],["Pedersen","D","TOR",5.95,5.84,4,0],["Terracciano F.","D","MIL",5.8,5.86,2,0],["Zortea","D","BOL",6.22,5.86,3,0],["Coco","D","TOR",6.03,5.84,5,0],["Gallo","D","LEC",5.99,5.95,5,0],["Marusic","D","LAZ",5.95,5.86,4,0],["Oyono A.","D","FRO",5.91,null,3,0],["Tiago Gabriel","D","LEC",6.1,6,5,0],["Bracaglia","D","FRO",5.79,null,3,0],["Kolasinac","D","ATA",5.9,6.03,3,0],["Mitaj","D","GEN",5.96,null,3,0],["Pedraza","D","LAZ",5.86,null,3,0],["Smolcic I.","D","COM",5.93,5.96,3,0],["Viery","D","FIO",5.94,null,3,0],["Couto","D","COM",6.17,null,4,0],["Celik","D","JUV",5.97,6.17,3,0],["Lucumì","D","JUV",5.97,5.88,3,0],["Stones","D","INT",6.19,null,3,0],["Valdepenas","D","FIO",6.04,null,3,0],["Kaiki","D","COM",5.97,null,3,0],["Valle","D","COM",6.08,6.06,3,0],["Bellanova","D","ATA",6.04,5.82,3,0],["Dodò","D","FIO",6.17,5.99,3,0],["Kelly L.","D","JUV",6.02,6.01,3,0],["Hermoso","D","ROM",6.17,6.17,3,0],["Obrador","D","SAS",6.09,6.06,4,0],["Joao Mario","D","FIO",5.93,5.79,3,0],["Abankwah","D","UDI",5.82,null,3,0],["Ahanor","D","ATA",5.84,5.79,2,0],["Buongiorno","D","NAP",6.02,5.89,3,0],["Correia T.","D","VEN",5.92,null,3,0],["Favasuli","D","NAP",5.91,null,3,0],["Pavard","D","INT",5.92,6.5,2,0],["Provstgaard","D","LAZ",5.85,5.91,3,0],["Tavares N.","D","LAZ",5.9,5.91,3,0],["Terzic","D","FRO",5.84,null,3,0],["Tomori","D","MIL",6.03,5.97,2,0],["Akpoguma","D","FRO",5.8,null,4,0],["Bella-Kotchap","D","VEN",5.91,5.83,5,0],["Carboni A.","D","MON",5.82,null,4,0],["Comuzzo","D","TOR",5.82,5.75,4,0],["Delli Carri","D","MON",5.73,null,3,0],["Doig","D","SAS",5.8,5.85,3,0],["Kamara H.","D","UDI",5.92,5.88,3,0],["Kouadio","D","MON",5.77,6,5,0],["Missori","D","SAS",5.93,null,3,0],["Monterisi","D","FRO",5.83,null,3,0],["Moreno M.","D","VEN",5.71,null,3,0],["Rodriguez Ju.","D","CAG",5.98,5.63,4,0],["Schingtienne","D","VEN",5.84,null,5,0],["Siebert","D","LEC",5.97,5.68,4,0],["Troilo","D","PAR",5.81,5.79,4,0],["Valenti","D","PAR",5.85,5.96,2,0],["Veiga D.","D","LEC",5.85,5.82,5,0],["Vitik","D","BOL",5.87,5.94,3,0],["Walukiewicz","D","SAS",5.84,5.81,3,0],["Zè Pedro","D","CAG",5.83,5.77,4,0],["Bertola","D","UDI",5.85,5.86,3,0],["Beukema","D","NAP",6.07,5.93,3,0],["Biraghi","D","TOR",5.71,5.59,2,2],["Britschgi","D","PAR",5.65,5.75,3,0],["Cabal","D","JUV",6.06,5.94,2,0],["Candè","D","SAS",5.71,5.69,2,0],["De Winter","D","MIL",5.87,5.75,2,0],["Ebosse","D","UDI",5.72,5.75,2,0],["Estupinan","D","MIL",5.77,5.64,2,0],["Floriani Mussolini","D","LAZ",5.88,5.72,2,0],["Fortini","D","TOR",5.74,5.96,2,0],["Franjic","D","VEN",5.8,null,2,0],["Gaspar K.","D","LEC",5.89,5.83,2,0],["Gatti","D","JUV",6.2,5.94,3,0],["Ghilardi","D","ROM",5.77,5.98,3,0],["Heggem","D","BOL",5.8,5.84,3,0],["Hien","D","ATA",5.89,5.91,2,0],["Holm","D","BOL",6.28,6.09,2,0],["Idrissi R.","D","CAG",6.04,5.82,2,0],["Kossounou","D","ATA",5.87,5.94,3,0],["Lazzari","D","LAZ",5.81,5.79,2,0],["Marianucci","D","NAP",5.65,5.73,2,0],["Martin","D","GEN",6,5.97,2,2],["Mazzocchi","D","NAP",5.71,5.94,1,0],["Mlacic","D","UDI",5.75,5.83,2,0],["Ndiaye","D","PAR",5.73,5.59,3,0],["Odenthal","D","SAS",5.8,null,4,0],["Olivera","D","NAP",5.88,5.75,3,0],["Parisi","D","FIO",5.75,6.02,1,0],["Pellegrini Lu.","D","LAZ",5.78,5.85,2,0],["Pongracic","D","FIO",5.86,5.84,2,0],["Ranieri L.","D","FIO",5.8,5.85,2,0],["Sabelli","D","GEN",5.72,5.81,2,0],["Van Der Brempt","D","COM",5.94,5.96,3,0],["Zanoli","D","UDI",6.12,6.05,1,0],["Zappa","D","CAG",5.88,5.9,3,0],["Ziolkowski","D","ROM",5.64,5.94,2,0],["Arizala","D","UDI",5.5,5.8,1,0],["Calvani","D","FRO",5.7,null,3,0],["Comert","D","TOR",5.84,null,3,0],["Lucchesi","D","MON",5.72,null,3,0],["Oyono J.","D","FRO",5.75,null,2,0],["Puczka","D","GEN",5.81,null,2,0],["Carboni F.","D","PAR",5.5,6,2,0],["Casale","D","BOL",5.63,5.65,1,0],["De Silvestri","D","BOL",6.08,6.05,1,0],["Goldaniga","D","COM",5.91,null,1,0],["Jean","D","LEC",5.67,5.8,1,0],["Matturro","D","GEN",5.59,null,1,0],["Otoa","D","GEN",5.59,5.6,2,0],["Palma","D","UDI",5.83,5.5,2,0],["Patric","D","LAZ",5.75,5.85,2,0],["Pieragnolo","D","SAS",5.5,null,1,0],["Rugani","D","JUV",5.77,5.69,1,0],["Sagrado","D","VEN",5.61,null,1,0],["Sverko","D","VEN",5.75,null,1,0],["Alhassane","D","BOL",5.73,null,2,0],["Amey","D","FRO",5.69,null,2,0],["Antov","D","MON",5.68,null,1,0],["Aurelio","D","CAG",5.69,null,2,0],["Badiashile","D","NAP",6.07,null,4,0],["Bakoune","D","MON",5.76,null,2,0],["Cinquegrano","D","SAS",5.75,null,3,0],["Cittadini","D","FRO",5.71,null,3,0],["Corrado","D","FRO",5.5,null,1,0],["Diawara S.","D","MIL",5.5,null,1,0],["Gomes","D","VEN",5.6,null,2,0],["Halhal","D","VEN",5.77,null,3,0],["Helland","D","BOL",5.84,5.5,3,0],["Kofler","D","CAG",5.66,null,2,0],["Leysen F.","D","SAS",5.79,null,3,0],["Lulli E.","D","ROM",6.06,null,3,0],["Macchioni","D","SAS",5.5,null,1,0],["Ndaba","D","LEC",5.58,5.5,2,0],["Omar Fayed","D","FRO",5.66,null,2,0],["Sutalo J.","D","LAZ",5.93,null,4,0],["Paz N.","C","COM",7.54,6.37,5,0],["Orsolini","C","BOL",7.27,6.06,5,3],["Pulisic","C","MIL",7.19,6.15,5,1],["Calhanoglu","C","INT",7.43,6.52,5,3],["McTominay","C","NAP",7.16,6.39,5,0],["Alajbegovic","C","JUV",7.04,null,4,0],["Baturina","C","COM",7,6.3,4,0],["Da Cunha","C","COM",6.85,6.34,5,1],["Zaniolo","C","UDI",6.96,6.26,5,0],["Zielinski","C","INT",6.83,6.25,3,1],["Mora","C","ROM",6.93,null,4,0],["Atta","C","FIO",6.78,6.36,5,0],["De Bruyne","C","NAP",7.05,6.26,4,1],["Mastantuono","C","FIO",6.88,null,4,0],["Zaccagni","C","LAZ",6.78,5.88,5,3],["Barella","C","INT",6.69,6.28,4,0],["Rowe","C","BOL",6.71,6.2,3,0],["Vlasic","C","TOR",6.72,6.03,5,1],["McKennie","C","JUV",6.49,6.13,5,0],["Rabiot","C","MIL",6.88,6.33,5,0],["Conceicao","C","JUV",6.68,6.28,3,0],["Moreira","C","MIL",6.61,null,4,0],["Rodriguez Je.","C","COM",6.83,6.25,3,0],["Jones C.","C","INT",6.85,null,3,0],["Isaksen","C","LAZ",6.47,6.04,3,0],["Gudmundsson A.","C","FIO",6.74,5.88,3,1],["Taylor K.","C","LAZ",6.5,6.06,5,0],["Diouf","C","INT",6.51,6.15,3,0],["Saelemaekers","C","MIL",6.37,6.14,3,0],["Ederson D.S.","C","ATA",6.41,6.25,5,0],["Ekkelenkamp","C","UDI",6.51,6.05,5,0],["Samardzic","C","ATA",6.4,5.93,3,0],["Konè M.","C","ROM",6.42,6.26,5,0],["Modric","C","MIL",6.41,6.45,4,0],["Calò","C","FRO",6.48,null,4,3],["Frattesi","C","LAZ",6.49,5.89,4,0],["Bernardeschi","C","BOL",6.61,6.04,3,0],["Casadei","C","TOR",6.45,5.97,3,0],["Perrone","C","COM",6.44,6.22,4,0],["Thorstvedt","C","SAS",6.66,6.15,5,0],["Baldanzi","C","GEN",6.54,6.15,3,0],["Bernabè","C","PAR",6.44,6.17,5,0],["Fazzini","C","CAG",6.36,5.88,5,0],["Thuram K.","C","JUV",6.46,6.1,4,0],["Colpani","C","MON",6.39,null,3,0],["Elmas","C","ATA",6.34,5.8,3,0],["Schmid","C","FRO",6.28,null,4,0],["Cacciamani","C","TOR",6.39,null,4,0],["Felici","C","CAG",6.31,6.05,3,0],["Gaetano","C","ATA",6.3,6.06,3,0],["Basic","C","VEN",6.3,6.09,4,0],["Busio","C","VEN",6.28,null,5,0],["Oristanio","C","TOR",6.21,5.78,3,0],["Zerbin","C","FRO",6.42,5.76,3,0],["Bakola","C","SAS",6.14,6.17,3,0],["Cataldi","C","LAZ",6.21,6.07,3,0],["Cristante","C","ROM",6.43,6.11,5,0],["Dele-Bashiru","C","LAZ",6.11,5.69,3,0],["De Roon","C","ATA",6.1,5.97,3,0],["Fagioli","C","FIO",6.28,6.03,4,0],["Fitz-Jim","C","TOR",6.22,null,4,0],["Laerke","C","LEC",6.25,null,2,0],["Locatelli","C","JUV",6.37,6.26,5,0],["Mandragora","C","FIO",6.41,6.04,3,0],["Unai Gomez","C","UDI",6.32,null,3,0],["Liberali","C","COM",6.49,null,3,0],["Zambo Anguissa","C","NAP",6.66,6.17,3,0],["Politano","C","NAP",6.58,6.09,3,0],["Cancellieri","C","LAZ",6.4,5.93,3,0],["Pasalic","C","ATA",6.34,5.94,3,0],["Adzic","C","SAS",6.38,6.13,3,0],["Mkhitaryan","C","INT",6.44,6.21,3,0],["Sucic P.","C","INT",6.17,6.07,3,0],["Vergara","C","NAP",6.63,6.25,3,0],["Addai","C","COM",6.55,5.96,2,0],["Chukwueze","C","MIL",6.45,5.5,3,0],["Odgaard","C","BOL",6.41,5.91,3,0],["Oulai","C","FIO",6.08,null,3,0],["Zhegrova","C","JUV",6.23,5.96,2,0],["Berisha M.","C","LEC",6.32,6.17,4,0],["Cambiaghi","C","BOL",6.44,5.98,3,0],["Caqueret","C","COM",6.45,6.11,3,0],["Cissè A.","C","MIL",6.24,null,3,0],["Diallo O.","C","PAR",6.41,null,3,0],["Douglas Luiz","C","JUV",6.31,null,3,0],["El Aynaoui","C","ROM",6.19,5.98,3,0],["Fini","C","FRO",6.33,5.5,3,0],["Gandelman","C","LEC",6.19,5.97,3,0],["Jashari","C","MIL",5.93,5.71,3,0],["Konè I.","C","SAS",6.5,6.19,1,0],["Luis Henrique","C","INT",6.06,5.89,3,0],["Miretti","C","JUV",6.25,5.97,2,0],["Ndour","C","FIO",6.07,5.8,3,0],["Pellegrini Lo.","C","ROM",6.55,6.04,3,2],["Perez K.","C","VEN",6.03,null,3,0],["Pessina","C","MON",6.38,null,5,1],["Pisilli","C","ROM",6.31,6.09,3,0],["Stankovic A.","C","INT",6.22,null,2,0],["Tourè I.","C","MON",6.11,5.82,3,0],["Traorè Hj.","C","GEN",6.34,null,3,0],["Volpato","C","SAS",6.32,6.14,3,0],["Adopo","C","CAG",6.08,5.83,5,0],["Akinsanmiro","C","MON",5.96,5.8,3,0],["Coulibaly L.","C","LEC",6.19,6.05,5,0],["El Azzouzi A.","C","FRO",6.02,null,2,0],["Ellertsson","C","GEN",5.99,5.84,3,0],["Ferguson","C","BOL",6.26,5.8,4,0],["Frendrup","C","GEN",6.17,5.96,5,0],["Gineitis","C","TOR",5.97,5.87,3,0],["Grillitsch","C","FRO",5.96,null,3,0],["Karlstrom","C","UDI",5.96,5.96,5,0],["Keita M.","C","PAR",6.05,6.01,5,0],["Koutsoupias","C","FRO",6.04,null,2,0],["Lobotka","C","NAP",6.27,6.05,5,0],["Matic","C","SAS",5.97,5.96,5,0],["Pierotti","C","LEC",6.02,5.8,4,0],["Piotrowski","C","UDI",5.99,5.88,3,0],["Pobega","C","BOL",6.31,5.83,3,0],["Romano","C","CAG",6.21,null,5,0],["Sohm","C","VEN",6.02,5.65,2,0],["Sorensen O.","C","PAR",5.92,5.85,2,0],["Sow","C","GEN",6.04,null,4,0],["Winks","C","CAG",5.97,null,4,0],["Aboukhlal","C","TOR",6.1,5.77,2,0],["Almqvist","C","PAR",6.15,5.94,2,0],["Anjorin","C","TOR",6.02,5.78,1,0],["Belahyane","C","LAZ",5.81,5.77,2,0],["Brescianini","C","FIO",6.1,5.97,3,0],["Chakvetadze","C","UDI",6.03,null,2,0],["Ciurria","C","MON",6.13,null,4,0],["Colombo L.","C","MON",5.95,null,3,0],["Deiola","C","CAG",6.17,5.98,3,0],["Dominguez B.","C","SAS",6.43,5.83,2,0],["Fadera","C","CAG",6.19,5.92,2,0],["Fofana Y.","C","MIL",6.12,5.85,2,0],["Folorunsho","C","NAP",6.15,6.04,2,0],["Forson O.","C","MON",6.37,null,2,0],["Gelli F.","C","FRO",5.95,null,2,0],["Gilmour","C","NAP",6.08,6.08,2,0],["Hasa","C","FRO",6,null,2,0],["Helgason","C","VEN",6.07,5.63,2,0],["Ilic","C","TOR",6,6,1,0],["Ilkhan","C","TOR",6.05,5.82,2,0],["Kaba","C","LEC",5.86,5.77,2,0],["Koopmeiners","C","JUV",6.31,5.64,2,0],["Loftus-Cheek","C","MIL",6.45,6.1,3,0],["Maleh","C","LEC",5.87,5.69,3,0],["Masini","C","FRO",5.95,5.98,2,0],["Meichtry","C","GEN",6.19,null,3,0],["Messias","C","GEN",6.17,6.18,2,0],["Miller L.","C","UDI",6.07,5.92,2,2],["Moro N.","C","BOL",6.11,5.93,3,0],["Musah","C","MIL",5.92,5.94,2,0],["Nicolussi Caviglia","C","PAR",6.1,5.89,3,0],["Njie","C","TOR",6.38,5.8,3,0],["Ordonez C.","C","PAR",5.81,5.79,2,0],["Ricci S.","C","MIL",6.2,6,2,0],["Rovella","C","LAZ",5.99,5.73,3,0],["Sulemana I.","C","ATA",6.32,5.69,2,0],["Venturino","C","GEN",6.12,5.86,2,0],["Zalewski","C","ATA",6.26,6.1,3,0],["Zarraga","C","UDI",5.91,5.75,1,0],["Amorim","C","GEN",5.96,5.72,3,0],["Dagasso","C","VEN",6.1,null,3,0],["Lipani","C","SAS",6.07,5.93,2,0],["Milla","C","COM",6.19,null,3,0],["Ngom","C","LEC",5.75,5.69,2,0],["Boloca","C","SAS",6.01,5.75,1,0],["Cremaschi","C","PAR",6,6,1,0],["Duncan","C","VEN",5.9,null,1,0],["El Azzouzi O.","C","BOL",6,null,1,0],["Fabbian","C","FIO",6.03,5.8,2,0],["Kone B.","C","FRO",5.75,null,1,0],["Prati","C","CAG",5.98,5.88,2,0],["Amondarain","C","BOL",6.05,null,2,0],["Cichella","C","FRO",5.89,null,1,0],["Comotto","C","MIL",6,null,1,0],["Foe Ondoa","C","MON",5.97,null,3,0],["Fofana Sa.","C","LEC",6,5.5,1,0],["Gorter","C","LEC",6.01,5.5,1,0],["Iannoni","C","SAS",6.04,6,1,0],["Konaté A.","C","PAR",5.86,null,2,0],["Lahdo","C","COM",6,null,1,0],["Liteta","C","CAG",6,5.75,2,0],["Mout","C","MON",6.04,null,3,0],["Przyborek","C","LAZ",6,null,1,0],["Malen","A","ROM",8.48,6.72,5,1],["Martinez L.","A","INT",8.13,6.42,5,0],["Thuram","A","INT",7.89,6.43,5,0],["Kolo Muani","A","JUV",7.71,null,5,0],["Ramos G.","A","MIL",7.64,null,5,1],["Douvikas","A","COM",7.62,6.18,5,0],["Hojlund","A","NAP",7.58,6.21,4,0],["Kean","A","FIO",7.38,5.88,4,0],["Yildiz","A","JUV",7.23,6.39,5,0],["Scamacca","A","ATA",7.51,6.18,3,0],["Simeone","A","TOR",7.38,6.08,4,0],["Leao","A","MIL",7.09,5.88,3,0],["Davis K.","A","UDI",7.28,6.32,5,1],["Dybala","A","ROM",7.18,6.26,3,2],["Dovbyk","A","BOL",6.97,6,3,0],["Berardi","A","SAS",7.11,6.31,5,3],["Laurientè","A","SAS",6.91,6.23,5,0],["Raspadori","A","ATA",6.98,6.12,4,0],["De Ketelaere","A","ATA",6.86,6.21,5,0],["Santos A.","A","NAP",7.01,6.35,4,0],["Colombo","A","GEN",6.83,5.92,5,1],["Diao","A","COM",6.93,6,4,0],["Adams A.","A","VEN",6.69,null,4,0],["Pinamonti","A","SAS",6.79,5.88,3,0],["Yeboah J.","A","VEN",6.69,null,4,0],["Tourè E.","A","PAR",6.53,null,4,0],["Ghedjemis","A","FRO",6.53,null,5,0],["Geubbels","A","LEC",6.54,null,3,1],["Raimondo","A","FRO",6.57,null,4,0],["Maldini","A","CAG",6.54,5.94,4,0],["Vitinha O.","A","GEN",6.42,5.95,5,0],["Kevin Carlos","A","CAG",6.53,null,4,0],["Kvernadze","A","FRO",6.39,null,3,0],["Mota","A","MON",6.49,null,4,0],["Krstovic","A","ATA",7.21,6.16,3,0],["Soulè","A","ROM",6.87,6.13,4,0],["Pellegrino M.","A","FIO",6.67,5.99,3,0],["Esposito F.P.","A","INT",7.06,6.26,3,0],["Castro S.","A","ROM",6.8,5.93,3,0],["Neres","A","NAP",6.83,6.19,3,0],["Piccoli","A","BOL",6.62,5.78,3,0],["Bonny","A","INT",6.71,6.15,3,0],["Nkunku","A","MIL",6.94,5.94,3,0],["Bowie","A","SAS",6.63,5.96,3,0],["Noslin","A","LAZ",6.64,6.02,3,0],["Romero D.","A","PAR",6.47,null,3,0],["Elphege","A","PAR",6.51,6,3,0],["Borrelli","A","CAG",6.46,5.92,3,0],["Ratkov","A","LAZ",6.23,5.64,2,0],["Ekhator","A","JUV",6.29,5.96,2,0],["Morata","A","COM",6.38,5.5,2,0],["Adams C.","A","TOR",6.43,5.98,2,0],["Boga","A","JUV",6.93,6.19,3,0],["Camarda","A","MIL",6.33,5.67,2,0],["Cutrone","A","MON",6.38,5.71,3,0],["David","A","JUV",6.48,5.77,3,0],["N'Dri","A","LEC",6.4,5.82,3,0],["Rrahmani Al.","A","VEN",6.56,null,3,0],["Zapata D.","A","TOR",6.71,5.83,3,0],["Dia","A","LAZ",6.52,5.68,3,0],["Esposito Se.","A","CAG",6.5,6.26,1,0],["Kulenovic","A","TOR",6,5.71,2,0],["Mendy P.","A","CAG",6.34,5.94,3,0],["Milik","A","JUV",6.5,6,2,0],["Varela G.","A","MON",6.68,null,3,0],["Adorante","A","VEN",6.33,null,2,0],["Bayo V.","A","UDI",6.18,5.75,1,0],["Frigan","A","PAR",6.41,null,3,0],["Gimenez","A","MIL",6.25,5.5,2,0],["Giovane","A","NAP",6.29,6,2,0],["Havel","A","GEN",6.2,null,2,0],["Kuhn","A","COM",6.27,5.96,2,0],["Lang","A","NAP",6.33,6.04,3,0],["Lauberbach","A","VEN",6.25,null,2,0],["Lontani","A","PAR",6.38,null,3,0],["Lucca","A","NAP",6.4,5.72,2,0],["Robinson J.","A","MON",6.33,null,2,0],["Stulic","A","LEC",6.41,5.73,3,0],["Sulemana K.","A","ATA",6.33,6,1,0],["Trepy","A","CAG",6,6.13,1,0],["Vaz","A","ROM",6.36,5.93,2,0],["Azon","A","COM",6.15,null,2,0],["Gueye","A","UDI",6.04,5.77,2,0],["Lisman","A","VEN",6.15,null,1,0],["Mutandwa","A","CAG",null,null,2,0],["De Martis","A","PAR",6,null,1,0],["Osmajic","A","GEN",null,null,0,0]];
+  // Serve a due cose: dare alle rose avversarie lo stesso trattamento che riservo
+  // alla mia (previsione dei punti con il motore vero, non il prezzo pagato
+  // all'asta), e sostituire la stima per ruolo della media voto con il dato reale
+  // dove c'è. Tabella listone.
+  var LISTONE = [];
 
-  // ---------------- lega fantacalcio (aggiunto 25/08/2026) ----------------
-  // Le 8 squadre della lega di Salvo con le rose d'asta e i costi pagati, e il
-  // calendario degli scontri diretti. Il calendario ha un ciclo di 7 turni che
-  // si ripete per tutte le 38 giornate (verificato: 7 turni x 4 partite, ogni
-  // coppia esattamente una volta; gli avversari così ricostruiti coincidono con
-  // il tabellone della lega per tutte e 38 le giornate). La somma dei costi di
-  // ogni rosa coincide con il totale dichiarato dal tabellone.
+  // La lega: 8 squadre con rose e costi d'asta, più il tabellone degli scontri
+  // diretti. Il calendario ha un ciclo di 7 turni che si ripete per tutte le 38
+  // giornate. LEGA_MIA viene riassegnata dalla riga con e_mia = true.
+  // Tabelle lega_squadre, lega_rose, lega_calendario.
   var LEGA_MIA = "BASTARDI SENZA GLORIA";
-  var LEGA_SQUADRE = {
-    "FulmiCrotone": {
-      "manager": "Piero",
-      "totale": 496,
-      "rosa": [
-        {
-          "n": "Svilar",
-          "r": "P",
-          "c": 32
-        },
-        {
-          "n": "Milinkovic-Savic V.",
-          "r": "P",
-          "c": 13
-        },
-        {
-          "n": "Gollini",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Akanji",
-          "r": "D",
-          "c": 32
-        },
-        {
-          "n": "Wesley",
-          "r": "D",
-          "c": 28
-        },
-        {
-          "n": "Vasquez",
-          "r": "D",
-          "c": 9
-        },
-        {
-          "n": "Doekhi",
-          "r": "D",
-          "c": 7
-        },
-        {
-          "n": "Miranda J.",
-          "r": "D",
-          "c": 7
-        },
-        {
-          "n": "Pedersen",
-          "r": "D",
-          "c": 5
-        },
-        {
-          "n": "Otoa",
-          "r": "D",
-          "c": 2
-        },
-        {
-          "n": "Delprato",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Barella",
-          "r": "C",
-          "c": 22
-        },
-        {
-          "n": "Alajbegovic",
-          "r": "C",
-          "c": 19
-        },
-        {
-          "n": "Mora",
-          "r": "C",
-          "c": 12
-        },
-        {
-          "n": "Gaetano",
-          "r": "C",
-          "c": 9
-        },
-        {
-          "n": "Frattesi",
-          "r": "C",
-          "c": 6
-        },
-        {
-          "n": "Casadei",
-          "r": "C",
-          "c": 2
-        },
-        {
-          "n": "Tourè I.",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Basic",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Martinez L.",
-          "r": "A",
-          "c": 199
-        },
-        {
-          "n": "Douvikas",
-          "r": "A",
-          "c": 84
-        },
-        {
-          "n": "Bonny",
-          "r": "A",
-          "c": 1
-        },
-        {
-          "n": "Tourè E.",
-          "r": "A",
-          "c": 1
-        },
-        {
-          "n": "Geubbels",
-          "r": "A",
-          "c": 1
-        },
-        {
-          "n": "Maldini",
-          "r": "A",
-          "c": 1
-        }
-      ]
-    },
-    "FC Porcellona": {
-      "manager": "Ninni",
-      "totale": 364,
-      "rosa": [
-        {
-          "n": "Falcone",
-          "r": "P",
-          "c": 9
-        },
-        {
-          "n": "Desplanches",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Palmisani",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Valle",
-          "r": "D",
-          "c": 13
-        },
-        {
-          "n": "Bisseck",
-          "r": "D",
-          "c": 12
-        },
-        {
-          "n": "Martin",
-          "r": "D",
-          "c": 4
-        },
-        {
-          "n": "Heggem",
-          "r": "D",
-          "c": 3
-        },
-        {
-          "n": "Idzes",
-          "r": "D",
-          "c": 3
-        },
-        {
-          "n": "Kabasele",
-          "r": "D",
-          "c": 3
-        },
-        {
-          "n": "Bella-Kotchap",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Gallo",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "McTominay",
-          "r": "C",
-          "c": 72
-        },
-        {
-          "n": "Zielinski",
-          "r": "C",
-          "c": 11
-        },
-        {
-          "n": "Saelemaekers",
-          "r": "C",
-          "c": 9
-        },
-        {
-          "n": "Piotrowski",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Bakola",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Pierotti",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Fagioli",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Winks",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Kolo Muani",
-          "r": "A",
-          "c": 135
-        },
-        {
-          "n": "Simeone",
-          "r": "A",
-          "c": 33
-        },
-        {
-          "n": "Esposito F.P.",
-          "r": "A",
-          "c": 30
-        },
-        {
-          "n": "Piccoli",
-          "r": "A",
-          "c": 16
-        },
-        {
-          "n": "N'Dri",
-          "r": "A",
-          "c": 1
-        },
-        {
-          "n": "Milik",
-          "r": "A",
-          "c": 1
-        }
-      ]
-    },
-    "Botaffogo": {
-      "manager": "Andrea",
-      "totale": 471,
-      "rosa": [
-        {
-          "n": "De Gea",
-          "r": "P",
-          "c": 13
-        },
-        {
-          "n": "Mandas",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Thiam",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Molina N.",
-          "r": "D",
-          "c": 38
-        },
-        {
-          "n": "Bastoni",
-          "r": "D",
-          "c": 35
-        },
-        {
-          "n": "Koulierakis",
-          "r": "D",
-          "c": 6
-        },
-        {
-          "n": "Haps",
-          "r": "D",
-          "c": 6
-        },
-        {
-          "n": "Zortea",
-          "r": "D",
-          "c": 6
-        },
-        {
-          "n": "Kelly L.",
-          "r": "D",
-          "c": 5
-        },
-        {
-          "n": "N'Dicka",
-          "r": "D",
-          "c": 3
-        },
-        {
-          "n": "Norton-Cuffy",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Conceicao",
-          "r": "C",
-          "c": 31
-        },
-        {
-          "n": "Rabiot",
-          "r": "C",
-          "c": 26
-        },
-        {
-          "n": "Zambo Anguissa",
-          "r": "C",
-          "c": 14
-        },
-        {
-          "n": "Konè M.",
-          "r": "C",
-          "c": 10
-        },
-        {
-          "n": "Chukwueze",
-          "r": "C",
-          "c": 6
-        },
-        {
-          "n": "Pasalic",
-          "r": "C",
-          "c": 6
-        },
-        {
-          "n": "Fitz-Jim",
-          "r": "C",
-          "c": 3
-        },
-        {
-          "n": "Konè I.",
-          "r": "C",
-          "c": 3
-        },
-        {
-          "n": "Hojlund",
-          "r": "A",
-          "c": 145
-        },
-        {
-          "n": "Yildiz",
-          "r": "A",
-          "c": 52
-        },
-        {
-          "n": "De Ketelaere",
-          "r": "A",
-          "c": 40
-        },
-        {
-          "n": "Santos A.",
-          "r": "A",
-          "c": 12
-        },
-        {
-          "n": "Castro S.",
-          "r": "A",
-          "c": 6
-        },
-        {
-          "n": "Neres",
-          "r": "A",
-          "c": 2
-        }
-      ]
-    },
-    "Al dobaglio": {
-      "manager": "luca",
-      "totale": 381,
-      "rosa": [
-        {
-          "n": "Okoye",
-          "r": "P",
-          "c": 13
-        },
-        {
-          "n": "Skorupski",
-          "r": "P",
-          "c": 9
-        },
-        {
-          "n": "Caprile",
-          "r": "P",
-          "c": 6
-        },
-        {
-          "n": "Dimarco",
-          "r": "D",
-          "c": 100
-        },
-        {
-          "n": "Jimenez A.",
-          "r": "D",
-          "c": 14
-        },
-        {
-          "n": "Ramon",
-          "r": "D",
-          "c": 13
-        },
-        {
-          "n": "Gila",
-          "r": "D",
-          "c": 13
-        },
-        {
-          "n": "Kaiki",
-          "r": "D",
-          "c": 2
-        },
-        {
-          "n": "Viery",
-          "r": "D",
-          "c": 2
-        },
-        {
-          "n": "Bernasconi",
-          "r": "D",
-          "c": 2
-        },
-        {
-          "n": "Carlos Augusto",
-          "r": "D",
-          "c": 2
-        },
-        {
-          "n": "Atta",
-          "r": "C",
-          "c": 50
-        },
-        {
-          "n": "Baturina",
-          "r": "C",
-          "c": 27
-        },
-        {
-          "n": "Moreira",
-          "r": "C",
-          "c": 26
-        },
-        {
-          "n": "Da Cunha",
-          "r": "C",
-          "c": 17
-        },
-        {
-          "n": "Rodriguez Je.",
-          "r": "C",
-          "c": 4
-        },
-        {
-          "n": "Calò",
-          "r": "C",
-          "c": 2
-        },
-        {
-          "n": "Diouf",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Mandragora",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Dovbyk",
-          "r": "A",
-          "c": 39
-        },
-        {
-          "n": "Adams A.",
-          "r": "A",
-          "c": 14
-        },
-        {
-          "n": "Colombo",
-          "r": "A",
-          "c": 8
-        },
-        {
-          "n": "Raspadori",
-          "r": "A",
-          "c": 7
-        },
-        {
-          "n": "Berardi",
-          "r": "A",
-          "c": 7
-        },
-        {
-          "n": "Ghedjemis",
-          "r": "A",
-          "c": 2
-        }
-      ]
-    },
-    "MILFWALL FC": {
-      "manager": "Gabriellone",
-      "totale": 450,
-      "rosa": [
-        {
-          "n": "Vicario",
-          "r": "P",
-          "c": 35
-        },
-        {
-          "n": "Meret",
-          "r": "P",
-          "c": 9
-        },
-        {
-          "n": "Di Gregorio",
-          "r": "P",
-          "c": 3
-        },
-        {
-          "n": "Bremer",
-          "r": "D",
-          "c": 22
-        },
-        {
-          "n": "Pavlovic",
-          "r": "D",
-          "c": 20
-        },
-        {
-          "n": "Ostigard",
-          "r": "D",
-          "c": 13
-        },
-        {
-          "n": "Chalobah T.",
-          "r": "D",
-          "c": 11
-        },
-        {
-          "n": "Vojvoda",
-          "r": "D",
-          "c": 10
-        },
-        {
-          "n": "Obrador",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Coco",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Kamara H.",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Orsolini",
-          "r": "C",
-          "c": 34
-        },
-        {
-          "n": "Rowe",
-          "r": "C",
-          "c": 25
-        },
-        {
-          "n": "Zaccagni",
-          "r": "C",
-          "c": 17
-        },
-        {
-          "n": "Thorstvedt",
-          "r": "C",
-          "c": 4
-        },
-        {
-          "n": "Busio",
-          "r": "C",
-          "c": 3
-        },
-        {
-          "n": "Cristante",
-          "r": "C",
-          "c": 3
-        },
-        {
-          "n": "Isaksen",
-          "r": "C",
-          "c": 2
-        },
-        {
-          "n": "Baldanzi",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Ramos G.",
-          "r": "A",
-          "c": 140
-        },
-        {
-          "n": "Krstovic",
-          "r": "A",
-          "c": 49
-        },
-        {
-          "n": "Lauriente",
-          "r": "A",
-          "c": 33
-        },
-        {
-          "n": "Romero D.",
-          "r": "A",
-          "c": 11
-        },
-        {
-          "n": "Camarda",
-          "r": "A",
-          "c": 1
-        },
-        {
-          "n": "Cutrone",
-          "r": "A",
-          "c": 1
-        }
-      ]
-    },
-    "The Shark fc": {
-      "manager": "squalo",
-      "totale": 497,
-      "rosa": [
-        {
-          "n": "Butez",
-          "r": "P",
-          "c": 36
-        },
-        {
-          "n": "Maignan",
-          "r": "P",
-          "c": 20
-        },
-        {
-          "n": "Muric",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Spence",
-          "r": "D",
-          "c": 20
-        },
-        {
-          "n": "Kalulu",
-          "r": "D",
-          "c": 18
-        },
-        {
-          "n": "Mina",
-          "r": "D",
-          "c": 15
-        },
-        {
-          "n": "Stones",
-          "r": "D",
-          "c": 15
-        },
-        {
-          "n": "Dragusin",
-          "r": "D",
-          "c": 8
-        },
-        {
-          "n": "Tiago Gabriel",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Di Lorenzo",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Zappacosta",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Zaniolo",
-          "r": "C",
-          "c": 55
-        },
-        {
-          "n": "Calhanoglu",
-          "r": "C",
-          "c": 52
-        },
-        {
-          "n": "De Bruyne",
-          "r": "C",
-          "c": 40
-        },
-        {
-          "n": "Taylor K.",
-          "r": "C",
-          "c": 15
-        },
-        {
-          "n": "Perrone",
-          "r": "C",
-          "c": 14
-        },
-        {
-          "n": "Ndour",
-          "r": "C",
-          "c": 6
-        },
-        {
-          "n": "Adzic",
-          "r": "C",
-          "c": 2
-        },
-        {
-          "n": "Modric",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Kean",
-          "r": "A",
-          "c": 167
-        },
-        {
-          "n": "Soulè",
-          "r": "A",
-          "c": 3
-        },
-        {
-          "n": "Leao",
-          "r": "A",
-          "c": 3
-        },
-        {
-          "n": "Kevin Carlos",
-          "r": "A",
-          "c": 1
-        },
-        {
-          "n": "Bowie",
-          "r": "A",
-          "c": 1
-        },
-        {
-          "n": "David",
-          "r": "A",
-          "c": 1
-        }
-      ]
-    },
-    "BASTARDI SENZA GLORIA": {
-      "manager": "Salvo",
-      "totale": 458,
-      "rosa": [
-        {
-          "n": "Carnesecchi",
-          "r": "P",
-          "c": 34
-        },
-        {
-          "n": "Bijlow",
-          "r": "P",
-          "c": 2
-        },
-        {
-          "n": "Sportiello",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Mancini",
-          "r": "D",
-          "c": 28
-        },
-        {
-          "n": "Rrahmani",
-          "r": "D",
-          "c": 14
-        },
-        {
-          "n": "Kristensen T.",
-          "r": "D",
-          "c": 11
-        },
-        {
-          "n": "Marcandalli",
-          "r": "D",
-          "c": 6
-        },
-        {
-          "n": "Valeri",
-          "r": "D",
-          "c": 5
-        },
-        {
-          "n": "Lucumì",
-          "r": "D",
-          "c": 2
-        },
-        {
-          "n": "Comuzzo",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Cambiaso",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Mastantuono",
-          "r": "C",
-          "c": 55
-        },
-        {
-          "n": "Vlasic",
-          "r": "C",
-          "c": 29
-        },
-        {
-          "n": "Samardzic",
-          "r": "C",
-          "c": 18
-        },
-        {
-          "n": "Ederson D.S.",
-          "r": "C",
-          "c": 17
-        },
-        {
-          "n": "Ekkelenkamp",
-          "r": "C",
-          "c": 10
-        },
-        {
-          "n": "Bernardeschi",
-          "r": "C",
-          "c": 2
-        },
-        {
-          "n": "Schmid",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Locatelli",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Thuram",
-          "r": "A",
-          "c": 68
-        },
-        {
-          "n": "Pellegrino M.",
-          "r": "A",
-          "c": 58
-        },
-        {
-          "n": "Davis K.",
-          "r": "A",
-          "c": 58
-        },
-        {
-          "n": "Dybala",
-          "r": "A",
-          "c": 33
-        },
-        {
-          "n": "Yeboah J.",
-          "r": "A",
-          "c": 2
-        },
-        {
-          "n": "Nkunku",
-          "r": "A",
-          "c": 1
-        }
-      ]
-    },
-    "Magnacciuna": {
-      "manager": "Dario",
-      "totale": 500,
-      "rosa": [
-        {
-          "n": "Provedel",
-          "r": "P",
-          "c": 10
-        },
-        {
-          "n": "Stankovic F.",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Martinez Jo.",
-          "r": "P",
-          "c": 1
-        },
-        {
-          "n": "Solet",
-          "r": "D",
-          "c": 34
-        },
-        {
-          "n": "Couto",
-          "r": "D",
-          "c": 21
-        },
-        {
-          "n": "Valdepenas",
-          "r": "D",
-          "c": 15
-        },
-        {
-          "n": "Dodò",
-          "r": "D",
-          "c": 11
-        },
-        {
-          "n": "Celik",
-          "r": "D",
-          "c": 8
-        },
-        {
-          "n": "Bellanova",
-          "r": "D",
-          "c": 3
-        },
-        {
-          "n": "Joao Mario",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Goldaniga",
-          "r": "D",
-          "c": 1
-        },
-        {
-          "n": "Paz N.",
-          "r": "C",
-          "c": 75
-        },
-        {
-          "n": "Pulisic",
-          "r": "C",
-          "c": 27
-        },
-        {
-          "n": "McKennie",
-          "r": "C",
-          "c": 21
-        },
-        {
-          "n": "Politano",
-          "r": "C",
-          "c": 21
-        },
-        {
-          "n": "Gudmundsson A.",
-          "r": "C",
-          "c": 6
-        },
-        {
-          "n": "Douglas Luiz",
-          "r": "C",
-          "c": 4
-        },
-        {
-          "n": "Oristanio",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Odgaard",
-          "r": "C",
-          "c": 1
-        },
-        {
-          "n": "Malen",
-          "r": "A",
-          "c": 191
-        },
-        {
-          "n": "Scamacca",
-          "r": "A",
-          "c": 33
-        },
-        {
-          "n": "Pinamonti",
-          "r": "A",
-          "c": 7
-        },
-        {
-          "n": "Vitinha O.",
-          "r": "A",
-          "c": 4
-        },
-        {
-          "n": "Boga",
-          "r": "A",
-          "c": 2
-        },
-        {
-          "n": "Diao",
-          "r": "A",
-          "c": 1
-        }
-      ]
-    }
-  };
-  var LEGA_TURNI = [[["FC Porcellona", "Magnacciuna"], ["Botaffogo", "MILFWALL FC"], ["BASTARDI SENZA GLORIA", "Al dobaglio"], ["The Shark fc", "FulmiCrotone"]], [["Magnacciuna", "The Shark fc"], ["FulmiCrotone", "BASTARDI SENZA GLORIA"], ["Al dobaglio", "Botaffogo"], ["MILFWALL FC", "FC Porcellona"]], [["Botaffogo", "FulmiCrotone"], ["BASTARDI SENZA GLORIA", "Magnacciuna"], ["The Shark fc", "FC Porcellona"], ["Al dobaglio", "MILFWALL FC"]], [["FC Porcellona", "BASTARDI SENZA GLORIA"], ["Magnacciuna", "Botaffogo"], ["FulmiCrotone", "Al dobaglio"], ["MILFWALL FC", "The Shark fc"]], [["Botaffogo", "FC Porcellona"], ["BASTARDI SENZA GLORIA", "The Shark fc"], ["FulmiCrotone", "MILFWALL FC"], ["Al dobaglio", "Magnacciuna"]], [["FC Porcellona", "Al dobaglio"], ["Magnacciuna", "FulmiCrotone"], ["BASTARDI SENZA GLORIA", "MILFWALL FC"], ["The Shark fc", "Botaffogo"]], [["Botaffogo", "BASTARDI SENZA GLORIA"], ["FulmiCrotone", "FC Porcellona"], ["Al dobaglio", "The Shark fc"], ["MILFWALL FC", "Magnacciuna"]]];
+  var LEGA_SQUADRE = {};
+  var LEGA_TURNI = [];
 
-  // Voti reali della giornata 1 (Salvo, 25/08/2026): [voto in pagella, fantavoto].
-  // Fantavoto null = ha giocato ma il fantavoto coincide col voto, oppure non
-  // disponibile. Chi non ha giocato non compare: nessun voto da registrare.
-  var VOTI_G1 = {
-    "Carnesecchi": [6.5, 6.5], "Cambiaso": [6, 5.5], "Rrahmani": [6.5, 6.5],
-    "Mancini": [6.5, 6.5], "Valeri": [6, 6], "Bernardeschi": [6.5, 6.5],
-    "Samardzic": [6, 6], "Vlasic": [5, 5], "Mastantuono": [5.5, 5.5],
-    "Yeboah J.": [6, 6], "Dybala": [8, 11], "Bijlow": [6, 4],
-    "Marcandalli": [6, 6], "Comuzzo": [6, 6], "Ederson D.S.": [6, 6],
-    "Ekkelenkamp": [6.5, 7.5], "Locatelli": [6, 6], "Schmid": [5, 4.5],
-    "Pellegrino M.": [5, 4.5]
-  };
-  // Fantapunti reali della giornata 1 di tutte e 8 le squadre della lega
-  // (schermata del tabellone, 25/08/2026). Il mio 73 coincide con il totale
-  // ricalcolato dai voti ufficiali, quindi i due dati si confermano a vicenda.
-  var RISULTATI_G1 = {
-    "FC Porcellona": 80.5, "Magnacciuna": 74.5,
-    "Botaffogo": 70.5, "MILFWALL FC": 80.5,
-    "BASTARDI SENZA GLORIA": 73, "Al dobaglio": 68,
-    "The Shark fc": 77, "FulmiCrotone": 77
-  };
+  var RIF_CACHE_KEY = "moduloRiferimentiV1";
+  var rifOrigine = "";
+
+  // Riempie i cinque contenitori a partire dalle righe delle tabelle. Non li
+  // riassegna mai: li svuota e li ripopola, così ogni riferimento già catturato
+  // altrove nel codice continua a vedere gli stessi array.
+  function applicaRiferimenti(rif) {
+    TEAM_LIST.length = 0;
+    (rif.squadre || []).forEach(function (s) {
+      TEAM_LIST.push({ code: s.codice, name: s.nome, tier: s.tier != null ? Number(s.tier) : 3 });
+    });
+
+    FIXTURES.length = 0;
+    (rif.calendario || []).forEach(function (r) {
+      var g = Number(r.giornata);
+      if (!(g >= 1)) return;
+      while (FIXTURES.length < g) FIXTURES.push([]);
+      FIXTURES[g - 1].push([r.casa, r.trasferta]);
+    });
+
+    LISTONE.length = 0;
+    (rif.listone || []).forEach(function (p) {
+      LISTONE.push([
+        p.nome, p.ruolo, p.squadra,
+        p.fmv_exp != null ? Number(p.fmv_exp) : null,
+        p.media_voto != null ? Number(p.media_voto) : null,
+        p.titolarita != null ? Number(p.titolarita) : 3,
+        (p.rigorista ? 1 : 0) + (p.piazzati ? 2 : 0)
+      ]);
+    });
+    LISTONE_INDEX = null;
+
+    Object.keys(LEGA_SQUADRE).forEach(function (k) { delete LEGA_SQUADRE[k]; });
+    (rif.legaSquadre || []).forEach(function (s) {
+      LEGA_SQUADRE[s.nome] = { manager: s.manager, totale: s.budget, rosa: [] };
+      if (s.e_mia) LEGA_MIA = s.nome;
+    });
+    var ordineRuolo = { P: 0, D: 1, C: 2, A: 3 };
+    function pesoRuolo(r) { return ordineRuolo[r] != null ? ordineRuolo[r] : 9; }
+    (rif.legaRose || []).slice().sort(function (a, b) {
+      if (a.squadra !== b.squadra) return a.squadra < b.squadra ? -1 : 1;
+      var d = pesoRuolo(a.ruolo) - pesoRuolo(b.ruolo);
+      if (d !== 0) return d;
+      return (b.costo || 0) - (a.costo || 0);
+    }).forEach(function (r) {
+      var sq = LEGA_SQUADRE[r.squadra];
+      if (sq) sq.rosa.push({ n: r.giocatore, r: r.ruolo, c: r.costo });
+    });
+
+    LEGA_TURNI.length = 0;
+    (rif.legaCalendario || []).forEach(function (r) {
+      var t = Number(r.turno);
+      if (!(t >= 1)) return;
+      while (LEGA_TURNI.length < t) LEGA_TURNI.push([]);
+      LEGA_TURNI[t - 1].push([r.squadra_a, r.squadra_b]);
+    });
+
+    Object.keys(VOTI).forEach(function (k) { delete VOTI[k]; });
+    (rif.voti || []).forEach(function (v) {
+      var g = String(v.giornata);
+      if (!VOTI[g]) VOTI[g] = {};
+      VOTI[g][v.giocatore] = [
+        v.voto != null ? Number(v.voto) : null,
+        v.fantavoto != null ? Number(v.fantavoto) : null
+      ];
+    });
+
+    Object.keys(RISULTATI).forEach(function (k) { delete RISULTATI[k]; });
+    (rif.risultati || []).forEach(function (r) {
+      var g = String(r.giornata);
+      if (!RISULTATI[g]) RISULTATI[g] = {};
+      RISULTATI[g][r.squadra] = r.punti != null ? Number(r.punti) : null;
+    });
+  }
+
+  function rifValidi(rif) {
+    return !!(rif && rif.listone && rif.listone.length && rif.squadre && rif.squadre.length);
+  }
+
+  // Prima la copia locale (l'app parte subito, anche senza rete), poi le tabelle.
+  // Se la rete risponde, la copia locale viene riscritta. Restituisce true se
+  // alla fine i riferimenti sono utilizzabili.
+  async function caricaRiferimenti() {
+    var cache = null;
+    try { cache = JSON.parse(localStorage.getItem(RIF_CACHE_KEY) || "null"); } catch (e) { cache = null; }
+    if (rifValidi(cache)) { applicaRiferimenti(cache); rifOrigine = "cache"; }
+    try {
+      var q = await Promise.all([
+        sb.from("serie_a_squadre").select("codice,nome,tier").order("codice"),
+        sb.from("serie_a_calendario").select("giornata,casa,trasferta").order("giornata").order("casa").limit(1000),
+        sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati").order("nome").limit(2000),
+        sb.from("lega_squadre").select("nome,manager,budget,e_mia").order("nome"),
+        sb.from("lega_rose").select("squadra,giocatore,ruolo,costo").limit(1000),
+        sb.from("lega_calendario").select("turno,squadra_a,squadra_b").order("turno").order("squadra_a"),
+        sb.from("voti_giornata").select("giornata,giocatore,voto,fantavoto").order("giornata").limit(2000),
+        sb.from("risultati_lega").select("giornata,squadra,punti").order("giornata").limit(1000)
+      ]);
+      for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
+      var rif = {
+        squadre: q[0].data, calendario: q[1].data, listone: q[2].data,
+        legaSquadre: q[3].data, legaRose: q[4].data, legaCalendario: q[5].data,
+        voti: q[6].data, risultati: q[7].data
+      };
+      if (!rifValidi(rif)) throw new Error("tabelle di riferimento vuote");
+      applicaRiferimenti(rif);
+      rifOrigine = "cloud";
+      try { localStorage.setItem(RIF_CACHE_KEY, JSON.stringify(rif)); } catch (e) {}
+      return true;
+    } catch (err) {
+      console.warn("Riferimenti non scaricati, uso la copia locale.", err);
+      return rifOrigine === "cache";
+    }
+  }
+
+  // Voti e risultati di lega, giornata per giornata. Anche questi arrivano dalle
+  // tabelle (voti_giornata, risultati_lega): caricare una nuova giornata non
+  // richiede più di toccare il codice.
+  //   VOTI[g] = { "Nome": [voto in pagella, fantavoto] }  — chi non ha giocato non compare
+  //   RISULTATI[g] = { "Squadra": fantapunti }
+  var VOTI = {};
+  var RISULTATI = {};
 
   // Consuntivo giornata 1: schierato 4-4-2, somma fantavoti 71,0 + modificatore
   // +2 (media voto migliori 3 difensori + portiere = 6,375) = 73 punti reali.
   // La previsione della formula ricalibrata per quello stesso 4-4-2 era 73,5.
+  // Unica riga di storico che il codice conosce: è una previsione fatta prima
+  // che il tool tenesse lo storico da sé, quindi non è ricostruibile dai dati.
   var STORICO_G1 = { g: "1", modulo: "4-4-2", previstoSenza: 73.0, previsto: 73.5, ts: "25/08/2026", reale: 73, v: 2 };
 
   function applyVotiGiornata(players, voti, g) {
@@ -3264,9 +2255,86 @@
     });
   }
 
+  // ---------------- normalizzazione dello stato ----------------
+  // Una sola funzione al posto della catena di migrazioni a flag che c'era
+  // prima (dodici "campoTaleAggiunto: true" nel meta, uno per ogni cosa mai
+  // aggiunta). Non è una migrazione: è una normalizzazione idempotente, gira a
+  // ogni avvio e si limita a due cose — riempire i campi mancanti con i loro
+  // default, e recepire dalle tabelle i dati di giornata che l'utente non ha
+  // ancora. Quello che l'utente ha già scritto non viene mai toccato: è la
+  // regola che rende la funzione sicura da rieseguire all'infinito.
+  function normalizzaStato() {
+    var m = state.meta || (state.meta = {});
+    if (!m.modulo) m.modulo = "auto";
+    if (typeof m.modificatore !== "boolean") m.modificatore = true;
+    if (typeof m.includiPortiere !== "boolean") m.includiPortiere = true;
+    if (!m.strategia || !STRATEGY_PROFILES[m.strategia]) m.strategia = "equilibrato";
+    if (typeof m.giornata !== "string") m.giornata = m.giornata != null ? String(m.giornata) : "1";
+    if (typeof m.primaPartita !== "string") m.primaPartita = "";
+    if (typeof m.manualLineup === "undefined") m.manualLineup = null;
+    if (!m.punteggiLega || typeof m.punteggiLega !== "object") m.punteggiLega = {};
+    if (!Array.isArray(m.storico)) m.storico = [];
+    // Modificatore attivo ⇒ la difesa deve stare a 4: un modulo forzato con 3 o
+    // 5 difensori è incompatibile, si torna su Auto.
+    if (m.modificatore && m.modulo !== "auto" && SHAPES[m.modulo] && SHAPES[m.modulo].D !== 4) m.modulo = "auto";
+
+    (state.players || []).forEach(function (p) {
+      // Il vecchio campo unico "fantamedia" è diventato "fantamediaAttesa".
+      if (p.fantamediaAttesa == null && p.fantamedia != null) p.fantamediaAttesa = p.fantamedia;
+      if (p.fantamedia != null) delete p.fantamedia;
+      if (p.fantamediaAttesa == null) p.fantamediaAttesa = 6.0;
+      if (p.fantamediaAttuale == null) p.fantamediaAttuale = "";
+      if (typeof p.note !== "string") p.note = "";
+      if (typeof p.fonte !== "string" || !p.fonte) p.fonte = "probabile";
+      if (typeof p.noteData !== "string") p.noteData = "";
+      if (p.votoReale == null) p.votoReale = "";
+      if (typeof p.pupillo !== "boolean") p.pupillo = false;
+      if (!Array.isArray(p.votiStorico)) p.votiStorico = [];
+      if (!p.modificato || typeof p.modificato !== "object") p.modificato = {};
+      // Rigorista e specialista sui piazzati: il default viene dal listone, che
+      // ora è la fonte unica anche per questi due flag. Vale solo se il campo
+      // manca del tutto — una spunta messa a mano resta com'è.
+      var riga = listoneGet(p.name);
+      var flag = riga && riga[6] != null ? riga[6] : 0;
+      if (typeof p.rigorista !== "boolean") p.rigorista = !!(flag & 1);
+      if (typeof p.piazzati !== "boolean") p.piazzati = !!(flag & 2);
+    });
+
+    // Voti delle giornate già chiuse: li prendo dalla tabella per chi non li ha
+    // ancora registrati. Se una giornata è già nel votiStorico del giocatore,
+    // quella è la versione buona (magari corretta a mano) e non la tocco.
+    Object.keys(VOTI).forEach(function (g) {
+      var daApplicare = {};
+      var qualcosa = false;
+      (state.players || []).forEach(function (p) {
+        var rec = VOTI[g][p.name];
+        if (!rec) return;
+        var gia = (p.votiStorico || []).some(function (h) { return h.g === g; });
+        if (gia) return;
+        daApplicare[p.name] = rec;
+        qualcosa = true;
+      });
+      if (qualcosa) applyVotiGiornata(state.players, daApplicare, g);
+    });
+
+    // Punteggi di lega: stessa regola, riempio solo le caselle vuote.
+    Object.keys(RISULTATI).forEach(function (g) {
+      if (!m.punteggiLega[g]) m.punteggiLega[g] = {};
+      Object.keys(RISULTATI[g]).forEach(function (sq) {
+        if (m.punteggiLega[g][sq] == null) m.punteggiLega[g][sq] = RISULTATI[g][sq];
+      });
+    });
+
+    // La previsione della giornata 1 è precedente allo storico automatico:
+    // la ricreo solo se manca del tutto.
+    if (VOTI["1"] && !m.storico.some(function (h) { return h.g === "1"; })) {
+      m.storico.push(JSON.parse(JSON.stringify(STORICO_G1)));
+    }
+  }
+
   function seedState() {
     var st = {
-      meta: { giornata: "1", primaPartita: "", manualLineup: null, modulo: "auto", modificatore: true, includiPortiere: true, strategia: "equilibrato", notizieAggiornateGiornata1: true, statoGiornata1v2: true, notizieAggiornateGiornata1v3: true, campiFonteVotoAggiunti: true, campoPupilloAggiunto: true, campiSpecialistiAggiunti: true, campoVotiStoricoAggiunto: true, formaNeutraV2: true, cambiasoFantamediaListone: true, listoneAgg2508: true, storico: [] },
+      meta: { giornata: "1", primaPartita: "", manualLineup: null, modulo: "auto", modificatore: true, includiPortiere: true, strategia: "equilibrato", punteggiLega: {}, storico: [] },
       players: SEED_PLAYERS.map(function (x) {
         var p = defaultPlayer(x.role);
         p.name = x.name;
@@ -3319,6 +2387,28 @@ async function loadLivePlayerNews() {
   }
 }
 
+// Vince il più recente. Ogni modifica fatta a mano su status/note/fonte lascia
+// un timbro in p.modificato; la notizia che arriva da Supabase sovrascrive quel
+// campo solo se il suo updated_at è più recente del timbro. Prima non c'era
+// nessun confronto e la ricerca automatica cancellava senza dirlo la correzione
+// appena fatta a mano.
+var CAMPI_NOTIZIA = ["status", "note", "fonte"];
+
+function segnaModifica(p, campo) {
+  if (!p.modificato || typeof p.modificato !== "object") p.modificato = {};
+  p.modificato[campo] = new Date().toISOString();
+}
+
+function notiziaPiuRecente(p, campo, tsNotizia) {
+  if (!tsNotizia) return false;
+  var mio = p.modificato && p.modificato[campo];
+  if (!mio) return true;
+  var a = Date.parse(tsNotizia), b = Date.parse(mio);
+  if (isNaN(a)) return false;
+  if (isNaN(b)) return true;
+  return a > b;
+}
+
 function applyLivePlayerNews(rows) {
   if (!Array.isArray(rows) || !rows.length || !Array.isArray(state.players)) return;
   var byName = {};
@@ -3329,10 +2419,17 @@ function applyLivePlayerNews(rows) {
   state.players.forEach(function (p) {
     var n = byName[String(p.name || "").trim().toLowerCase()];
     if (!n) return;
-    if (n.status) p.status = n.status;
-    if (n.note != null) p.note = n.note;
-    if (n.fonte) p.fonte = n.fonte;
-    if (n.noteData) p.noteData = n.noteData;
+    var toccato = false;
+    CAMPI_NOTIZIA.forEach(function (campo) {
+      var val = n[campo];
+      if (campo === "note" ? val == null : !val) return;
+      if (!notiziaPiuRecente(p, campo, n.updated_at)) return;
+      p[campo] = val;
+      toccato = true;
+    });
+    // La data mostrata sotto la nota segue la nota: la aggiorno solo se qualcosa
+    // è stato davvero sovrascritto.
+    if (toccato && n.noteData) p.noteData = n.noteData;
   });
 }
 
@@ -4078,6 +3175,7 @@ async function refreshLivePlayerNews() {
     }
     row.querySelector('[data-field="note"]').addEventListener("input", function (e) {
       p.note = e.target.value;
+      segnaModifica(p, "note");
       p.noteData = formatDateIt(new Date());
       var dateLabel = row.querySelector('[data-field="noteDataLabel"]');
       if (dateLabel) dateLabel.textContent = "Aggiornato: " + p.noteData;
@@ -4088,6 +3186,7 @@ async function refreshLivePlayerNews() {
     if (fonteSel) {
       fonteSel.addEventListener("change", function (e) {
         p.fonte = e.target.value;
+        segnaModifica(p, "fonte");
         fonteSel.dataset.tone = fonteByKey(p.fonte).tone;
         refreshNoteFlag();
         scheduleSave();
@@ -4134,6 +3233,7 @@ async function refreshLivePlayerNews() {
     var statusSel = row.querySelector('[data-field="status"]');
     statusSel.addEventListener("change", function (e) {
       p.status = e.target.value;
+      segnaModifica(p, "status");
       statusSel.dataset.tone = statusByKey(p.status).tone;
       scheduleSave();
     });
@@ -4916,7 +4016,7 @@ async function refreshLivePlayerNews() {
     });
     html += '</div></div>';
 
-    html += '<table class="compare-table"><thead><tr><th>Modulo</th><th>Senza bonus/malus</th><th>Con bonus/malus</th><th>Reparti</th></tr></thead><tbody>';
+    html += '<div class="compare-wrap"><table class="compare-table"><thead><tr><th>Modulo</th><th>Senza bonus/malus</th><th>Con bonus/malus</th><th>Reparti</th></tr></thead><tbody>';
     Object.keys(SHAPES).forEach(function (name) {
       var r = data.results[name], isWinner = name === data.best;
       html += '<tr class="' + (isWinner ? 'winner' : '') + '"><td>' + name + (isWinner ? (data.forced ? ' ●' : ' ✓') : '') + '</td><td class="num">' + r.totalSenzaBonus.toFixed(1) + '</td><td class="num">' + r.total.toFixed(1) + '</td><td>' +
@@ -4924,7 +4024,7 @@ async function refreshLivePlayerNews() {
         (r.modEligible ? '<div class="warn-note">modificatore +' + r.modBonus.toFixed(1) + ' (media ' + r.modAvg.toFixed(2) + ')</div>' : '') +
         (r.shortage ? '<div class="warn-note">rosa incompleta per questo modulo</div>' : '') + '</td></tr>';
     });
-    html += '</tbody></table><p class="lineup-hint">La tabella resta sempre la scelta pura dell’algoritmo, senza sostituzioni manuali.</p>';
+    html += '</tbody></table></div><p class="lineup-hint">La tabella resta sempre la scelta pura dell’algoritmo, senza sostituzioni manuali.</p>';
     html += '</div><div class="pitch-card"><div class="pitch">' + pitchLinesSvg() + pitchDots(pitchData, bestShape) + '</div></div></div>';
 
     host.innerHTML = html;
@@ -5116,6 +4216,14 @@ async function refreshLivePlayerNews() {
 
   // ---------------- wiring ----------------
   async function init() {
+    // I dati di riferimento arrivano dalle tabelle: senza di loro nessun calcolo
+    // ha senso, quindi si caricano prima di tutto il resto.
+    var rifOk = await caricaRiferimenti();
+    if (!rifOk) {
+      setSaveStatus("err", "Dati non caricati");
+      alert("Non riesco a caricare listone e calendario e non ho una copia locale.\nControlla la connessione e ricarica la pagina.");
+    }
+
     var themePref = loadThemePref();
     applyTheme(themePref);
     document.getElementById("themeToggleBtn").addEventListener("click", function () {
@@ -5186,219 +4294,7 @@ async function refreshLivePlayerNews() {
 
     setSaveStatus("busy", "Caricamento…");
     loadState().then(function () {
-      if (!state.meta.modulo) state.meta.modulo = "auto";
-      if (typeof state.meta.modificatore !== "boolean") state.meta.modificatore = true;
-      if (typeof state.meta.includiPortiere !== "boolean") state.meta.includiPortiere = true;
-      if (!state.meta.strategia || !STRATEGY_PROFILES[state.meta.strategia]) state.meta.strategia = "equilibrato";
-      // Migrazione da versioni salvate prima del 23/08/2026: il vecchio campo
-      // unico "fantamedia" diventa "fantamediaAttesa"; "fantamediaAttuale" parte
-      // vuoto (da compilare a mano man mano che si gioca).
-      var migrated = false;
-      (state.players || []).forEach(function (p) {
-        if (p.fantamediaAttesa == null && p.fantamedia != null) { p.fantamediaAttesa = p.fantamedia; migrated = true; }
-        if (p.fantamediaAttesa == null) { p.fantamediaAttesa = 6.0; migrated = true; }
-        if (p.fantamediaAttuale == null) { p.fantamediaAttuale = ""; migrated = true; }
-        if (p.fantamedia != null) { delete p.fantamedia; migrated = true; }
-        if (p.note == null) { p.note = ""; migrated = true; }
-      });
-      // Scambio giocatore (23/08/2026): Gila sostituito da Cambiaso nella rosa
-      // reale. Aggiorno chi ha ancora "Gila" salvato dal dispositivo, mantenendo
-      // eventuali dati che l'utente avesse già personalizzato (stato, forma,
-      // fantamedia attuale) tranne nome/squadra/fantamedia attesa/calendario.
-      (state.players || []).forEach(function (p) {
-        if (p.name === "Gila") {
-          p.name = "Cambiaso";
-          p.team = "JUV";
-          p.fantamediaAttesa = 7.11;
-          p.avversario = "Frosinone";
-          p.difficolta = "facile";
-          p.casa = false;
-          migrated = true;
-        }
-      });
-      // Modificatore attivo ⇒ difesa sempre a 4 (23/08/2026): se era salvato un
-      // modulo forzato con 3 o 5 difensori, si torna su Auto.
-      if (state.meta.modificatore && state.meta.modulo !== "auto" && SHAPES[state.meta.modulo] && SHAPES[state.meta.modulo].D !== 4) {
-        state.meta.modulo = "auto";
-        migrated = true;
-      }
-      if (typeof state.meta.includiPortiere !== "boolean") { state.meta.includiPortiere = true; migrated = true; }
-      // Ricerca notizie pre-giornata 1 (23/08/2026, una tantum): applica a chi
-      // aveva già salvato la rosa sul dispositivo le stesse notizie/stato già
-      // precaricati per i nuovi utenti in SEED_PLAYERS. Il flag
-      // notizieAggiornateGiornata1 garantisce che scatti una sola volta, così
-      // non sovrascrive eventuali aggiornamenti manuali fatti in seguito.
-      if (!state.meta.notizieAggiornateGiornata1) {
-        var NEWS_UPDATE = {};
-        SEED_PLAYERS.forEach(function (x) { if (x.status || x.note) NEWS_UPDATE[x.name] = x; });
-        (state.players || []).forEach(function (p) {
-          var n = NEWS_UPDATE[p.name];
-          if (n) {
-            if (n.status) p.status = n.status;
-            if (n.note) p.note = n.note;
-          }
-        });
-        state.meta.notizieAggiornateGiornata1 = true;
-        migrated = true;
-      }
-      // Correzione stato giornata 1 v2 (23/08/2026, una tantum, superata dalla v3
-      // sotto): Marcandalli e Kristensen T. erano stati abbassati a "ballottaggio"
-      // per coerenza con una nota poi rivista — lasciato per compatibilità dei
-      // dispositivi che avevano già applicato questa versione.
-      if (!state.meta.statoGiornata1v2) {
-        state.meta.statoGiornata1v2 = true;
-        migrated = true;
-      }
-      // Correzione stato/note giornata 1 v3 (23/08/2026, una tantum): dopo verifica
-      // più approfondita su richiesta dell'utente ("ieri sera non ha giocato Thuram
-      // e Davis ha avuto un risentimento muscolare prima della partita... devi
-      // essere molto più preciso"), riapplico stato e note aggiornate di
-      // SEED_PLAYERS a chi aveva già salvato la rosa: Marcandalli e Kristensen T.
-      // tornano titolari (confermati/verificati), Valeri titolare confermato
-      // (non più ballottaggio), Samardzic titolare previsto (non più ballottaggio),
-      // Pellegrino passa in panchina (Kean favorito), Davis passa ad assente
-      // (escluso dai convocati per un risentimento muscolare, non semplice
-      // titolarità). Flag separato per non sovrascrivere eventuali correzioni
-      // manuali fatte dall'utente dopo questo aggiornamento.
-      if (!state.meta.notizieAggiornateGiornata1v3) {
-        var NEWS_UPDATE_V3 = {};
-        SEED_PLAYERS.forEach(function (x) { NEWS_UPDATE_V3[x.name] = x; });
-        (state.players || []).forEach(function (p) {
-          var n = NEWS_UPDATE_V3[p.name];
-          if (n) {
-            if (n.status) p.status = n.status;
-            if (n.note) p.note = n.note;
-            if (n.fonte) p.fonte = n.fonte;
-            if (n.noteData) p.noteData = n.noteData;
-          }
-        });
-        state.meta.notizieAggiornateGiornata1v3 = true;
-        migrated = true;
-      }
-      // Nuovi campi fonte/noteData/votoReale (23/08/2026, una tantum): chi aveva
-      // già salvato la rosa non ha questi campi nei dati persistiti — li
-      // inizializzo con i default (fonte "probabile", note/voto vuoti) così il
-      // tool non si rompe e mostra comunque i nuovi controlli in ogni riga.
-      if (!state.meta.campiFonteVotoAggiunti) {
-        (state.players || []).forEach(function (p) {
-          if (typeof p.fonte !== "string" || !p.fonte) p.fonte = "probabile";
-          if (typeof p.noteData !== "string") p.noteData = "";
-          if (p.votoReale === undefined || p.votoReale === null) p.votoReale = "";
-        });
-        state.meta.campiFonteVotoAggiunti = true;
-        migrated = true;
-      }
-      // Campo "pupillo" (aggiunto 23/08/2026, su richiesta dell'utente: "ho fatto
-      // delle scommesse/pupilli in fase d'asta, dammi la possibilità di
-      // flaggare i giocatori"): default false per chi aveva già salvato la
-      // rosa, e "1ª partita"/scadenza schieramento a livello di meta.
-      if (!state.meta.campoPupilloAggiunto) {
-        (state.players || []).forEach(function (p) {
-          if (typeof p.pupillo !== "boolean") p.pupillo = false;
-        });
-        state.meta.campoPupilloAggiunto = true;
-        migrated = true;
-      }
-      // Rigorista/Piazzati (aggiunto 23/08/2026, su richiesta dell'utente:
-      // "mettiamo l'opzione rigorista tiratore corner e calci piazzati"):
-      // aggiungo i campi con default false per chi aveva già una rosa
-      // salvata, e riapplico anche i flag noti dei giocatori già in rosa
-      // (ricerca web sui rigoristi/specialisti piazzati Serie A 2026/27).
-      if (!state.meta.campiSpecialistiAggiunti) {
-        (state.players || []).forEach(function (p) {
-          if (typeof p.rigorista !== "boolean") p.rigorista = false;
-          if (typeof p.piazzati !== "boolean") p.piazzati = false;
-          var known = SPECIALISTI_2026[p.name];
-          if (known) {
-            if (known.rigorista) p.rigorista = true;
-            if (known.piazzati) p.piazzati = true;
-          }
-        });
-        state.meta.campiSpecialistiAggiunti = true;
-        migrated = true;
-      }
-      if (typeof state.meta.primaPartita !== "string") { state.meta.primaPartita = ""; migrated = true; }
-      if (typeof state.meta.manualLineup === "undefined") { state.meta.manualLineup = null; migrated = true; }
-      if (!state.meta.punteggiLega || typeof state.meta.punteggiLega !== "object") { state.meta.punteggiLega = {}; migrated = true; }
-      // Cambiaso: la fantamedia attesa era 7,11, presa da una fonte esterna
-      // quando il suo dato non era disponibile. Il listone della lega — la
-      // stessa fonte di tutti gli altri 24 — dice 6,20 (media voto 5,81).
-      // Correggo: era l'errore singolo più grosso della giornata 1.
-      // Listone aggiornato al 25/08/2026: rinfresca le fantamedie attese che
-      // sono cambiate rispetto alla versione precedente del file (Schmid aveva
-      // il default 6,0 perché il dato mancava, ora ce l'ha). Tocca solo chi ha
-      // ancora il valore vecchio, così una correzione fatta a mano resta.
-      if (!state.meta.listoneAgg2508) {
-        var EXP_AGG = { "Cambiaso": [6.2, 6.16], "Lucum\u00ec": [5.99, 5.97], "Mastantuono": [6.94, 6.88], "Schmid": [6, 6.28], "Pellegrino M.": [6.77, 6.67] };
-        (state.players || []).forEach(function (p) {
-          var e = EXP_AGG[p.name];
-          if (e && Number(p.fantamediaAttesa) === e[0]) p.fantamediaAttesa = e[1];
-        });
-        state.meta.listoneAgg2508 = true;
-        migrated = true;
-      }
-      if (!state.meta.cambiasoFantamediaListone) {
-        (state.players || []).forEach(function (p) {
-          if (p.name === "Cambiaso" && Number(p.fantamediaAttesa) === 7.11) p.fantamediaAttesa = 6.2;
-        });
-        state.meta.cambiasoFantamediaListone = true;
-        migrated = true;
-      }
-      // Voti reali in blocco + storico previsioni (aggiunto 23/08/2026, su
-      // richiesta dell'utente dopo "fasi questi" sui miglioramenti proposti).
-      if (!state.meta.campoVotiStoricoAggiunto) {
-        (state.players || []).forEach(function (p) {
-          if (!Array.isArray(p.votiStorico)) p.votiStorico = [];
-        });
-        if (!Array.isArray(state.meta.storico)) state.meta.storico = [];
-        state.meta.campoVotiStoricoAggiunto = true;
-        migrated = true;
-      }
-      // Ricalibrazione della formula (23/08/2026, "riusciamo ad essere più
-      // accurati?"). Le stelle di partenza erano state stimate dall'Affidabilità
-      // del listone: ma l'affidabilità misura quanto un giocatore è costante e
-      // gioca con continuità, cosa che sta già nello Stato e nella fantamedia —
-      // usarla come "forma" era un terzo doppio conteggio, e alzava quasi tutti
-      // a 4-5 stelle aggiungendo ~3 punti a giornata senza distinguere nessuno.
-      // Riporto a 3 (= rende come da previsione) chi non ha ancora voti reali:
-      // da lì in poi le stelle si ritarano da sole sui voti veri.
-      if (!state.meta.formaNeutraV2) {
-        (state.players || []).forEach(function (p) {
-          if (!Array.isArray(p.votiStorico) || p.votiStorico.length === 0) p.forma = 3;
-        });
-        state.meta.formaNeutraV2 = true;
-        migrated = true;
-      }
-      // Voti reali della giornata 1 (25/08/2026): li registro una tantum anche
-      // per chi aveva già la rosa salvata sul proprio dispositivo, insieme alla
-      // riga di storico previsto-vs-reale della stessa giornata. Da qui in poi
-      // fantamedia attuale e forma si aggiornano da sole sui dati veri.
-      // Risultati di lega della giornata 1: li registro una tantum anche per chi
-      // aveva già lo stato salvato, senza toccare eventuali valori già inseriti
-      // a mano (se hai corretto qualcosa, la tua correzione vince).
-      if (!state.meta.risultatiG1) {
-        if (!state.meta.punteggiLega || typeof state.meta.punteggiLega !== "object") state.meta.punteggiLega = {};
-        if (!state.meta.punteggiLega["1"]) state.meta.punteggiLega["1"] = {};
-        Object.keys(RISULTATI_G1).forEach(function (t) {
-          if (state.meta.punteggiLega["1"][t] == null) state.meta.punteggiLega["1"][t] = RISULTATI_G1[t];
-        });
-        state.meta.risultatiG1 = true;
-        migrated = true;
-      }
-      if (!state.meta.votiGiornata1) {
-        applyVotiGiornata(state.players, VOTI_G1, "1");
-        if (!Array.isArray(state.meta.storico)) state.meta.storico = [];
-        var g1 = state.meta.storico.find(function (h) { return h.g === "1"; });
-        if (g1) {
-          g1.modulo = STORICO_G1.modulo; g1.previstoSenza = STORICO_G1.previstoSenza;
-          g1.previsto = STORICO_G1.previsto; g1.reale = STORICO_G1.reale;
-          g1.ts = STORICO_G1.ts; g1.v = 2;
-        } else {
-          state.meta.storico.push(STORICO_G1);
-        }
-        state.meta.votiGiornata1 = true;
-        migrated = true;
-      }
+      normalizzaStato();
       // Le note giornaliere arrivano da Supabase: non sovrascrivono i dati
       // fantacalcistici personali, ma solo status/note/fonte/noteData.
       refreshLivePlayerNews().then(function () { renderSections(); renderResult(); });
