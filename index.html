@@ -30,6 +30,24 @@
     --font-display: "Oswald", "Arial Narrow", sans-serif;
     --font-body: "IBM Plex Sans", system-ui, sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    /* Ruoli: un colore pieno per la maglia sul campetto, uno tenue per la
+       pastiglia a inizio riga. Servono a riconoscere il reparto senza leggere. */
+    --ruolo-p: #c08526;  --ruolo-p-soft: #f7e9cb;
+    --ruolo-d: #2f6fae;  --ruolo-d-soft: #d9e7f5;
+    --ruolo-c: #2f6b45;  --ruolo-c-soft: #dcebe0;
+    --ruolo-a: #b0443a;  --ruolo-a-soft: #f5ddd8;
+    /* Scala del voto atteso: cinque fasce, spiegate nella legenda. La rampa
+       cambia tinta e non solo luminosita', altrimenti a 15px non si distinguono. */
+    --voto-elite: #1b5e3a;
+    --voto-ottimo: #3d8f57;
+    --voto-buono: #6f9457;
+    --voto-sufficiente: #c08526;
+    --voto-rischioso: #b0443a;
+    /* Campo da gioco */
+    --erba-a: #4f8f43;
+    --erba-b: #478138;
+    --erba-linea: rgba(255,255,255,0.72);
+    --maglia-testo: #ffffff;
     color-scheme: light;
   }
 
@@ -56,6 +74,20 @@
       --gold: #e2c069;
       --gold-soft: #382d16;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+      --ruolo-p: #e0b45c;  --ruolo-p-soft: #3a2f16;
+      --ruolo-d: #74a9db;  --ruolo-d-soft: #1b2a38;
+      --ruolo-c: #6fbf85;  --ruolo-c-soft: #1e3324;
+      --ruolo-a: #e08b7e;  --ruolo-a-soft: #38211d;
+      --voto-elite: #7fd39a;
+      --voto-ottimo: #6fbf85;
+      --voto-buono: #a8c98c;
+      --voto-sufficiente: #e0ab53;
+      --voto-rischioso: #e2796b;
+      --erba-a: #33613b;
+      --erba-b: #2d5634;
+      --erba-linea: rgba(255,255,255,0.55);
+    --maglia-testo: #10180f;
+      --maglia-testo: #10180f;
       color-scheme: dark;
     }
   }
@@ -82,6 +114,19 @@
     --gold: #e2c069;
     --gold-soft: #382d16;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+    --ruolo-p: #e0b45c;  --ruolo-p-soft: #3a2f16;
+    --ruolo-d: #74a9db;  --ruolo-d-soft: #1b2a38;
+    --ruolo-c: #6fbf85;  --ruolo-c-soft: #1e3324;
+    --ruolo-a: #e08b7e;  --ruolo-a-soft: #38211d;
+    --voto-elite: #7fd39a;
+    --voto-ottimo: #6fbf85;
+    --voto-buono: #a8c98c;
+    --voto-sufficiente: #e0ab53;
+    --voto-rischioso: #e2796b;
+    --erba-a: #33613b;
+    --erba-b: #2d5634;
+    --erba-linea: rgba(255,255,255,0.55);
+    --maglia-testo: #10180f;
     color-scheme: dark;
   }
 
@@ -824,66 +869,95 @@
     position: relative;
     width: 100%;
     aspect-ratio: 5 / 7;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    background: var(--accent-soft);
+    /* Taglio d'erba: fasce orizzontali alternate, come su un campo vero. */
+    background:
+      repeating-linear-gradient(180deg,
+        var(--erba-a) 0, var(--erba-a) 8.5%,
+        var(--erba-b) 8.5%, var(--erba-b) 17%);
+    box-shadow: inset 0 0 40px rgba(0,0,0,.18);
   }
   .pitch svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .pitch svg.lines .field-lines { stroke: var(--accent-strong); }
+  .pitch svg.lines .field-lines { stroke: var(--erba-linea); }
+  .pitch svg.lines .field-dots { fill: var(--erba-linea); }
+
   .pitch-dot {
     position: absolute;
     transform: translate(-50%, -50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    width: 60px;
+    gap: 4px;
+    width: 76px;
   }
   .pitch-dot .bubble {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: var(--on-accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-mono);
-    font-weight: 600;
-    font-size: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    border: 2px solid var(--surface);
     position: relative;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35));
   }
+  .pitch-dot .shirt { width: 100%; height: 100%; display: block; }
+  .pitch-dot .shirt-body { stroke: rgba(255,255,255,.85); stroke-width: 1.6; }
+  .pitch-dot .shirt-letter {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    /* In tema chiaro le maglie sono sature e la lettera va bianca; in tema scuro
+       sono chiare e la lettera va scura, altrimenti sparisce. */
+    fill: var(--maglia-testo);
+  }
+  .pitch-dot[data-ruolo="P"] .shirt-body { fill: var(--ruolo-p); }
+  .pitch-dot[data-ruolo="D"] .shirt-body { fill: var(--ruolo-d); }
+  .pitch-dot[data-ruolo="C"] .shirt-body { fill: var(--ruolo-c); }
+  .pitch-dot[data-ruolo="A"] .shirt-body { fill: var(--ruolo-a); }
   .pitch-dot .badge {
     position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 16px;
-    height: 16px;
+    top: -4px;
+    right: -5px;
+    width: 17px;
+    height: 17px;
     border-radius: 50%;
     background: var(--gold);
     color: #241c05;
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid #fff;
+  }
+  .pitch-dot .plabel {
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 2px 5px;
+    /* L'etichetta può essere più larga della maglia: resta centrata e sborda
+       da entrambi i lati, così i nomi lunghi non vengono tagliati. */
+    width: max-content;
+    max-width: 88px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
   }
   .pitch-dot .pname {
-    font-size: 9.5px;
+    /* Oswald è condensato: "Bernardeschi" ci sta dove un carattere normale
+       verrebbe troncato, e sul campetto lo spazio è quello che è. */
+    font-family: var(--font-display);
+    font-size: 11px;
     font-weight: 600;
-    text-align: center;
+    letter-spacing: .01em;
     color: var(--text);
-    background: var(--surface);
-    border-radius: 4px;
-    padding: 1px 5px;
     line-height: 1.3;
-    max-width: 60px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+  }
+  .pitch-dot .pmeta {
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    color: var(--text-muted);
+    line-height: 1.25;
+    white-space: nowrap;
   }
 
   .side-col { display: flex; flex-direction: column; gap: 18px; }
@@ -968,28 +1042,10 @@
   .lineup-slot .lscore { font-family: var(--font-mono); color: var(--text-muted); font-size: 12px; width: 34px; text-align: right; flex: none; }
   .reset-lineup-btn { flex: none; }
   .lineup-hint { font-size: 11.5px; color: var(--text-muted); margin: 0 0 10px; }
-  .bench-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    padding: 6px 8px;
-    border-radius: 7px;
-  }
+  /* Le riserve usano la stessa riga della Formazione (.pl-riga): qui resta solo
+     la riga zebrata che le separa. */
+  .bench-item { border-radius: 8px; }
   .bench-item:nth-child(odd) { background: var(--surface-2); }
-  .bench-item .role-tag {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 600;
-    color: var(--text-muted);
-    background: var(--muted-soft);
-    border-radius: 5px;
-    padding: 1px 5px;
-    min-width: 18px;
-    text-align: center;
-  }
-  .bench-item .bname { flex: 1; }
-  .bench-item .bscore { font-family: var(--font-mono); color: var(--text-muted); font-size: 12px; }
 
   .calendar-msg {
     display: none;
@@ -1132,30 +1188,7 @@
     margin: 0 0 9px;
     color: var(--text);
   }
-  .pitch {
-    aspect-ratio: 5 / 7.6;
-    background: linear-gradient(180deg, #739d4b 0%, #628e3d 48%, #729b48 100%);
-    border: 1px solid var(--line);
-  }
-  .pitch-dot { width: 92px; gap: 3px; }
-  .pitch-dot .bubble { width: 34px; height: 34px; font-size: 11px; }
-  .pitch-dot .pname {
-    max-width: 90px;
-    font-size: 10px;
-    padding: 2px 5px;
-  }
-  .pitch-dot .pmeta {
-    font-size: 8px;
-    color: var(--text-muted);
-    background: var(--surface);
-    border-radius: 4px;
-    padding: 1px 4px;
-    white-space: nowrap;
-    box-shadow: 0 1px 2px rgba(0,0,0,.14);
-  }
-  .bench-item { min-height: 38px; }
-  .bench-item .bname { min-width: 0; flex: 1; }
-  .bench-item .bmeta { display:block; font-size:10.5px; color:var(--text-muted); margin-top:1px; }
+  .pitch { aspect-ratio: 5 / 7.4; }
   @media (max-width: 900px) {
     .result-grid { grid-template-columns: 1fr; }
     .result-grid > .side-col, .result-grid > .pitch-card { grid-column: 1; grid-row: auto; }
@@ -1165,15 +1198,41 @@
     .lineup-slot { grid-template-columns: 22px minmax(0,1fr) 48px; padding: 7px; gap: 6px; }
     .lineup-meta { font-size: 10px; }
     .lineup-picker { padding: 4px 5px; }
-    .pitch-dot { width: 72px; }
-    .pitch-dot .pname { max-width: 72px; font-size: 9px; }
+    .pitch-dot { width: 64px; }
+    .pitch-dot .bubble { width: 32px; height: 32px; }
+    /* Anche su telefono l'etichetta sborda dalla maglia: alla larghezza del
+       campetto i quattro difensori distano ~85px, quindi 82px non si toccano. */
+    .pitch-dot .plabel { max-width: 82px; padding: 1px 4px; }
+    .pitch-dot .pname { font-size: 10px; }
+    .pitch-dot .pmeta { font-size: 8px; }
   }
 
   /* ---------- Enhanced formation UI ---------- */
-  .formation-shortcuts { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-  .formation-shortcuts .shortcut { border:1px solid var(--line); background:var(--surface); color:var(--text); border-radius:9px; padding:8px 12px; font-family:var(--font-mono); font-weight:700; cursor:pointer; }
+  .formation-shortcuts { display:flex; gap:9px; flex-wrap:wrap; margin-bottom:12px; }
+  .formation-shortcuts .shortcut {
+    display:flex; align-items:baseline; gap:12px;
+    border:1px solid var(--line); background:var(--surface); color:var(--text);
+    border-radius:10px; padding:9px 14px; cursor:pointer;
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .formation-shortcuts .sc-modulo { font-family:var(--font-mono); font-weight:700; font-size:15px; letter-spacing:.02em; }
+  .formation-shortcuts .sc-punti { font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-weight:600; font-size:15px; color:var(--text-muted); }
   .formation-shortcuts .shortcut:hover { border-color:var(--accent); }
-  .formation-shortcuts .shortcut.active { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+  .formation-shortcuts .shortcut.active { background:var(--accent-strong); color:var(--on-accent); border-color:var(--accent-strong); }
+  .formation-shortcuts .shortcut.active .sc-punti { color:var(--on-accent); }
+
+  /* ---------- Legenda ---------- */
+  .legenda { margin-top:14px; border-top:1px solid var(--line); padding-top:12px; }
+  .legenda h4 {
+    margin:0 0 9px; font-family:var(--font-display); font-size:12px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted);
+  }
+  .legenda-righe + h4 { margin-top:15px; }
+  .legenda-righe { display:grid; grid-template-columns:auto minmax(0,1fr); gap:5px 9px; align-items:center; font-size:11.5px; }
+  .legenda-righe .lg-desc { color:var(--text-muted); }
+  .legenda-righe > .pl-stato, .legenda-righe > .pl-flag, .legenda-righe > .pl-stelle { justify-self:start; }
+  .legenda-pallino { width:11px; height:11px; border-radius:50%; display:block; justify-self:center; }
+  .legenda-nota { margin:11px 0 0; font-size:11px; line-height:1.4; color:var(--text-muted); }
   .formation-shortcuts-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:0 0 6px; font-weight:700; }
   .formation-actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
   .btn-danger-lite { border-color:var(--danger)!important; color:var(--danger)!important; }
@@ -1466,45 +1525,86 @@
   }
 
 
-  /* Lista formazione: versione compatta richiesta */
-  /* Lista formazione: tipografia allineata alle Riserve consigliate */
-  .lineup-slot-compact {
-    grid-template-columns:24px minmax(0,1fr) 58px;
-    min-height:48px;
-    padding:6px 8px;
-    gap:7px;
+  /* ---------- Riga giocatore: una sola grammatica ----------
+     Pastiglia del ruolo · nome con badge · avversario e difficoltà · voto atteso
+     grande e colorato a destra. La usano la lista Formazione e le Riserve. */
+  .pl-riga {
+    position: relative;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 12px;
+    min-height: 54px;
   }
-  .lineup-slot-compact .lineup-role {
-    width:auto; height:auto; border-radius:0;
-    display:block; background:transparent; color:var(--text-muted);
-    font-family:var(--font-mono); font-size:10.5px; font-weight:600;
-    text-align:left;
+  .pl-ruolo {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 13px;
+    line-height: 1;
   }
-  .lineup-slot-compact .lineup-player-top { gap:6px; flex-wrap:nowrap; align-items:baseline; }
-  .lineup-slot-compact .lineup-player-name {
-    font-family:var(--font-body); font-size:13px; font-weight:600; line-height:1.15;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  .pl-ruolo[data-ruolo="P"] { background: var(--ruolo-p-soft); color: var(--ruolo-p); }
+  .pl-ruolo[data-ruolo="D"] { background: var(--ruolo-d-soft); color: var(--ruolo-d); }
+  .pl-ruolo[data-ruolo="C"] { background: var(--ruolo-c-soft); color: var(--ruolo-c); }
+  .pl-ruolo[data-ruolo="A"] { background: var(--ruolo-a-soft); color: var(--ruolo-a); }
+  .pl-main { min-width: 0; }
+  .pl-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .pl-nome {
+    font-family: var(--font-body); font-weight: 700; font-size: 14.5px;
+    line-height: 1.2; letter-spacing: -0.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
   }
-  .lineup-slot-compact .lineup-status {
-    flex:none; font-size:9px; padding:1px 5px; border-radius:5px;
+  .pl-stato {
+    flex: none; font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+    letter-spacing: .02em; padding: 2px 5px; border-radius: 5px;
+    background: var(--muted-soft); color: var(--text-muted);
   }
-  .lineup-slot-compact .lineup-info {
-    margin-top:2px; font-family:var(--font-body); font-size:10.5px; line-height:1.1;
-    color:var(--text-muted);
+  .pl-stato[data-tone="good"] { background: var(--good-soft); color: var(--good); }
+  .pl-stato[data-tone="warn"] { background: var(--warn-soft); color: var(--warn); }
+  .pl-stato[data-tone="danger"] { background: var(--danger-soft); color: var(--danger); }
+  .pl-stelle { flex: none; color: var(--gold); font-size: 11px; letter-spacing: .5px; }
+  .pl-flag {
+    flex: none; font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    padding: 1px 4px; border-radius: 4px; border: 1px solid currentColor;
+    line-height: 1.35;
   }
-  .lineup-slot-compact .lineup-picker-select {
-    position:relative; right:auto; top:auto; width:58px; height:32px; opacity:1; pointer-events:auto; cursor:pointer; z-index:20;
-    flex:none; margin:0; padding:4px 7px; border:1px solid var(--line); border-radius:7px;
-    background:var(--surface-2); color:var(--text); font-family:var(--font-mono); font-size:13px; font-weight:600;
-    text-align:center; appearance:auto;
+  .pl-flag[data-flag="r"], .pl-flag[data-flag="p"] { color: var(--ruolo-d); }
+  .pl-flag[data-flag="pup"] { color: var(--gold); }
+  .pl-info {
+    margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: var(--text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .lineup-slot-compact .lineup-picker-select:focus { outline:2px solid var(--accent); outline-offset:1px; }
-  @media(max-width:760px){
-    .lineup-slot-compact { grid-template-columns:22px minmax(0,1fr) 52px; gap:6px; padding:6px 7px; }
-    .lineup-slot-compact .lineup-player-name { font-size:12.5px; }
-    .lineup-slot-compact .lineup-info { font-size:10px; }
-    .lineup-slot-compact .lineup-picker-select { right:auto; width:58px; }
+  .pl-punteggio { display: flex; align-items: center; gap: 7px; justify-self: end; }
+  .pl-voto {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-weight: 600; font-size: 17px; line-height: 1;
+    color: var(--voto-buono);
   }
+  .pl-voto[data-fascia="elite"] { color: var(--voto-elite); font-weight: 700; }
+  .pl-voto[data-fascia="ottimo"] { color: var(--voto-ottimo); }
+  .pl-voto[data-fascia="buono"] { color: var(--voto-buono); }
+  .pl-voto[data-fascia="sufficiente"] { color: var(--voto-sufficiente); }
+  .pl-voto[data-fascia="rischioso"] { color: var(--voto-rischioso); font-weight: 700; }
+  .pl-freccia { color: var(--text-muted); font-size: 14px; line-height: 1; }
+  /* La riga della Formazione è cliccabile: il select copre tutta la riga e resta
+     invisibile, così si apre il selettore nativo del sistema toccando ovunque. */
+  .pl-riga .lineup-picker-select {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0; z-index: 3;
+  }
+  .pl-riga:has(.lineup-picker-select):hover { background: var(--surface-2); }
+  .pl-riga .lineup-picker-select:focus-visible { opacity: 1; outline: 2px solid var(--accent); }
+  @media (max-width: 760px) {
+    .pl-riga { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 9px; padding: 8px 10px; min-height: 50px; }
+    .pl-ruolo { width: 24px; height: 24px; font-size: 12px; }
+    .pl-nome { font-size: 13.5px; }
+    .pl-info { font-size: 11px; }
+    .pl-voto { font-size: 16px; }
+  }
+
+  /* Le vecchie regole compatte sono state sostituite dalla grammatica .pl-riga
+     qui sopra: restano solo i contenitori dei gruppi. */
+  .lineup-summary { font-size: 11.5px; color: var(--text-muted); margin: 0 0 10px; }
 
   /* ---------- Lista giocatori: reparti senza riquadro esterno ---------- */
   .lineup-group {
@@ -3206,6 +3306,66 @@ async function refreshLivePlayerNews() {
     return t ? t + " " : "";
   }
 
+  // ---------------- riga giocatore, grammatica unica ----------------
+  // Una sola forma per la lista Formazione e per le Riserve: pastiglia del ruolo,
+  // nome con i suoi badge, riga avversario/difficoltà, e a destra il voto atteso
+  // grande e colorato. Il voto è il numero per cui esiste tutto il resto, e prima
+  // era la cosa più piccola della riga.
+  var VOTO_FASCE = [
+    { min: 8, key: "elite", label: "Elite" },
+    { min: 7, key: "ottimo", label: "Ottimo" },
+    { min: 6, key: "buono", label: "Buono" },
+    { min: 5, key: "sufficiente", label: "Sufficiente" },
+    { min: -Infinity, key: "rischioso", label: "Rischioso" }
+  ];
+  function fasciaVoto(v) {
+    for (var i = 0; i < VOTO_FASCE.length; i++) if (v >= VOTO_FASCE[i].min) return VOTO_FASCE[i];
+    return VOTO_FASCE[VOTO_FASCE.length - 1];
+  }
+  var STATO_BREVE = {
+    titolare: "TIT",
+    ballottaggio_fav: "BAL+",
+    ballottaggio: "BAL",
+    ballottaggio_sfav: "BAL−",
+    panchina: "PCH",
+    assente: "ASS"
+  };
+  function stelleTesto(n) {
+    var f = Math.max(1, Math.min(5, Math.round(Number(n) || 3)));
+    return "★★★★★".slice(0, f) + "☆☆☆☆☆".slice(0, 5 - f);
+  }
+  function badgeSpecialisti(p) {
+    var out = "";
+    if (p.rigorista) out += '<span class="pl-flag" data-flag="r" title="Rigorista">R</span>';
+    if (p.piazzati) out += '<span class="pl-flag" data-flag="p" title="Specialista su punizioni e corner">P</span>';
+    if (p.pupillo) out += '<span class="pl-flag" data-flag="pup" title="Pupillo d\'asta">PUP</span>';
+    return out;
+  }
+  // freccia: mostra il chevron a destra del voto (righe cliccabili per cambiare
+  // giocatore). Il voto passato è già il valore atteso, non la fantamedia grezza.
+  function rigaGiocatoreHtml(p, voto, opts) {
+    opts = opts || {};
+    var st = statusByKey(p.status);
+    var fascia = fasciaVoto(voto);
+    var sede = p.casa ? "C" : "T";
+    var avv = p.avversario ? escapeHtml(p.avversario) + " (" + sede + ")" : "avversario da impostare";
+    var diff = diffByKey(p.difficolta);
+    return '<span class="pl-ruolo" data-ruolo="' + p.role + '">' + p.role + '</span>' +
+      '<div class="pl-main">' +
+        '<div class="pl-top">' +
+          '<span class="pl-nome">' + escapeHtml(p.name || "(senza nome)") + '</span>' +
+          '<span class="pl-stato" data-tone="' + st.tone + '" title="' + escapeAttr(st.label) + '">' + escapeHtml(STATO_BREVE[p.status] || "") + '</span>' +
+          '<span class="pl-stelle" title="Forma: ' + (Math.round(Number(p.forma) || 3)) + ' su 5">' + stelleTesto(p.forma) + '</span>' +
+          badgeSpecialisti(p) +
+        '</div>' +
+        '<div class="pl-info">vs ' + avv + ' · Difficoltà: ' + escapeHtml(diff.label) + '</div>' +
+      '</div>' +
+      '<div class="pl-punteggio">' +
+        '<span class="pl-voto" data-fascia="' + fascia.key + '" title="Voto atteso — ' + fascia.label + '">' + voto.toFixed(1) + '</span>' +
+        (opts.freccia ? '<span class="pl-freccia" aria-hidden="true">⌄</span>' : '') +
+      '</div>';
+  }
+
   function renderSections() {
     var host = document.getElementById("sections");
     host.innerHTML = "";
@@ -4226,7 +4386,10 @@ async function refreshLivePlayerNews() {
       if (!allowed) return;
       var rr = data.results[name];
       var active = name === data.best ? ' active' : '';
-      html += '<button type="button" class="shortcut'+active+'" data-formation-shortcut="'+name+'">'+name+(rr ? ' · '+rr.total.toFixed(1) : '')+'</button>';
+      html += '<button type="button" class="shortcut'+active+'" data-formation-shortcut="'+name+'">' +
+        '<span class="sc-modulo">'+name+'</span>' +
+        (rr ? '<span class="sc-punti">'+rr.total.toFixed(1)+'</span>' : '') +
+        '</button>';
     });
     html += '</div>';
 
@@ -4250,7 +4413,7 @@ async function refreshLivePlayerNews() {
     html += '<div class="bench-card"><h3>Riserve consigliate</h3><div class="bench-list">';
     if (!bestResult.bench.length) html += '<div class="empty-row">Nessuna riserva disponibile.</div>';
     else bestResult.bench.forEach(function (x) {
-      html += '<div class="bench-item"><span class="role-tag">' + x.p.role + '</span><span class="bname">' + specialistTags(x.p) + escapeHtml(x.p.name || "(senza nome)") + '</span><span class="bscore">' + x.s.adj.toFixed(1) + '</span></div>';
+      html += '<div class="bench-item pl-riga">' + rigaGiocatoreHtml(x.p, x.s.raw, {}) + '</div>';
     });
     html += '</div></div>';
 
@@ -4263,7 +4426,7 @@ async function refreshLivePlayerNews() {
         (r.shortage ? '<div class="warn-note">rosa incompleta per questo modulo</div>' : '') + '</td></tr>';
     });
     html += '</tbody></table></div><p class="lineup-hint">La tabella resta sempre la scelta pura dell’algoritmo, senza sostituzioni manuali.</p>';
-    html += '</div><div class="pitch-card"><div class="pitch">' + pitchLinesSvg() + pitchDots(pitchData, bestShape) + '</div></div></div>';
+    html += '</div><div class="pitch-card"><div class="pitch">' + pitchLinesSvg() + pitchDots(pitchData, bestShape) + '</div>' + legendaHtml() + '</div></div>';
 
     host.innerHTML = html;
     wireLineupEditor(data, bestResult);
@@ -4320,19 +4483,10 @@ async function refreshLivePlayerNews() {
           var sel=current&&current.p.id===x.p.id?' selected':'';
           return '<option value="'+x.p.id+'"'+sel+'>'+escapeHtml(specialistTags(x)+(x.p.name||'(senza nome)')+' — '+x.s.adj.toFixed(1))+'</option>';
         }).join('');
-        var opp = p ? opponentCode(p.avversario) : '—';
-        var team = p && p.team ? p.team : '—';
-        var value = sc ? sc.adj.toFixed(1).replace('.', ',') : '—';
-        var shortStatus = p ? (statusShort[p.status] || String(st ? st.label : '').toUpperCase()) : '';
-        html += '<div class="lineup-slot lineup-slot-compact">'+
-          '<span class="lineup-role">'+r.key+'.</span>'+ 
-          '<div class="lineup-player-main">'+
-            '<div class="lineup-player-top"><span class="lineup-player-name">'+escapeHtml(p?(p.name||'(senza nome)'):'—')+'</span>'+ 
-            (shortStatus?'<span class="lineup-status" data-tone="'+st.tone+'">'+escapeHtml(shortStatus)+'</span>':'')+
-            '</div>'+ 
-            '<div class="lineup-info"><span>'+escapeHtml(team)+' vs '+escapeHtml(opp)+'</span></div>'+ 
-          '</div>'+ 
-          '<select class="lineup-picker-select" data-role="'+r.key+'" data-slot="'+i+'" aria-label="Cambia giocatore">'+opts+'</select>'+ 
+        html += '<div class="lineup-slot pl-riga">' +
+          (p ? rigaGiocatoreHtml(p, sc ? sc.raw : 0, { freccia: true })
+             : '<span class="pl-ruolo" data-ruolo="' + r.key + '">' + r.key + '</span><div class="pl-main"><div class="pl-top"><span class="pl-nome">—</span></div><div class="pl-info">nessun giocatore disponibile</div></div><div class="pl-punteggio"><span class="pl-voto">—</span></div>') +
+          '<select class="lineup-picker-select" data-role="'+r.key+'" data-slot="'+i+'" aria-label="Cambia giocatore">'+opts+'</select>'+
         '</div>';
       }
       html += '</div></div>';
@@ -4378,15 +4532,71 @@ async function refreshLivePlayerNews() {
       '<div class="sub">' + x.p.role + ' · voto atteso ' + x.s.raw.toFixed(1) + '</div></div>';
   }
 
+  // Campo vero e proprio: perimetro, meta campo, cerchio e dischetto di
+  // centrocampo, due aree grandi con le rispettive aree piccole e i dischetti
+  // del rigore. Il taglio d'erba a strisce sta nel CSS (.pitch), non qui.
+  // Legenda: fino a ieri i badge (TIT, BAL, R, P, PUP) e il colore dei numeri non
+  // erano spiegati da nessuna parte. Sta accanto al campetto perché è lì che si
+  // guardano i simboli.
+  function legendaHtml() {
+    var stati = [
+      ["titolare", "Titolare"],
+      ["ballottaggio_fav", "Ballottaggio favorito"],
+      ["ballottaggio", "Ballottaggio pari"],
+      ["ballottaggio_sfav", "Ballottaggio sfavorito"],
+      ["panchina", "Panchina"],
+      ["assente", "Assente o squalificato"]
+    ];
+    var html = '<div class="legenda"><h4>Stato</h4><div class="legenda-righe">';
+    stati.forEach(function (r) {
+      var st = statusByKey(r[0]);
+      html += '<span class="pl-stato" data-tone="' + st.tone + '">' + escapeHtml(STATO_BREVE[r[0]]) + '</span>' +
+        '<span class="lg-desc">' + escapeHtml(r[1]) + '</span>';
+    });
+    html += '</div><h4>Simboli</h4><div class="legenda-righe">' +
+      '<span class="pl-flag" data-flag="r">R</span><span class="lg-desc">Rigorista</span>' +
+      '<span class="pl-flag" data-flag="p">P</span><span class="lg-desc">Specialista su punizioni e corner</span>' +
+      '<span class="pl-flag" data-flag="pup">PUP</span><span class="lg-desc">Pupillo d\'asta</span>' +
+      '<span class="pl-stelle">★★★☆☆</span><span class="lg-desc">Forma recente, 3 = rende come da previsione</span>' +
+      '</div>';
+    html += '<h4>Voto atteso</h4><div class="legenda-righe">';
+    var etichette = { elite: "8 e oltre", ottimo: "7 – 7,9", buono: "6 – 6,9", sufficiente: "5 – 5,9", rischioso: "sotto 5" };
+    VOTO_FASCE.forEach(function (f) {
+      html += '<span class="legenda-pallino" style="background:var(--voto-' + f.key + ')"></span>' +
+        '<span class="lg-desc"><b>' + escapeHtml(etichette[f.key]) + '</b> · ' + escapeHtml(f.label) + '</span>';
+    });
+    html += '</div>';
+    html += '<p class="legenda-nota">Il numero è il voto atteso <b>se scende in campo</b>. L\'ordine delle liste tiene conto anche della probabilità che giochi, che è quella del badge di stato: per questo un BAL può stare sotto un TIT con voto più basso.</p>';
+    html += '</div>';
+    return html;
+  }
+
   function pitchLinesSvg() {
     return '<svg class="lines" viewBox="0 0 100 140" preserveAspectRatio="none">' +
-      '<g class="field-lines" fill="none" stroke-opacity="0.4" stroke-width="1">' +
-      '<rect x="3" y="3" width="94" height="134" rx="3"/>' +
-      '<line x1="3" y1="70" x2="97" y2="70"/>' +
-      '<circle cx="50" cy="70" r="13"/>' +
-      '<rect x="22" y="3" width="56" height="20"/>' +
-      '<rect x="22" y="117" width="56" height="20"/>' +
+      '<g class="field-lines" fill="none" stroke-width="0.7" stroke-linejoin="round">' +
+      '<rect x="3.5" y="3.5" width="93" height="133"/>' +
+      '<line x1="3.5" y1="70" x2="96.5" y2="70"/>' +
+      '<circle cx="50" cy="70" r="12"/>' +
+      '<rect x="21" y="3.5" width="58" height="19"/>' +
+      '<rect x="35" y="3.5" width="30" height="8"/>' +
+      '<rect x="21" y="117.5" width="58" height="19"/>' +
+      '<rect x="35" y="128.5" width="30" height="8"/>' +
+      '</g>' +
+      '<g class="field-dots" stroke="none">' +
+      '<circle cx="50" cy="70" r="0.9"/>' +
+      '<circle cx="50" cy="16" r="0.8"/>' +
+      '<circle cx="50" cy="124" r="0.8"/>' +
       '</g></svg>';
+  }
+
+  // Maglia: sagoma semplice con maniche, riempita col colore del ruolo e con la
+  // lettera del reparto al centro. Meglio di un pallino: si riconosce il reparto
+  // senza leggere, che è il motivo per cui il campetto esiste.
+  function shirtSvg(role) {
+    return '<svg class="shirt" viewBox="0 0 40 40" aria-hidden="true">' +
+      '<path class="shirt-body" d="M13.5 4 L20 7.5 L26.5 4 L36 9 L32 17 L29 15.5 V36 H11 V15.5 L8 17 L4 9 Z"/>' +
+      '<text class="shirt-letter" x="20" y="27" text-anchor="middle">' + role + '</text>' +
+      '</svg>';
   }
 
   function pitchDots(data, shape) {
@@ -4400,13 +4610,30 @@ async function refreshLivePlayerNews() {
         var top = rowsTop[roleKey];
         var isCap = data.captain && data.captain.p.id === x.p.id;
         var isVice = data.vice && data.vice.p.id === x.p.id;
-        html += '<div class="pitch-dot" style="left:' + left + '%; top:' + top + '%;">' +
-          '<div class="bubble">' + (isCap ? '<span class="badge">C</span>' : (isVice ? '<span class="badge">V</span>' : "")) + initials(x.p.name || roleKey) + '</div>' +
-          '<div class="pname">' + specialistTags(x.p) + escapeHtml(shortName(x.p.name) || roleKey) + '</div>' +
-          '<div class="pmeta">' + escapeHtml(x.p.avversario ? ('vs ' + x.p.avversario) : 'avversario —') + ' · ' + x.s.adj.toFixed(1) + '</div></div>';
+        var codiceAvv = x.p.avversario ? opponentCodeGlobal(x.p.avversario) : null;
+        var sede = x.p.casa ? "C" : "T";
+        html += '<div class="pitch-dot" data-ruolo="' + roleKey + '" style="left:' + left + '%; top:' + top + '%;">' +
+          '<div class="bubble">' + shirtSvg(roleKey) +
+            (isCap ? '<span class="badge" title="Capitano">C</span>' : (isVice ? '<span class="badge" title="Vice capitano">V</span>' : "")) + '</div>' +
+          '<div class="plabel">' +
+            '<div class="pname">' + escapeHtml(shortName(x.p.name) || roleKey) + '</div>' +
+            '<div class="pmeta">' + (codiceAvv ? 'vs ' + escapeHtml(codiceAvv) + ' (' + sede + ')' : 'avversario —') + '</div>' +
+          '</div></div>';
       });
     });
     return html;
+  }
+
+  // Sigla di tre lettere dell'avversario: sul campetto il nome per esteso non ci
+  // sta e veniva troncato ("vs Fiorentina" → "vs Fiorentin…").
+  function opponentCodeGlobal(name) {
+    if (!name) return "";
+    var n = String(name).trim().toLowerCase();
+    for (var i = 0; i < TEAM_LIST.length; i++) {
+      if (String(TEAM_LIST[i].name).toLowerCase() === n) return TEAM_LIST[i].code;
+      if (String(TEAM_LIST[i].code).toLowerCase() === n) return TEAM_LIST[i].code;
+    }
+    return String(name).trim().slice(0, 3).toUpperCase();
   }
 
   function initials(name) {
@@ -4415,10 +4642,17 @@ async function refreshLivePlayerNews() {
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
+  // Nel listone i nomi sono "Cognome Iniziale." per distinguere gli omonimi
+  // (Yeboah J., Ederson D.S., Kristensen T.). Prendendo l'ultima parola, sul
+  // campetto comparivano "J.", "D.S.", "T." — cioè l'iniziale invece del nome.
+  // Qui si tolgono le iniziali finali e si tiene il resto.
   function shortName(name) {
     if (!name) return "";
-    var parts = name.trim().split(/\s+/);
-    return parts[parts.length - 1];
+    var parts = String(name).trim().split(/\s+/);
+    while (parts.length > 1 && /^[A-Za-zÀ-ÿ]\.?([A-Za-zÀ-ÿ]\.?)?\.?$/.test(parts[parts.length - 1]) && parts[parts.length - 1].indexOf(".") !== -1) {
+      parts.pop();
+    }
+    return parts.join(" ");
   }
 
   // ---------------- calendario ----------------
