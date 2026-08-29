@@ -2692,6 +2692,62 @@ async function refreshLivePlayerNews() {
     }
     return 0;
   }
+
+  // Il Modificatore è una funzione a gradini di una media STIMATA, ed è il
+  // punto in cui è più facile ingannarsi da soli. Massimizzare il gradino sul
+  // valore puntuale spinge a inseguire una fascia per un centesimo: si compra
+  // una probabilità del 50% di prendere +1 al prezzo di mezzo punto di
+  // fantavoto certo. Quindi per SCEGLIERE la difesa non si usa il gradino, si
+  // usa il valore atteso del bonus integrando l'incertezza sui voti.
+  //
+  // MEDIA_VOTO_SD: quanto oscilla il voto in pagella di un giocatore attorno
+  // alla sua media. Sui 19 voti reali della giornata 1 la deviazione standard è
+  // ~0,46 escludendo l'8 di Dybala, ~0,63 includendolo. 0,5 è una stima
+  // prudente su un campione minuscolo: va rivista quando ci saranno più
+  // giornate, ed è il primo numero da ricontrollare se qualcosa non torna.
+  var MEDIA_VOTO_SD = 0.5;
+  // Approssimazione di Abramowitz-Stegun 7.1.26 per la normale cumulativa
+  // (errore < 1,5e-7): serve solo a pesare le fasce, non vale la pena di più.
+  function normCdf(z) {
+    var segno = z < 0 ? -1 : 1;
+    var x = Math.abs(z) / Math.SQRT2;
+    var t = 1 / (1 + 0.3275911 * x);
+    var y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return 0.5 * (1 + segno * y);
+  }
+  // Somma di bonus_fascia × probabilità di finire in quella fascia.
+  function modificatoreAtteso(avg, n) {
+    if (avg == null) return 0;
+    var sd = MEDIA_VOTO_SD / Math.sqrt(n || 4);
+    var atteso = 0;
+    for (var i = 0; i < MODIFICATORE_BONUS_TABLE.length; i++) {
+      var lo = MODIFICATORE_BONUS_TABLE[i].min;
+      var hi = i === 0 ? Infinity : MODIFICATORE_BONUS_TABLE[i - 1].min;
+      var pHi = hi === Infinity ? 1 : normCdf((hi - avg) / sd);
+      var pLo = lo === -Infinity ? 0 : normCdf((lo - avg) / sd);
+      atteso += MODIFICATORE_BONUS_TABLE[i].bonus * (pHi - pLo);
+    }
+    return atteso;
+  }
+  // Quanto manca alla fascia successiva e che probabilità c'è di arrivarci.
+  // Serve a mostrare la situazione, non a decidere: se sei a 0,03 dalla fascia
+  // è un'informazione che cambia come guardi il numero.
+  function modificatoreProssimaFascia(avg, n) {
+    if (avg == null) return null;
+    var next = null;
+    // La tabella è ordinata per soglia decrescente: l'ultima soglia sopra la
+    // media è la più vicina.
+    for (var i = 0; i < MODIFICATORE_BONUS_TABLE.length; i++) {
+      if (MODIFICATORE_BONUS_TABLE[i].min > avg) next = MODIFICATORE_BONUS_TABLE[i];
+    }
+    if (!next || next.min === Infinity) return null;
+    var sd = MEDIA_VOTO_SD / Math.sqrt(n || 4);
+    return {
+      soglia: next.min, bonus: next.bonus,
+      distanza: next.min - avg,
+      prob: 1 - normCdf((next.min - avg) / sd)
+    };
+  }
   // Voto usato nel calcolo del Modificatore: se il giocatore ha un "Voto reale"
   // compilato (ultima giornata effettivamente giocata) si usa quello — è il dato
   // vero della regola di lega. Altrimenti si ricade sulla fantamedia come stima
@@ -2749,15 +2805,17 @@ async function refreshLivePlayerNews() {
     if (p.votoReale != null && p.votoReale !== "") return true;
     return Array.isArray(p.votiStorico) && p.votiStorico.length > 0;
   }
-  var MOD_NO_RESULT = { bonus: 0, avg: null, eligible: false, realCount: 0, totalCount: 0 };
-  function teamModificatoreBonus(chosen, shapeD) {
-    if (!state.meta.modificatore || shapeD !== 4) return MOD_NO_RESULT;
-    var defPlayers = (chosen.D || []).map(function (x) { return x.p; })
+  var MOD_NO_RESULT = { bonus: 0, avg: null, eligible: false, realCount: 0, totalCount: 0, atteso: 0, prossima: null };
+  // Calcolo del Modificatore su una selezione esplicita di difensori e portiere,
+  // così lo si può valutare anche su combinazioni ipotetiche durante la scelta
+  // della difesa, non solo sull'undici già formato.
+  function modificatoreDaSelezione(dEntries, pEntries) {
+    var defPlayers = (dEntries || []).map(function (x) { return x.p; })
       .sort(function (a, b) { return effectiveVotoModificatore(b) - effectiveVotoModificatore(a); });
     var picked;
     if (state.meta.includiPortiere !== false) {
       if (defPlayers.length < 3) return MOD_NO_RESULT;
-      var gk = (chosen.P || [])[0];
+      var gk = (pEntries || [])[0];
       if (!gk) return MOD_NO_RESULT;
       picked = defPlayers.slice(0, 3).concat([gk.p]);
     } else {
@@ -2767,7 +2825,16 @@ async function refreshLivePlayerNews() {
     var votes = picked.map(effectiveVotoModificatore);
     var realCount = picked.filter(hasVotoReale).length;
     var avg = votes.reduce(function (a, b) { return a + b; }, 0) / votes.length;
-    return { bonus: modificatoreBonusFromAvg(avg), avg: avg, eligible: true, realCount: realCount, totalCount: votes.length };
+    return {
+      bonus: modificatoreBonusFromAvg(avg), avg: avg, eligible: true,
+      realCount: realCount, totalCount: votes.length,
+      atteso: modificatoreAtteso(avg, votes.length),
+      prossima: modificatoreProssimaFascia(avg, votes.length)
+    };
+  }
+  function teamModificatoreBonus(chosen, shapeD) {
+    if (!state.meta.modificatore || shapeD !== 4) return MOD_NO_RESULT;
+    return modificatoreDaSelezione(chosen.D || [], chosen.P || []);
   }
 
   // Pupillo/preferito d'asta (aggiunto 23/08/2026, su richiesta dell'utente:
@@ -2851,21 +2918,116 @@ async function refreshLivePlayerNews() {
     return { order: order, sub: sub };
   }
 
+  // Tutte le combinazioni di k elementi.
+  function combinazioni(arr, k) {
+    var out = [];
+    (function rec(start, acc) {
+      if (acc.length === k) { out.push(acc.slice()); return; }
+      for (var i = start; i < arr.length; i++) { acc.push(arr[i]); rec(i + 1, acc); acc.pop(); }
+    })(0, []);
+    return out;
+  }
+
+  // Valore atteso di un reparto data una selezione precisa: chi subentra è il
+  // migliore rimasto fuori, come in orderRolePool ma con la selezione imposta.
+  function valutaReparto(pool, picked) {
+    var inXI = {};
+    picked.forEach(function (x) { inXI[x.p.id] = true; });
+    var benchTop = null;
+    for (var i = 0; i < pool.length; i++) {
+      if (inXI[pool[i].p.id]) continue;
+      if (!benchTop || pool[i].s.adj > benchTop.s.adj) benchTop = pool[i];
+    }
+    var sub = subValueOf(benchTop);
+    var con = 0, senza = 0;
+    picked.forEach(function (x) {
+      var e = evWithSub(x.s, sub.con, sub.senza);
+      x.ev = e.ev; x.evNoBonus = e.evNoBonus;
+      con += e.ev; senza += e.evNoBonus;
+    });
+    return { picked: picked, con: con, senza: senza };
+  }
+
+  // Scelta CONGIUNTA di portiere e difesa quando il Modificatore è in gioco
+  // (aggiunto 29/08/2026). Prima ogni reparto si sceglieva per conto suo sul
+  // solo valore atteso, e il Modificatore veniva calcolato dopo, su chi era
+  // uscito. Ma una fascia del Modificatore vale 1-1,5 punti mentre due
+  // difensori differiscono di ~0,3 di fantavoto atteso: conviene poter
+  // rinunciare a un po' di fantavoto per una media voto più alta. Si enumerano
+  // le combinazioni dei migliori candidati (qualche decina, costo trascurabile)
+  // e si tiene quella che massimizza
+  //     somma dei valori attesi + valore ATTESO del Modificatore.
+  // Atteso, non a gradino: vedi modificatoreAtteso(). Massimizzare il gradino
+  // significherebbe inseguire una soglia per un centesimo di media stimata.
+  var MOD_CANDIDATI_D = 7;
+  var MOD_CANDIDATI_P = 3;
+  function scegliDifesaEPortiere(dPool, pPool, shape) {
+    var needD = shape.D || 0, needP = shape.P || 0;
+    var dOrd = dPool.slice().sort(function (a, b) { return b.s.adj - a.s.adj; });
+    var pOrd = pPool.slice().sort(function (a, b) { return b.s.adj - a.s.adj; });
+    var comboD = dOrd.length >= needD
+      ? combinazioni(dOrd.slice(0, Math.min(MOD_CANDIDATI_D, dOrd.length)), needD)
+      : [dOrd.slice()];
+    var comboP = pOrd.length >= needP
+      ? pOrd.slice(0, Math.min(MOD_CANDIDATI_P, pOrd.length)).map(function (x) { return [x]; })
+      : [pOrd.slice()];
+    if (!comboD.length) comboD = [dOrd.slice(0, needD)];
+    if (!comboP.length) comboP = [pOrd.slice(0, needP)];
+    var best = null;
+    comboD.forEach(function (dSel) {
+      comboP.forEach(function (pSel) {
+        var m = modificatoreDaSelezione(dSel, pSel);
+        // valutaReparto scrive ev/evNoBonus sulle entry: qui serve solo il
+        // punteggio, la selezione vincente viene ricalcolata alla fine.
+        var vd = valutaReparto(dOrd, dSel);
+        var vp = valutaReparto(pOrd, pSel);
+        var punteggio = vd.con + vp.con + m.atteso;
+        if (!best || punteggio > best.punteggio) best = { punteggio: punteggio, dSel: dSel, pSel: pSel };
+      });
+    });
+    if (!best) return { D: [], P: [], con: 0, senza: 0, mod: MOD_NO_RESULT };
+    var fd = valutaReparto(dOrd, best.dSel);
+    var fp = valutaReparto(pOrd, best.pSel);
+    return {
+      D: fd.picked, P: fp.picked,
+      con: fd.con + fp.con, senza: fd.senza + fp.senza,
+      mod: modificatoreDaSelezione(best.dSel, best.pSel)
+    };
+  }
+
   function buildXI(players, shape) {
     var chosen = {}; var shortage = false; var totalConBonus = 0; var totalSenzaBonus = 0;
+    var pools = {};
     ROLES.forEach(function (r) {
       var need = shape[r.key] || 0;
-      var pool = players.filter(function (p) { return p.role === r.key && p.status !== "assente"; })
+      pools[r.key] = players.filter(function (p) { return p.role === r.key && p.status !== "assente"; })
         .map(function (p) { return { p: p, s: scorePlayer(p) }; });
-      if (pool.length < need) shortage = true;
-      var ordered = orderRolePool(pool, need);
+      if (pools[r.key].length < need) shortage = true;
+    });
+    // Con il Modificatore attivo portiere e difesa si scelgono insieme, perché
+    // il bonus dipende da entrambi; gli altri reparti restano indipendenti.
+    var modAttivo = !!state.meta.modificatore && shape.D === 4;
+    ROLES.forEach(function (r) {
+      if (modAttivo && (r.key === "D" || r.key === "P")) return;
+      var need = shape[r.key] || 0;
+      var ordered = orderRolePool(pools[r.key], need);
       var picked = ordered.order.slice(0, need);
       picked.forEach(function (x) { totalConBonus += x.ev; totalSenzaBonus += x.evNoBonus; });
       chosen[r.key] = picked;
     });
+    var mod;
+    if (modAttivo) {
+      var sel = scegliDifesaEPortiere(pools.D, pools.P, shape);
+      chosen.D = sel.D; chosen.P = sel.P;
+      totalConBonus += sel.con; totalSenzaBonus += sel.senza;
+      mod = sel.mod;
+    } else {
+      mod = teamModificatoreBonus(chosen, shape.D);
+    }
     // Bonus/malus modificatore difesa: una tantum sul totale squadra, non
-    // distribuibile sui singoli giocatori — vedi teamModificatoreBonus().
-    var mod = teamModificatoreBonus(chosen, shape.D);
+    // distribuibile sui singoli giocatori. Nel totale mostrato entra il valore
+    // a gradino — quello che prenderesti se la stima fosse esatta — mentre la
+    // scelta di chi schierare è stata fatta sul valore atteso.
     totalConBonus += mod.bonus;
     return {
       chosen: chosen,
@@ -2876,6 +3038,7 @@ async function refreshLivePlayerNews() {
       modEligible: mod.eligible,
       modRealCount: mod.realCount || 0,
       modTotalCount: mod.totalCount || 0,
+      modProssima: mod.prossima || null,
       shortage: shortage
     };
   }
@@ -3015,6 +3178,7 @@ async function refreshLivePlayerNews() {
       modEligible: mod.eligible,
       modRealCount: mod.realCount || 0,
       modTotalCount: mod.totalCount || 0,
+      modProssima: mod.prossima || null,
       overridden: overridden,
       captain: cvb.captain,
       vice: cvb.vice,
@@ -3444,6 +3608,16 @@ async function refreshLivePlayerNews() {
     // v: 2 = calcolato col modello a scostamenti (23/08/2026). Le righe salvate
     // prima restano ma vanno lette sapendo che sovrastimavano di ~8 punti:
     // mescolarle alle nuove falserebbe la taratura, quindi sono marcate.
+    // Stato previsto di ogni giocatore al momento del calcolo (aggiunto
+    // 29/08/2026). Le probabilità in STATUS — "ballottaggio pari" = 55% di
+    // giocare — sono il moltiplicatore più pesante di tutto il modello e
+    // finora nessuno le aveva mai verificate: sbagliarne una di 0,1 sposta un
+    // giocatore da 7 di 0,7 punti, più di tutti gli scostamenti messi insieme.
+    // Salvando qui la previsione, a fine giornata si può confrontare con quello
+    // che è successo davvero (ha un voto = ha giocato). Non serve a correggere
+    // niente adesso: serve ad avere i dati fra qualche mese.
+    var stati = {};
+    (state.players || []).forEach(function (p) { if (p.name) stati[p.name] = p.status; });
     if (entry) {
       // Giornata già chiusa: il punteggio reale è noto, quindi la previsione di
       // allora è un dato storico e non va riscritta. Senza questo, ricalcolare
@@ -3452,9 +3626,42 @@ async function refreshLivePlayerNews() {
       // qualcosa.
       if (entry.reale != null && entry.reale !== "") return;
       entry.modulo = modulo; entry.previstoSenza = previstoSenza; entry.previsto = previsto; entry.ts = ts; entry.v = 2;
+      entry.stati = stati;
     } else {
-      state.meta.storico.push({ g: g, modulo: modulo, previstoSenza: previstoSenza, previsto: previsto, ts: ts, reale: "", v: 2 });
+      state.meta.storico.push({ g: g, modulo: modulo, previstoSenza: previstoSenza, previsto: previsto, ts: ts, reale: "", v: 2, stati: stati });
     }
+  }
+
+  // Taratura delle probabilità di stato: confronta quello che avevo previsto
+  // con quello che è successo. Una giornata "conta" quando esiste almeno un
+  // voto registrato per quella giornata — prima i voti non ci sono ancora e
+  // sembrerebbe che non abbia giocato nessuno.
+  // Volutamente NON corregge niente in automatico: con tre giornate una
+  // percentuale osservata è rumore, e sostituire un numero scelto a tavolino
+  // con un numero rumoroso non è un miglioramento. È un conto da guardare.
+  function taraturaStati() {
+    var conteggio = {};
+    STATUS.forEach(function (s) { conteggio[s.key] = { label: s.label, prob: s.prob, previsti: 0, giocati: 0 }; });
+    var storico = Array.isArray(state.meta.storico) ? state.meta.storico : [];
+    var giornate = 0;
+    storico.forEach(function (h) {
+      if (!h.stati) return;
+      var chiusa = (state.players || []).some(function (p) {
+        return (p.votiStorico || []).some(function (v) { return v.g === h.g; });
+      });
+      if (!chiusa) return;
+      giornate++;
+      (state.players || []).forEach(function (p) {
+        var st = h.stati[p.name];
+        if (!st || !conteggio[st]) return;
+        conteggio[st].previsti++;
+        var haGiocato = (p.votiStorico || []).some(function (v) {
+          return v.g === h.g && v.v != null && v.v !== "";
+        });
+        if (haGiocato) conteggio[st].giocati++;
+      });
+    });
+    return { conteggio: conteggio, giornate: giornate };
   }
 
   // ---------------- lega: avversario di giornata ----------------
@@ -3908,6 +4115,31 @@ async function refreshLivePlayerNews() {
 
   }
 
+  // Tabellina "quanto ci prendo sugli stati". Compare solo quando c'è almeno
+  // una giornata chiusa con gli stati salvati, e dice sempre su quanti casi è
+  // calcolata: una percentuale su sei osservazioni non significa niente e il
+  // numero di casi è l'unica cosa che lo rende evidente.
+  function taraturaHtml() {
+    var t = taraturaStati();
+    if (!t.giornate) return '';
+    var righe = STATUS.filter(function (s) { return t.conteggio[s.key].previsti > 0; });
+    if (!righe.length) return '';
+    return '<p><b>Quanto ci prendo sugli stati</b>: le probabilità che uso ("ballottaggio pari" = 55% di giocare) sono il numero che pesa di più in tutto il calcolo, e sono scelte a tavolino. Qui sotto c\'è quello che è successo davvero. Non correggo niente in automatico: su poche giornate una percentuale osservata è rumore, e sostituire una stima con del rumore non è un miglioramento. Serve ad avere i dati per decidere più avanti.</p>' +
+      '<div class="history-table-wrap"><table class="history-table"><thead><tr><th>Stato previsto</th><th>Casi</th><th>Ha giocato</th><th>Osservato</th><th>Uso</th></tr></thead><tbody>' +
+      righe.map(function (s) {
+        var c = t.conteggio[s.key];
+        var oss = c.giocati / c.previsti;
+        var scarto = oss - c.prob;
+        // Il tono si accende solo con abbastanza casi da voler dire qualcosa.
+        var tone = c.previsti >= 10 && Math.abs(scarto) >= 0.15 ? "danger" : "";
+        return '<tr><td>' + escapeHtml(c.label) + '</td><td class="num">' + c.previsti + '</td><td class="num">' + c.giocati + '</td>' +
+          '<td class="num" data-tone="' + tone + '">' + Math.round(oss * 100) + '%</td>' +
+          '<td class="num">' + Math.round(c.prob * 100) + '%</td></tr>';
+      }).join("") +
+      '</tbody></table></div>' +
+      '<p class="scale-note">Su ' + t.giornate + (t.giornate === 1 ? ' giornata chiusa' : ' giornate chiuse') + '. Con meno di ~10 casi per riga i numeri non dicono ancora niente: servono cinque o sei giornate prima che valga la pena guardarli.</p>';
+  }
+
   function renderHistoryCard() {
     var host = document.getElementById("historyCardHost");
     if (!host) return;
@@ -3944,6 +4176,7 @@ async function refreshLivePlayerNews() {
           '<p><b>Storico previsioni</b>: il valore atteso lo salvo io ogni volta che calcoli la formazione; il punteggio reale lo compili tu qui sotto quando lo conosci, per vedere quanto la formula ci ha preso.</p>' +
           rowsHtml +
           (storico.some(function (h) { return h.v !== 2; }) ? '<p class="scale-note">† righe calcolate con la formula precedente, che sovrastimava di circa 8 punti a giornata: non sono confrontabili con quelle nuove.</p>' : '') +
+          taraturaHtml() +
         '</div>' +
       '</details>';
 
@@ -3975,9 +4208,14 @@ async function refreshLivePlayerNews() {
     var bestResult = buildManualXI(data);
     var totalConTxt = bestResult.total.toFixed(1);
     var totalSenzaTxt = bestResult.totalSenzaBonus.toFixed(1);
+    // Il Modificatore è una scala a gradini larghi 0,25 su una media stimata:
+    // sapere quanto manca alla fascia sopra dice più del bonus da solo. A 0,03
+    // dalla soglia il +1 è quasi una monetina; a 0,20 è fuori portata.
+    var pr = bestResult.modProssima;
     var modInfoTxt = bestResult.modEligible
       ? ('modificatore: media voto migliori difensori ' + bestResult.modAvg.toFixed(2) + ' → bonus +' + bestResult.modBonus.toFixed(1) +
-         (bestResult.modRealCount > 0 ? ' (' + bestResult.modRealCount + '/' + bestResult.modTotalCount + ' su voto reale)' : ' (stima)'))
+         (bestResult.modRealCount > 0 ? ' (' + bestResult.modRealCount + '/' + bestResult.modTotalCount + ' su voto reale)' : ' (stima)') +
+         (pr ? ' · fascia +' + pr.bonus.toFixed(1) + ' a ' + pr.distanza.toFixed(2) + ' di media (' + Math.round(pr.prob * 100) + '% stimato)' : ''))
       : (state.meta.modificatore ? 'modificatore: non applicabile a questo modulo (serve difesa a 4)' : 'modificatore disattivato');
 
     var html = '';
