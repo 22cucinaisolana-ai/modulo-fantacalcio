@@ -2965,9 +2965,31 @@ async function refreshLivePlayerNews() {
   // Scostamento per difficoltà avversario: quanto un avversario più facile o
   // più difficile del solito sposta il fantavoto atteso rispetto alla media
   // stagionale, che è già una media su avversari di ogni livello.
-  function difficoltaMod(diff) {
+  // CORRETTO 30/08/2026 — la difficoltà entrava due volte per portieri e
+  // difensori. Questo termine e cleanSheetTerm sono entrambi funzione della
+  // stessa variabile `diff` e si sommavano: un difensore contro un avversario
+  // facile prendeva +0,15 qui e +0,15 di porta inviolata, cioè ±0,30 totali
+  // contro i ±0,15 di un centrocampista. Nessuno aveva scelto quel rapporto di
+  // 2 a 1: era un effetto collaterale di due addizioni, presentate come due
+  // numeri indipendenti quando indipendenti non sono — buona parte del "gioca
+  // meglio contro una squadra scarsa", per un difensore, *è* la porta inviolata
+  // che stiamo già contando a parte.
+  //
+  // Ora il peso è esplicito per ruolo e sta in un posto solo. Per P e D il
+  // termine di rendimento vale metà, perché l'altra metà è già nel clean sheet:
+  // il totale scende da ±0,30 a ±0,225, cioè un difensore resta più sensibile
+  // all'avversario di un centrocampista (1,5 volte) ma non il doppio.
+  // ONESTÀ: quel 0,5 è un giudizio, non un numero derivato dai dati — con due
+  // giornate non c'è modo di stimarlo. È però un giudizio *dichiarato*, al
+  // posto di un rapporto uscito per caso. Quando lo storico avrà cinque o sei
+  // giornate, la tabella "Dove sbaglia" nel pannello di fine giornata dirà se
+  // difesa e centrocampo hanno scarti medi diversi, ed è da lì che si ritocca.
+  var DIFF_PESO_RUOLO = { P: 0.5, D: 0.5, C: 1, A: 1 };
+  function difficoltaMod(diff, role) {
     var map = { facile: 0.15, media: 0, difficile: -0.15 };
-    return map[diff] != null ? map[diff] : 0;
+    var base = map[diff] != null ? map[diff] : 0;
+    var peso = DIFF_PESO_RUOLO[role];
+    return base * (peso == null ? 1 : peso);
   }
   var CASA_DELTA = 0.10;
 
@@ -3366,7 +3388,7 @@ async function refreshLivePlayerNews() {
     // base = fantavoto medio atteso del giocatore, bonus/malus storici inclusi
     var base = effectiveFantamedia(p);
     var dForma = formaDelta(p.forma);
-    var dMatch = (difficoltaMod(p.difficolta) + (p.casa ? CASA_DELTA : -CASA_DELTA)) * profile.modScale;
+    var dMatch = (difficoltaMod(p.difficolta, p.role) + (p.casa ? CASA_DELTA : -CASA_DELTA)) * profile.modScale;
     var pupilloBonus = p.pupillo ? PUPILLO_BONUS : 0;
     var specialistBonus = (p.rigorista ? RIGORISTA_BONUS : 0) + (p.piazzati ? PIAZZATI_BONUS : 0);
     var rawNoBonus = base + dForma + dMatch + pupilloBonus + specialistBonus;
@@ -4210,7 +4232,7 @@ async function refreshLivePlayerNews() {
 
   // Salva/aggiorna il valore atteso della giornata corrente ad ogni "Calcola
   // formazione": non tocca 'reale' se l'utente lo aveva già compilato.
-  function snapshotPrevisione(modulo, previstoSenza, previsto) {
+  function snapshotPrevisione(modulo, previstoSenza, previsto, chosen) {
     var g = state.meta.giornata || "";
     if (!Array.isArray(state.meta.storico)) state.meta.storico = [];
     var entry = state.meta.storico.find(function (h) { return h.g === g; });
@@ -4228,6 +4250,32 @@ async function refreshLivePlayerNews() {
     // niente adesso: serve ad avere i dati fra qualche mese.
     var stati = {};
     (state.players || []).forEach(function (p) { if (p.name) stati[p.name] = p.status; });
+
+    // Fantavoto previsto di OGNI titolare (aggiunto 30/08/2026). Finora lo
+    // storico salvava solo il totale: a fine giornata si sapeva di quanto il
+    // modello aveva sbagliato, mai su chi. Con due squadre che fanno lo stesso
+    // totale per ragioni opposte — un attaccante sovrastimato di 2 e tre
+    // difensori sottostimati di 0,7 — il totale non distingue, e ogni giornata
+    // passata senza questo dato è persa per sempre.
+    // `v` è il valore atteso a giocatore schierato (s.raw), non moltiplicato
+    // per la probabilità: va confrontato col fantavoto reale di chi ha giocato
+    // davvero, così l'errore del modello di rendimento resta separato da quello
+    // del modello di disponibilità, che è già misurato da taraturaStati().
+    var previsioni = [];
+    if (chosen) {
+      ROLES.forEach(function (r) {
+        (chosen[r.key] || []).forEach(function (e) {
+          if (!e || !e.p || !e.p.name) return;
+          previsioni.push({
+            n: e.p.name,
+            r: r.key,
+            v: Math.round(e.s.raw * 100) / 100,
+            p: Math.round(e.s.prob * 100) / 100
+          });
+        });
+      });
+    }
+
     if (entry) {
       // Giornata già chiusa: il punteggio reale è noto, quindi la previsione di
       // allora è un dato storico e non va riscritta. Senza questo, ricalcolare
@@ -4237,8 +4285,9 @@ async function refreshLivePlayerNews() {
       if (entry.reale != null && entry.reale !== "") return;
       entry.modulo = modulo; entry.previstoSenza = previstoSenza; entry.previsto = previsto; entry.ts = ts; entry.v = 2;
       entry.stati = stati;
+      if (previsioni.length) entry.previsioni = previsioni;
     } else {
-      state.meta.storico.push({ g: g, modulo: modulo, previstoSenza: previstoSenza, previsto: previsto, ts: ts, reale: "", v: 2, stati: stati });
+      state.meta.storico.push({ g: g, modulo: modulo, previstoSenza: previstoSenza, previsto: previsto, ts: ts, reale: "", v: 2, stati: stati, previsioni: previsioni });
     }
   }
 
@@ -4379,7 +4428,7 @@ async function refreshLivePlayerNews() {
       var oppTeam = avvCode ? teamByCode(avvCode) : null;
       var diff = oppTeam ? diffFromTier(oppTeam.tier) : "media";
       var raw = exp
-        + (difficoltaMod(diff) + (casa ? CASA_DELTA : -CASA_DELTA))
+        + (difficoltaMod(diff, rp.r) + (casa ? CASA_DELTA : -CASA_DELTA))
         + ((rp.r === "P" || rp.r === "D") ? cleanSheetTerm(rp.r, diff) : 0)
         + ((flags & 1) ? RIGORISTA_BONUS : 0)
         + ((flags & 2) ? PIAZZATI_BONUS : 0);
@@ -4756,6 +4805,58 @@ async function refreshLivePlayerNews() {
       '<p class="scale-note">Su ' + t.giornate + (t.giornate === 1 ? ' giornata chiusa' : ' giornate chiuse') + '. Con meno di ~10 casi per riga i numeri non dicono ancora niente: servono cinque o sei giornate prima che valga la pena guardarli.</p>';
   }
 
+  // Errore per componente: dove sbaglia il modello, non solo di quanto.
+  // Confronta il fantavoto previsto di ogni titolare (salvato in h.previsioni)
+  // con quello reale, e SOLO per chi ha davvero giocato: chi non è sceso in
+  // campo è un errore del modello di disponibilità, che si misura altrove
+  // (taraturaStati). Mescolare le due cose renderebbe illeggibili entrambe.
+  function erroreComponenti() {
+    var perRuolo = {};
+    ROLES.forEach(function (r) { perRuolo[r.key] = { casi: 0, somma: 0, assoluto: 0 }; });
+    var casi = [];
+    var storico = Array.isArray(state.meta.storico) ? state.meta.storico : [];
+    storico.forEach(function (h) {
+      if (!Array.isArray(h.previsioni) || !h.previsioni.length) return;
+      h.previsioni.forEach(function (q) {
+        var p = (state.players || []).find(function (x) { return x.name === q.n; });
+        if (!p) return;
+        var v = (p.votiStorico || []).find(function (x) { return x.g === h.g; });
+        if (!v || v.f == null || v.f === "") return;   // non ha giocato: non è affar nostro qui
+        var reale = Number(v.f);
+        if (isNaN(reale)) return;
+        var scarto = reale - q.v;
+        var b = perRuolo[q.r] || (perRuolo[q.r] = { casi: 0, somma: 0, assoluto: 0 });
+        b.casi++; b.somma += scarto; b.assoluto += Math.abs(scarto);
+        casi.push({ g: h.g, n: q.n, r: q.r, previsto: q.v, reale: reale, scarto: scarto });
+      });
+    });
+    casi.sort(function (a, b) { return Math.abs(b.scarto) - Math.abs(a.scarto); });
+    return { perRuolo: perRuolo, casi: casi };
+  }
+
+  function erroreComponentiHtml() {
+    var e = erroreComponenti();
+    if (!e.casi.length) return '';
+    var righe = ROLES.filter(function (r) { return e.perRuolo[r.key] && e.perRuolo[r.key].casi > 0; });
+    var peggiori = e.casi.slice(0, 5);
+    return '<p><b>Dove sbaglia</b>: finora lo storico diceva solo di quanto il totale era sbagliato, mai su chi. Qui il fantavoto previsto di ogni titolare è confrontato con quello reale, contando solo chi ha effettivamente giocato. <b>Scarto medio</b> col segno dice se un reparto è sistematicamente sopra o sotto (è il difetto che si può correggere); <b>errore medio</b> senza segno dice quanto è rumoroso (quello non si corregge, si accetta).</p>' +
+      '<div class="history-table-wrap"><table class="history-table"><thead><tr><th>Reparto</th><th>Casi</th><th>Scarto medio</th><th>Errore medio</th></tr></thead><tbody>' +
+      righe.map(function (r) {
+        var b = e.perRuolo[r.key];
+        var bias = b.somma / b.casi, mae = b.assoluto / b.casi;
+        var tone = b.casi >= 10 && Math.abs(bias) >= 0.5 ? "danger" : "";
+        return '<tr><td>' + escapeHtml(r.label || r.key) + '</td><td class="num">' + b.casi + '</td>' +
+          '<td class="num" data-tone="' + tone + '">' + (bias >= 0 ? "+" : "") + bias.toFixed(2) + '</td>' +
+          '<td class="num">' + mae.toFixed(2) + '</td></tr>';
+      }).join("") +
+      '</tbody></table></div>' +
+      '<p class="scale-note">Gli scarti più grossi finora: ' +
+      peggiori.map(function (c) {
+        return escapeHtml(shortName(c.n)) + ' G' + escapeHtml(String(c.g)) + ' (previsto ' + c.previsto.toFixed(1) + ', reale ' + c.reale.toFixed(1) + ')';
+      }).join(' · ') +
+      '. Vale lo stesso avvertimento della tabella sopra: con meno di ~10 casi per reparto uno scarto medio è rumore, non un difetto.</p>';
+  }
+
   function renderLegaSelect() {
     var sel = document.getElementById("legaSelect");
     if (!sel) return;
@@ -4827,6 +4928,7 @@ async function refreshLivePlayerNews() {
           rowsHtml +
           (storico.some(function (h) { return h.v !== 2; }) ? '<p class="scale-note">† righe calcolate con la formula precedente, che sovrastimava di circa 8 punti a giornata: non sono confrontabili con quelle nuove.</p>' : '') +
           taraturaHtml() +
+          erroreComponentiHtml() +
         '</div>' +
       '</details>';
 
@@ -4954,7 +5056,7 @@ async function refreshLivePlayerNews() {
         renderResult();
       });
     });
-    snapshotPrevisione(data.best, bestResult.totalSenzaBonus, bestResult.total);
+    snapshotPrevisione(data.best, bestResult.totalSenzaBonus, bestResult.total, bestResult.chosen);
     renderHistoryCard();
     scheduleSave();
   }
