@@ -211,6 +211,7 @@
      strategia, modificatore, calendario — spostate in un pannello a
      comparsa per liberare la barra in alto, tenendo visibili solo giornata
      e scadenza. */
+  .squadra-field select { font-weight: 600; max-width: 260px; }
   .settings-menu { position: relative; }
   .settings-menu > summary {
     list-style: none;
@@ -238,6 +239,7 @@
   }
   .settings-group { display: flex; flex-direction: column; gap: 8px; }
   .settings-group + .settings-group { border-top: 1px dashed var(--line); padding-top: 12px; }
+  .settings-note { font-size: 11px; line-height: 1.4; color: var(--text-muted); margin-top: 6px; }
   .settings-group-title {
     font-size: 11px;
     text-transform: uppercase;
@@ -604,6 +606,54 @@
     gap: 8px;
     margin-top: 6px;
     font-size: 12px;
+    color: var(--text-muted);
+  }
+  /* Titoli grezzi raccolti da Google News: materiale di lettura, deliberatamente
+     più sommesso della nota, perché non è un giudizio. */
+  .row-titoli { margin-top: 8px; }
+  .row-titoli > summary {
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .row-titoli > summary::marker { color: var(--text-muted); }
+  .row-titoli .titoli-quando {
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: .8;
+  }
+  .row-titoli ul {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 7px;
+  }
+  .row-titoli li {
+    font-size: 12px;
+    line-height: 1.35;
+    padding-left: 10px;
+    border-left: 2px solid var(--line);
+  }
+  .row-titoli li a { color: var(--text); text-decoration: none; }
+  .row-titoli li a:hover { text-decoration: underline; }
+  .row-titoli .titolo-meta {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .row-titoli .titoli-avviso {
+    margin: 9px 0 0;
+    font-size: 10px;
+    line-height: 1.35;
     color: var(--text-muted);
   }
   .row-note-foot input {
@@ -1155,13 +1205,10 @@
   .lineup-meta .flag.pupillo { color: var(--gold); }
   .lineup-meta .flag.special { color: var(--accent-strong); }
   .lineup-score-wrap { display: flex; align-items: center; gap: 5px; }
-  .lineup-slot select {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-  }
+  /* Regola rimossa il 29/08/2026: nascondeva il <select> in 1x1 px con
+     pointer-events:none, residuo di un disegno precedente con un selettore
+     personalizzato. Con la riga cliccabile nuova rendeva impossibile cambiare
+     giocatore: la riga sembrava attiva e non lo era. */
   .lineup-picker {
     min-width: 0;
     display: flex;
@@ -1591,9 +1638,21 @@
   .pl-riga .lineup-picker-select {
     position: absolute; inset: 0; width: 100%; height: 100%;
     opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0; z-index: 3;
+    pointer-events: auto; appearance: none;
   }
-  .pl-riga:has(.lineup-picker-select):hover { background: var(--surface-2); }
-  .pl-riga .lineup-picker-select:focus-visible { opacity: 1; outline: 2px solid var(--accent); }
+  /* Una riga che si può cambiare deve sembrare cliccabile: cursore, sfondo al
+     passaggio, e la freccia in un pulsantino tondo invece di un segno grigio. */
+  .pl-riga-clic { cursor: pointer; }
+  .pl-riga-clic:hover { background: var(--surface-2); }
+  .pl-riga-clic:hover .pl-freccia { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .pl-riga-clic:focus-within { background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--accent); }
+  .pl-riga-clic .pl-freccia {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--surface);
+    display: grid; place-items: center;
+    font-size: 12px; line-height: 1;
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
   @media (max-width: 760px) {
     .pl-riga { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 9px; padding: 8px 10px; min-height: 50px; }
     .pl-ruolo { width: 24px; height: 24px; font-size: 12px; }
@@ -1822,12 +1881,15 @@
       <h1>Modulo</h1>
       <span class="tag">calcolatore formazione settimanale</span>
     </div>
+    <label class="giornata-field squadra-field" title="Cambia squadra: ogni squadra ha la sua rosa, la sua lega, le sue regole e il suo storico">Squadra
+      <select id="squadraSelect"></select>
+    </label>
     <label class="giornata-field">Giornata
       <input type="number" min="1" max="38" id="giornataInput" placeholder="1" />
     </label>
     <button class="btn btn-small" id="applyCalendarBtn" title="Riempie avversario, difficoltà e casa/trasferta per chi ha la squadra impostata">Applica calendario</button>
-    <button class="btn btn-small" id="refreshNewsBtn" type="button" title="Cerca ora le ultime notizie dei 25 giocatori e aggiorna Supabase">↻ Aggiorna news</button>
-    <button class="btn btn-small" id="downloadNewsBtn" type="button" title="Scarica le ultime news dei 25 giocatori in CSV">↓ Scarica news</button>
+    <button class="btn btn-small" id="refreshNewsBtn" type="button" title="Raccoglie i titoli di stampa più recenti sui 25 giocatori. Non decide lo stato: quello resta da leggere, sotto la nota di ogni giocatore.">↻ Raccogli titoli</button>
+    <button class="btn btn-small" id="downloadNewsBtn" type="button" title="Scarica in CSV stato, nota e titoli raccolti per i 25 giocatori">↓ Scarica news</button>
     <span class="status-pill" id="newsStatus" title="Stato dell'ultimo aggiornamento delle news"><span class="dot"></span><span class="label">News —</span></span>
     <span class="status-pill" id="deadlinePill" title="Schierabile fino a 45 minuti prima del calcio d'inizio della prima partita della giornata (regola di lega)"><span class="dot"></span><span class="label">—</span></span>
     <span class="status-pill" id="saveStatus"><span class="dot"></span><span class="label">—</span></span>
@@ -1865,6 +1927,14 @@
           </label>
         </div>
         <div class="settings-group">
+          <span class="settings-group-title">Lega</span>
+          <label class="switch-row" title="La lega di questa squadra: decide avversari, tabellone, fasce dei modificatori e scadenza per schierare. Le regole arrivano dalla lega, non dal programma.">
+            <span>Campionato</span>
+            <select id="legaSelect"></select>
+          </label>
+          <div class="settings-note" id="legaRegoleNota"></div>
+        </div>
+        <div class="settings-group">
           <span class="settings-group-title">Modificatore difesa</span>
           <label class="switch-row" title="Regola di lega: bonus/malus una tantum sul totale squadra, in base alla media voto dei migliori difensori (+ portiere). Richiede almeno 4 difensori in campo.">
             <span>Modificatore</span>
@@ -1873,6 +1943,13 @@
           <label class="switch-row" title="Se attivo, il voto del portiere entra nella media del Modificatore insieme ai migliori 3 difensori (regola di lega, default attivo). Se disattivo, si usano i migliori 4 difensori senza portiere.">
             <span>Includi portiere</span>
             <span class="switch"><input type="checkbox" id="includiPortiereToggle" checked /><span class="switch-track"></span></span>
+          </label>
+        </div>
+        <div class="settings-group">
+          <span class="settings-group-title">Modificatore centrocampo</span>
+          <label class="switch-row" title="Regola di lega: confronto diretto fra la somma dei voti puri dei centrocampisti tue e dell'avversario di giornata. Chi ha la somma piu alta prende da +1 a +4, l'altro altrettanto in negativo. A chi schiera meno mediani si aggiunge 5 per ogni uomo mancante. Meta del conto e una stima della formazione avversaria: se preferisci non basarti su quella, spegnilo.">
+            <span>Modificatore</span>
+            <span class="switch"><input type="checkbox" id="modificatoreCentrocampoToggle" checked /><span class="switch-track"></span></span>
           </label>
         </div>
       </div>
@@ -1953,7 +2030,7 @@
   </div>
 </div>
 
-<footer class="credits">Dati salvati automaticamente per questa rosa · nessun collegamento a fonti esterne, i dati vanno aggiornati a mano ogni giornata</footer>
+<footer class="credits">Dati salvati automaticamente su Supabase · i titoli di stampa arrivano da soli, stato e nota di ogni giocatore restano una scelta di chi legge</footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1985,6 +2062,46 @@
     { key: "difficile", label: "Difficile", tone: "danger" }
   ];
   function diffByKey(k) { for (var i = 0; i < DIFF.length; i++) if (DIFF[i].key === k) return DIFF[i]; return DIFF[1]; }
+
+  // I titoli grezzi sotto la nota. Non sono un giudizio e non entrano nel
+  // calcolo: sono il materiale con cui controllare che lo stato scritto sopra
+  // abbia senso. La vecchia funzione automatica provava a dedurre lo stato da
+  // queste stesse righe con delle espressioni regolari e sbagliava un terzo
+  // delle volte (a Davis è stato attribuito l'infortunio di Zaniolo perché i
+  // due nomi comparivano nello stesso titolo); ora le righe si leggono e basta.
+  function eta(iso) {
+    var t = Date.parse(iso);
+    if (isNaN(t)) return "";
+    var min = Math.round((Date.now() - t) / 60000);
+    if (min < 1) return "adesso";
+    if (min < 60) return min + " min fa";
+    var h = Math.round(min / 60);
+    if (h < 24) return h + (h === 1 ? " ora fa" : " ore fa");
+    var g = Math.round(h / 24);
+    return g + (g === 1 ? " giorno fa" : " giorni fa");
+  }
+
+  function titoliHtml(nome) {
+    var t = titoliDi(nome);
+    if (!t) return "";
+    var righe = t.righe.slice(0, 6).map(function (r) {
+      var titolo = escapeHtml(String(r.t || "").trim());
+      var fonte = escapeHtml(String(r.s || "").trim());
+      var quando = eta(r.d);
+      var meta = [fonte, quando].filter(Boolean).join(" · ");
+      var url = String(r.u || "");
+      var testo = /^https?:\/\//.test(url)
+        ? '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener noreferrer">' + titolo + '</a>'
+        : titolo;
+      return '<li>' + testo + (meta ? '<span class="titolo-meta">' + meta + '</span>' : '') + '</li>';
+    }).join("");
+    return '<details class="row-titoli">' +
+      '<summary>Titoli raccolti (' + t.righe.length + ')' +
+        (t.quando ? '<span class="titoli-quando">' + escapeHtml(eta(t.quando)) + '</span>' : '') + '</summary>' +
+      '<ul>' + righe + '</ul>' +
+      '<p class="titoli-avviso">Materiale grezzo da Google News, non una classificazione: lo stato qui sopra lo decide chi ha letto gli articoli.</p>' +
+      '</details>';
+  }
   // Riassunto sintetico avversario/sede mostrato nella riga compatta (il
   // dettaglio editabile resta nel pannello "Dettagli" sotto).
   function matchupText(p) {
@@ -2076,7 +2193,14 @@
   // Regola di lega (corretta 25/08/2026: erano 5 minuti, sono 45): la formazione
   // si può schierare fino a 45 minuti prima del calcio d'inizio della prima
   // partita della giornata.
+  // La scadenza per schierare cambia da lega a lega: Carmy 45 minuti prima del
+  // calcio d'inizio, Cassina all'inizio della prima partita. Il valore vive
+  // nelle regole della lega; questo resta come ripiego.
   var MINUTI_ANTICIPO_SCADENZA = 45;
+  function minutiAnticipoScadenza() {
+    var v = regoleLega().scadenzaMinutiPrima;
+    return isNaN(v) ? MINUTI_ANTICIPO_SCADENZA : v;
+  }
   var deadlineTimer = null;
 
   function uid() { return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -2144,7 +2268,7 @@
       labelEl.textContent = "Orario non valido";
       return;
     }
-    var deadline = new Date(kickoff.getTime() - MINUTI_ANTICIPO_SCADENZA * 60000);
+    var deadline = new Date(kickoff.getTime() - minutiAnticipoScadenza() * 60000);
     var diff = deadline.getTime() - Date.now();
     var dd = String(deadline.getDate()).padStart(2, "0");
     var mm = String(deadline.getMonth() + 1).padStart(2, "0");
@@ -2217,6 +2341,10 @@
   var LEGA_MIA = "BASTARDI SENZA GLORIA";
   var LEGA_SQUADRE = {};
   var LEGA_TURNI = [];
+  // Dal 29/08/2026 il tool tiene più leghe: RIF_LEGHE le contiene tutte,
+  // LEGA_SQUADRE / LEGA_TURNI / RISULTATI sono la vista sulla lega attiva.
+  var RIF_LEGHE = {};
+  var LEGA_PREDEFINITA = "carmy";
 
   var RIF_CACHE_KEY = "moduloRiferimentiV1";
   var rifOrigine = "";
@@ -2250,29 +2378,46 @@
     });
     LISTONE_INDEX = null;
 
-    Object.keys(LEGA_SQUADRE).forEach(function (k) { delete LEGA_SQUADRE[k]; });
+    // Le righe di lega arrivano tutte insieme, per tutte le leghe: qui si
+    // raggruppano per lega e restano in RIF_LEGHE. Quella attiva viene poi
+    // riversata in LEGA_SQUADRE / LEGA_TURNI / RISULTATI da applicaLega().
+    Object.keys(RIF_LEGHE).forEach(function (k) { delete RIF_LEGHE[k]; });
+    (rif.leghe || []).forEach(function (l) {
+      RIF_LEGHE[l.id] = { id: l.id, nome: l.nome, nSquadre: l.n_squadre, miaSquadra: l.mia_squadra,
+        regole: l.regole || {}, squadre: {}, turni: [], risultati: {} };
+    });
+    function lega(id) {
+      if (!id) id = LEGA_PREDEFINITA;
+      if (!RIF_LEGHE[id]) RIF_LEGHE[id] = { id: id, nome: id, squadre: {}, turni: [], risultati: {} };
+      return RIF_LEGHE[id];
+    }
     (rif.legaSquadre || []).forEach(function (s) {
-      LEGA_SQUADRE[s.nome] = { manager: s.manager, totale: s.budget, rosa: [] };
-      if (s.e_mia) LEGA_MIA = s.nome;
+      lega(s.lega_id).squadre[s.nome] = { manager: s.manager, totale: s.budget, rosa: [], eMia: !!s.e_mia };
     });
     var ordineRuolo = { P: 0, D: 1, C: 2, A: 3 };
     function pesoRuolo(r) { return ordineRuolo[r] != null ? ordineRuolo[r] : 9; }
     (rif.legaRose || []).slice().sort(function (a, b) {
+      if (a.lega_id !== b.lega_id) return a.lega_id < b.lega_id ? -1 : 1;
       if (a.squadra !== b.squadra) return a.squadra < b.squadra ? -1 : 1;
       var d = pesoRuolo(a.ruolo) - pesoRuolo(b.ruolo);
       if (d !== 0) return d;
       return (b.costo || 0) - (a.costo || 0);
     }).forEach(function (r) {
-      var sq = LEGA_SQUADRE[r.squadra];
+      var sq = lega(r.lega_id).squadre[r.squadra];
       if (sq) sq.rosa.push({ n: r.giocatore, r: r.ruolo, c: r.costo });
     });
-
-    LEGA_TURNI.length = 0;
     (rif.legaCalendario || []).forEach(function (r) {
       var t = Number(r.turno);
       if (!(t >= 1)) return;
-      while (LEGA_TURNI.length < t) LEGA_TURNI.push([]);
-      LEGA_TURNI[t - 1].push([r.squadra_a, r.squadra_b]);
+      var L = lega(r.lega_id);
+      while (L.turni.length < t) L.turni.push([]);
+      L.turni[t - 1].push([r.squadra_a, r.squadra_b]);
+    });
+    (rif.risultati || []).forEach(function (r) {
+      var L = lega(r.lega_id);
+      var g = String(r.giornata);
+      if (!L.risultati[g]) L.risultati[g] = {};
+      L.risultati[g][r.squadra] = r.punti != null ? Number(r.punti) : null;
     });
 
     Object.keys(VOTI).forEach(function (k) { delete VOTI[k]; });
@@ -2285,12 +2430,34 @@
       ];
     });
 
+    applicaLega(legaAttivaId());
+  }
+
+  // Riversa nei contenitori "attivi" la lega della squadra che stai usando.
+  // Come per gli altri riferimenti, non li riassegna: li svuota e li ripopola,
+  // così ogni riferimento gia' catturato altrove continua a vedere gli stessi.
+  function applicaLega(id) {
+    // Attenzione: id === "" significa "questa squadra non ha ancora una lega
+    // collegata", non "usa quella di default". Ripiegare su Carmy faceva vedere
+    // alla squadra nuova gli avversari e la classifica dell'altro campionato.
+    var L = (id === "" || id == null) ? null : (RIF_LEGHE[id] || null);
+    Object.keys(LEGA_SQUADRE).forEach(function (k) { delete LEGA_SQUADRE[k]; });
+    LEGA_TURNI.length = 0;
     Object.keys(RISULTATI).forEach(function (k) { delete RISULTATI[k]; });
-    (rif.risultati || []).forEach(function (r) {
-      var g = String(r.giornata);
-      if (!RISULTATI[g]) RISULTATI[g] = {};
-      RISULTATI[g][r.squadra] = r.punti != null ? Number(r.punti) : null;
+    if (!L) { LEGA_MIA = ""; return; }
+    Object.keys(L.squadre).forEach(function (nome) {
+      var s = L.squadre[nome];
+      LEGA_SQUADRE[nome] = { manager: s.manager, totale: s.totale, rosa: s.rosa };
+      if (s.eMia) LEGA_MIA = nome;
     });
+    if (L.miaSquadra && LEGA_SQUADRE[L.miaSquadra]) LEGA_MIA = L.miaSquadra;
+    L.turni.forEach(function (t) { LEGA_TURNI.push(t); });
+    Object.keys(L.risultati).forEach(function (g) { RISULTATI[g] = L.risultati[g]; });
+    invalidaCentrocampoAvversario();
+  }
+  function legaAttivaId() {
+    if (!state || !state.meta) return LEGA_PREDEFINITA;
+    return typeof state.meta.legaId === "string" ? state.meta.legaId : LEGA_PREDEFINITA;
   }
 
   function rifValidi(rif) {
@@ -2309,17 +2476,18 @@
         sb.from("serie_a_squadre").select("codice,nome,tier").order("codice"),
         sb.from("serie_a_calendario").select("giornata,casa,trasferta").order("giornata").order("casa").limit(1000),
         sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati").order("nome").limit(2000),
-        sb.from("lega_squadre").select("nome,manager,budget,e_mia").order("nome"),
-        sb.from("lega_rose").select("squadra,giocatore,ruolo,costo").limit(1000),
-        sb.from("lega_calendario").select("turno,squadra_a,squadra_b").order("turno").order("squadra_a"),
+        sb.from("lega_squadre").select("lega_id,nome,manager,budget,e_mia").order("nome"),
+        sb.from("lega_rose").select("lega_id,squadra,giocatore,ruolo,costo").limit(4000),
+        sb.from("lega_calendario").select("lega_id,turno,squadra_a,squadra_b").order("turno").order("squadra_a"),
         sb.from("voti_giornata").select("giornata,giocatore,voto,fantavoto").order("giornata").limit(2000),
-        sb.from("risultati_lega").select("giornata,squadra,punti").order("giornata").limit(1000)
+        sb.from("risultati_lega").select("lega_id,giornata,squadra,punti").order("giornata").limit(2000),
+        sb.from("leghe").select("id,nome,n_squadre,mia_squadra,regole").order("creata_il")
       ]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var rif = {
         squadre: q[0].data, calendario: q[1].data, listone: q[2].data,
         legaSquadre: q[3].data, legaRose: q[4].data, legaCalendario: q[5].data,
-        voti: q[6].data, risultati: q[7].data
+        voti: q[6].data, risultati: q[7].data, leghe: q[8].data
       };
       if (!rifValidi(rif)) throw new Error("tabelle di riferimento vuote");
       applicaRiferimenti(rif);
@@ -2355,6 +2523,70 @@
     });
   }
 
+  // ---------------- più squadre nello stesso tool ----------------
+  // Salvo gioca due fantacalcio diversi, con leghe e regole diverse. Invece di
+  // rifare a plurale tutto il codice — centinaia di punti che leggono
+  // state.meta e state.players — la squadra ATTIVA resta esattamente dov'era, e
+  // le altre stanno in state.archivio. Cambiare squadra vuol dire mettere via
+  // quella corrente e tirare fuori l'altra. Nessun altro pezzo del programma si
+  // accorge di niente, e le impostazioni (modificatori, strategia, modulo)
+  // diventano per-squadra senza toccare una riga: vivono già in meta.
+  function elencoSquadre() {
+    var out = [{
+      id: state.meta.squadraId || "carmy",
+      nome: state.meta.squadraNome || LEGA_MIA || "La mia squadra",
+      legaId: typeof state.meta.legaId === "string" ? state.meta.legaId : LEGA_PREDEFINITA,
+      attiva: true
+    }];
+    var arc = state.archivio || {};
+    Object.keys(arc).forEach(function (id) {
+      var m = (arc[id] && arc[id].meta) || {};
+      out.push({ id: id, nome: m.squadraNome || id, legaId: typeof m.legaId === "string" ? m.legaId : LEGA_PREDEFINITA, attiva: false });
+    });
+    return out;
+  }
+
+  function cambiaSquadra(id) {
+    if (!id || id === (state.meta.squadraId || "carmy")) return false;
+    var arc = state.archivio || (state.archivio = {});
+    var target = arc[id];
+    if (!target) return false;
+    var correnteId = state.meta.squadraId || "carmy";
+    // metto via quella corrente…
+    arc[correnteId] = { meta: state.meta, players: state.players };
+    // …e tiro fuori l'altra
+    delete arc[id];
+    state.meta = target.meta;
+    state.players = target.players;
+    normalizzaStato();
+    applicaLega(legaAttivaId());
+    invalidaCentrocampoAvversario();
+    scheduleSave();
+    return true;
+  }
+
+  // Una squadra nuova parte vuota: nessun giocatore precaricato, perché la rosa
+  // dell'altro fantacalcio non la conosco. Il listone e il calendario di Serie A
+  // sono condivisi, quindi il tool funziona da subito.
+  function creaSquadra(nome, legaId) {
+    var arc = state.archivio || (state.archivio = {});
+    var id = "sq" + Date.now().toString(36);
+    arc[state.meta.squadraId || "carmy"] = { meta: state.meta, players: state.players };
+    state.meta = {
+      squadraId: id, squadraNome: nome || "Squadra nuova", legaId: legaId || "",
+      giornata: state.meta.giornata || "1", primaPartita: "", manualLineup: null,
+      modulo: "auto", modificatore: true, includiPortiere: true,
+      modificatoreCentrocampo: true, strategia: "equilibrato",
+      punteggiLega: {}, storico: []
+    };
+    state.players = [];
+    normalizzaStato();
+    applicaLega(legaAttivaId());
+    invalidaCentrocampoAvversario();
+    scheduleSave();
+    return id;
+  }
+
   // ---------------- normalizzazione dello stato ----------------
   // Una sola funzione al posto della catena di migrazioni a flag che c'era
   // prima (dodici "campoTaleAggiunto: true" nel meta, uno per ogni cosa mai
@@ -2372,6 +2604,14 @@
     if (typeof m.giornata !== "string") m.giornata = m.giornata != null ? String(m.giornata) : "1";
     if (typeof m.primaPartita !== "string") m.primaPartita = "";
     if (typeof m.manualLineup === "undefined") m.manualLineup = null;
+    if (typeof m.modificatoreCentrocampo !== "boolean") m.modificatoreCentrocampo = true;
+    // Identità della squadra attiva. Lo stato che esisteva prima del 29/08/2026
+    // è la squadra della lega Carmy: prende quell'id senza che l'utente debba
+    // fare niente, e i suoi dati restano dove sono.
+    if (!m.squadraId) m.squadraId = "carmy";
+    if (!m.squadraNome) m.squadraNome = (m.squadraId === "carmy" ? "BASTARDI SENZA GLORIA" : "Squadra");
+    if (typeof m.legaId !== "string") m.legaId = (m.squadraId === "carmy" ? LEGA_PREDEFINITA : "");
+    if (!state.archivio || typeof state.archivio !== "object") state.archivio = {};
     if (!m.punteggiLega || typeof m.punteggiLega !== "object") m.punteggiLega = {};
     if (!Array.isArray(m.storico)) m.storico = [];
     // Modificatore attivo ⇒ la difesa deve stare a 4: un modulo forzato con 3 o
@@ -2426,15 +2666,16 @@
     });
 
     // La previsione della giornata 1 è precedente allo storico automatico:
-    // la ricreo solo se manca del tutto.
-    if (VOTI["1"] && !m.storico.some(function (h) { return h.g === "1"; })) {
+    // la ricreo solo se manca del tutto. Ed è una previsione fatta per la
+    // squadra di Carmy: una squadra nuova non deve ereditarla.
+    if (m.squadraId === "carmy" && VOTI["1"] && !m.storico.some(function (h) { return h.g === "1"; })) {
       m.storico.push(JSON.parse(JSON.stringify(STORICO_G1)));
     }
   }
 
   function seedState() {
     var st = {
-      meta: { giornata: "1", primaPartita: "", manualLineup: null, modulo: "auto", modificatore: true, includiPortiere: true, strategia: "equilibrato", punteggiLega: {}, storico: [] },
+      meta: { giornata: "1", primaPartita: "", manualLineup: null, modulo: "auto", modificatore: true, includiPortiere: true, modificatoreCentrocampo: true, strategia: "equilibrato", punteggiLega: {}, storico: [] },
       players: SEED_PLAYERS.map(function (x) {
         var p = defaultPlayer(x.role);
         p.name = x.name;
@@ -2474,7 +2715,7 @@ var livePlayerNews = [];
 async function loadLivePlayerNews() {
   try {
     var res = await sb.from(PLAYER_NEWS_TABLE)
-      .select("player,status,note,fonte,noteData,updated_at")
+      .select("player,status,note,fonte,noteData,updated_at,titoli,titoli_json,titoli_updated_at")
       .order("updated_at", { ascending: false });
     if (res.error) {
       console.warn("player_news:", res.error.message);
@@ -2509,27 +2750,50 @@ function notiziaPiuRecente(p, campo, tsNotizia) {
   return a > b;
 }
 
+// I titoli grezzi raccolti da Google News non stanno nello stato del giocatore:
+// sono materiale di lettura, cambiano ogni poche ore e non vanno salvati in
+// modulo_state. Restano qui, indicizzati per nome.
+var TITOLI_PER_NOME = {};
+
+function titoliDi(nome) {
+  var v = TITOLI_PER_NOME[String(nome || "").trim().toLowerCase()];
+  return v && Array.isArray(v.righe) && v.righe.length ? v : null;
+}
+
 function applyLivePlayerNews(rows) {
-  if (!Array.isArray(rows) || !rows.length || !Array.isArray(state.players)) return;
+  if (!Array.isArray(rows) || !rows.length) return;
   var byName = {};
+  TITOLI_PER_NOME = {};
   rows.forEach(function (r) {
     var k = String(r.player || "").trim().toLowerCase();
-    if (k) byName[k] = r;
+    if (!k) return;
+    byName[k] = r;
+    var righe = Array.isArray(r.titoli_json) ? r.titoli_json : [];
+    if (righe.length) TITOLI_PER_NOME[k] = { righe: righe, quando: r.titoli_updated_at || "" };
   });
+  if (!Array.isArray(state.players)) return;
   state.players.forEach(function (p) {
     var n = byName[String(p.name || "").trim().toLowerCase()];
     if (!n) return;
     var toccato = false;
     CAMPI_NOTIZIA.forEach(function (campo) {
       var val = n[campo];
-      if (campo === "note" ? val == null : !val) return;
+      if (val == null) val = "";
       if (!notiziaPiuRecente(p, campo, n.updated_at)) return;
+      // status vuoto NON azzera lo stato locale: statusByKey("") ricadrebbe su
+      // "titolare" (prob 0.95), cioè trasformerebbe "non lo so" nella certezza
+      // più ottimista possibile. Meglio tenere l'ultimo stato conosciuto finché
+      // qualcuno non ne scrive uno vero.
+      if (campo === "status" && !val) return;
+      // note e fonte invece si possono svuotare: è il modo di ritirare una
+      // notizia sbagliata senza inventarne un'altra.
+      if (!val && !p[campo]) return;
       p[campo] = val;
       toccato = true;
     });
     // La data mostrata sotto la nota segue la nota: la aggiorno solo se qualcosa
-    // è stato davvero sovrascritto.
-    if (toccato && n.noteData) p.noteData = n.noteData;
+    // è stato davvero sovrascritto, e se la nota è sparita sparisce anche lei.
+    if (toccato) p.noteData = n.noteData || "";
   });
 }
 
@@ -2778,18 +3042,47 @@ async function refreshLivePlayerNews() {
   // come stima del voto reale non ancora disponibile) dei migliori 3 difensori
   // + portiere (o dei migliori 4 difensori se il portiere è escluso), e si
   // applica solo schierando almeno 4 difensori.
-  var MODIFICATORE_BONUS_TABLE = [
-    { min: 7, bonus: 6 },
-    { min: 6.75, bonus: 4.5 },
-    { min: 6.5, bonus: 3 },
-    { min: 6.25, bonus: 2 },
-    { min: 6, bonus: 1 },
-    { min: -Infinity, bonus: 0 }
-  ];
+  // Regole della lega attiva. Se una lega non le ha (o la squadra non ha lega
+  // collegata) valgono quelle storiche di Carmy, che erano scritte nel codice.
+  var REGOLE_DEFAULT = {
+    scadenzaMinutiPrima: 45,
+    modificatoreDifesa: { attivo: true, portiere: "opzionale", fasce: [[7, 6], [6.75, 4.5], [6.5, 3], [6.25, 2], [6, 1]] },
+    modificatoreCentrocampo: { attivo: false, votoMancante: 5, fasce: [[7.5, 4], [5.5, 3], [3.5, 2], [2, 1]] }
+  };
+  function regoleLega() {
+    var L = RIF_LEGHE[legaAttivaId()];
+    var r = (L && L.regole) || {};
+    return {
+      fonteVoti: r.fonteVoti || null,
+      scadenzaMinutiPrima: r.scadenzaMinutiPrima != null ? Number(r.scadenzaMinutiPrima) : REGOLE_DEFAULT.scadenzaMinutiPrima,
+      difesa: r.modificatoreDifesa || REGOLE_DEFAULT.modificatoreDifesa,
+      centrocampo: r.modificatoreCentrocampo || REGOLE_DEFAULT.modificatoreCentrocampo
+    };
+  }
+  // Le fasce arrivano come [[soglia, bonus], …] in ordine decrescente di soglia.
+  function fasceInTabella(fasce) {
+    var out = (fasce || []).map(function (f) { return { min: Number(f[0]), bonus: Number(f[1]) }; })
+      .sort(function (a, b) { return b.min - a.min; });
+    out.push({ min: -Infinity, bonus: 0 });
+    return out;
+  }
+  function tabellaDifesa() { return fasceInTabella(regoleLega().difesa.fasce); }
+  function tabellaCentrocampo() { return fasceInTabella(regoleLega().centrocampo.fasce); }
+  // Il portiere entra nella media della difesa: in alcune leghe sempre, in altre
+  // è una scelta. Quando è "sempre", l'interruttore non deve poterlo escludere.
+  function portiereNelModificatore() {
+    var mo = regoleLega().difesa.portiere;
+    if (mo === "sempre") return true;
+    if (mo === "mai") return false;
+    return state.meta.includiPortiere !== false;
+  }
+  function centrocampoAttivoRegole() {
+    return regoleLega().centrocampo.attivo !== false && state.meta.modificatoreCentrocampo !== false;
+  }
+
   function modificatoreBonusFromAvg(avg) {
-    for (var i = 0; i < MODIFICATORE_BONUS_TABLE.length; i++) {
-      if (avg >= MODIFICATORE_BONUS_TABLE[i].min) return MODIFICATORE_BONUS_TABLE[i].bonus;
-    }
+    var T = tabellaDifesa();
+    for (var i = 0; i < T.length; i++) if (avg >= T[i].min) return T[i].bonus;
     return 0;
   }
 
@@ -2819,13 +3112,14 @@ async function refreshLivePlayerNews() {
   function modificatoreAtteso(avg, n) {
     if (avg == null) return 0;
     var sd = MEDIA_VOTO_SD / Math.sqrt(n || 4);
+    var T = tabellaDifesa();
     var atteso = 0;
-    for (var i = 0; i < MODIFICATORE_BONUS_TABLE.length; i++) {
-      var lo = MODIFICATORE_BONUS_TABLE[i].min;
-      var hi = i === 0 ? Infinity : MODIFICATORE_BONUS_TABLE[i - 1].min;
+    for (var i = 0; i < T.length; i++) {
+      var lo = T[i].min;
+      var hi = i === 0 ? Infinity : T[i - 1].min;
       var pHi = hi === Infinity ? 1 : normCdf((hi - avg) / sd);
       var pLo = lo === -Infinity ? 0 : normCdf((lo - avg) / sd);
-      atteso += MODIFICATORE_BONUS_TABLE[i].bonus * (pHi - pLo);
+      atteso += T[i].bonus * (pHi - pLo);
     }
     return atteso;
   }
@@ -2837,8 +3131,9 @@ async function refreshLivePlayerNews() {
     var next = null;
     // La tabella è ordinata per soglia decrescente: l'ultima soglia sopra la
     // media è la più vicina.
-    for (var i = 0; i < MODIFICATORE_BONUS_TABLE.length; i++) {
-      if (MODIFICATORE_BONUS_TABLE[i].min > avg) next = MODIFICATORE_BONUS_TABLE[i];
+    var T = tabellaDifesa();
+    for (var i = 0; i < T.length; i++) {
+      if (T[i].min > avg) next = T[i];
     }
     if (!next || next.min === Infinity) return null;
     var sd = MEDIA_VOTO_SD / Math.sqrt(n || 4);
@@ -2913,7 +3208,7 @@ async function refreshLivePlayerNews() {
     var defPlayers = (dEntries || []).map(function (x) { return x.p; })
       .sort(function (a, b) { return effectiveVotoModificatore(b) - effectiveVotoModificatore(a); });
     var picked;
-    if (state.meta.includiPortiere !== false) {
+    if (portiereNelModificatore()) {
       if (defPlayers.length < 3) return MOD_NO_RESULT;
       var gk = (pEntries || [])[0];
       if (!gk) return MOD_NO_RESULT;
@@ -2935,6 +3230,108 @@ async function refreshLivePlayerNews() {
   function teamModificatoreBonus(chosen, shapeD) {
     if (!state.meta.modificatore || shapeD !== 4) return MOD_NO_RESULT;
     return modificatoreDaSelezione(chosen.D || [], chosen.P || []);
+  }
+
+  // ---------------- Modificatore di centrocampo (aggiunto 29/08/2026) ----------------
+  // Regola di lega passata da Salvo. A differenza del Modificatore difesa, che
+  // guarda solo la propria squadra, questo è un CONFRONTO DIRETTO: si sommano i
+  // voti puri (voto in pagella, senza bonus né malus) dei centrocampisti
+  // schierati dalle due squadre e si premia chi ha la somma più alta.
+  //
+  //   differenza < 2      → nessun bonus
+  //   da 2   a 3,49       → ±1
+  //   da 3,5 a 5,49       → ±2
+  //   da 5,5 a 7,49       → ±3
+  //   da 7,5 in su        → ±4
+  //
+  // Se una delle due schiera meno centrocampisti dell'altra, alla squadra con
+  // meno uomini si aggiunge 5 per ogni mediano mancante, così il confronto resta
+  // sullo stesso numero di giocatori.
+  //
+  // Conseguenza tattica non ovvia: siccome un mediano vero vale in media più di
+  // 5, ogni centrocampista in più che schieri sposta la differenza a tuo favore
+  // di circa (il suo voto − 5), cioè circa un punto. È il motivo per cui questo
+  // modificatore spinge verso i moduli con la mediana folta — e vale anche senza
+  // sapere chi schiererà l'avversario, a differenza della fascia di bonus.
+  var VOTO_MEDIANO_MANCANTE = 5;
+  // Quanto è incerta la stima del centrocampo avversario, oltre alla normale
+  // oscillazione dei voti: non so né che modulo sceglierà né chi metterà dentro.
+  var MOD_C_INCERTEZZA_AVV = 0.5;
+
+  function bandaCentrocampo(diff) {
+    var T = tabellaCentrocampo();
+    for (var i = 0; i < T.length; i++) if (diff >= T[i].min) return T[i].bonus;
+    return 0;
+  }
+
+  // Valore atteso del bonus quando la differenza fra le due mediane è una stima.
+  // Stessa logica del Modificatore difesa: la tabella è a gradini e inseguire un
+  // gradino su un numero stimato — per giunta stimato sulla formazione di un
+  // altro — è il modo più rapido per farsi male. La differenza D è modellata
+  // come normale attorno alla stima; il bonus atteso è la somma dei gradini
+  // pesati per la probabilità di finirci dentro, contando che D può anche
+  // cambiare segno (cioè che il confronto lo perda io).
+  function modificatoreCentrocampoAtteso(d, nMiei, nSuoi) {
+    var varianza = (nMiei + nSuoi) * MEDIA_VOTO_SD * MEDIA_VOTO_SD + nSuoi * MOD_C_INCERTEZZA_AVV * MOD_C_INCERTEZZA_AVV;
+    var sd = Math.sqrt(varianza);
+    if (!(sd > 0)) return bandaCentrocampo(Math.abs(d)) * (d >= 0 ? 1 : -1);
+    var T = tabellaCentrocampo();
+    var atteso = 0;
+    for (var i = 0; i < T.length; i++) {
+      var bonus = T[i].bonus;
+      if (!bonus) continue;
+      var lo = T[i].min;
+      var hi = i === 0 ? Infinity : T[i - 1].min;
+      // ramo positivo: vinco io il confronto
+      var pPos = (hi === Infinity ? 1 : normCdf((hi - d) / sd)) - normCdf((lo - d) / sd);
+      // ramo negativo: lo vince lui, stesso gradino ma di segno opposto
+      var pNeg = normCdf((-lo - d) / sd) - (hi === Infinity ? 0 : normCdf((-hi - d) / sd));
+      atteso += bonus * (pPos - pNeg);
+    }
+    return atteso;
+  }
+
+  var MOD_C_NULLO = { eligible: false, bonus: 0, atteso: 0, mio: null, suo: null, nMiei: 0, nSuoi: 0, diff: 0, riempiti: 0, squadra: null };
+
+  // Stima del centrocampo che schiererà l'avversario di giornata. Doppia stima:
+  // non conosco né il suo modulo né i suoi undici. Ricalcolata una volta per
+  // giornata e tenuta in cache, perché buildXI la chiede per ogni modulo.
+  var _centroAvvCache = { chiave: null, valore: null };
+  function centrocampoAvversario() {
+    var g = state.meta.giornata || "";
+    var chiave = g + "|" + state.meta.strategia + "|" + (state.meta.modificatore ? 1 : 0);
+    if (_centroAvvCache.chiave === chiave) return _centroAvvCache.valore;
+    var nome = legaAvversario(g);
+    var stima = nome ? legaValoreAtteso(nome, g) : null;
+    var valore = (stima && stima.centro && stima.centro.length)
+      ? { squadra: nome, voti: stima.centro.slice(), modulo: stima.modulo }
+      : null;
+    _centroAvvCache = { chiave: chiave, valore: valore };
+    return valore;
+  }
+  function invalidaCentrocampoAvversario() { _centroAvvCache = { chiave: null, valore: null }; }
+
+  function somma(v) { return v.reduce(function (a, b) { return a + b; }, 0); }
+
+  // mieiC: elenco di entry { p, s } dei centrocampisti schierati.
+  function modificatoreCentrocampoDaSelezione(mieiC, avv) {
+    if (!centrocampoAttivoRegole()) return MOD_C_NULLO;
+    if (!avv || !avv.voti.length || !mieiC || !mieiC.length) return MOD_C_NULLO;
+    var mieiVoti = mieiC.map(function (x) { return effectiveVotoModificatore(x.p); });
+    var suoiVoti = avv.voti.slice();
+    var n = Math.max(mieiVoti.length, suoiVoti.length);
+    var mio = somma(mieiVoti) + VOTO_MEDIANO_MANCANTE * (n - mieiVoti.length);
+    var suo = somma(suoiVoti) + VOTO_MEDIANO_MANCANTE * (n - suoiVoti.length);
+    var d = mio - suo;
+    return {
+      eligible: true,
+      bonus: bandaCentrocampo(Math.abs(d)) * (d >= 0 ? 1 : -1),
+      atteso: modificatoreCentrocampoAtteso(d, mieiVoti.length, suoiVoti.length),
+      mio: mio, suo: suo, diff: d,
+      nMiei: mieiVoti.length, nSuoi: suoiVoti.length,
+      riempiti: (n - mieiVoti.length) + (n - suoiVoti.length),
+      squadra: avv.squadra, suoModulo: avv.modulo
+    };
   }
 
   // Pupillo/preferito d'asta (aggiunto 23/08/2026, su richiesta dell'utente:
@@ -3095,6 +3492,30 @@ async function refreshLivePlayerNews() {
     };
   }
 
+  // Scelta del centrocampo quando il modificatore di centrocampo è attivo:
+  // stessa idea della difesa, cioè si può rinunciare a un po' di fantavoto per
+  // una somma di voti puri più alta. Obiettivo sul valore ATTESO del bonus, non
+  // sul gradino — qui a maggior ragione, visto che metà del confronto è una
+  // stima della formazione altrui.
+  var MOD_C_CANDIDATI = 8;
+  function scegliCentrocampo(pool, need, avv) {
+    var ord = pool.slice().sort(function (a, b) { return b.s.adj - a.s.adj; });
+    var combo = ord.length >= need
+      ? combinazioni(ord.slice(0, Math.min(MOD_C_CANDIDATI, ord.length)), need)
+      : [ord.slice()];
+    if (!combo.length) combo = [ord.slice(0, need)];
+    var best = null;
+    combo.forEach(function (sel) {
+      var m = modificatoreCentrocampoDaSelezione(sel, avv);
+      var v = valutaReparto(ord, sel);
+      var punteggio = v.con + m.atteso;
+      if (!best || punteggio > best.punteggio) best = { punteggio: punteggio, sel: sel };
+    });
+    if (!best) return { picked: [], con: 0, senza: 0, mod: MOD_C_NULLO };
+    var f = valutaReparto(ord, best.sel);
+    return { picked: f.picked, con: f.con, senza: f.senza, mod: modificatoreCentrocampoDaSelezione(best.sel, avv) };
+  }
+
   function buildXI(players, shape) {
     var chosen = {}; var shortage = false; var totalConBonus = 0; var totalSenzaBonus = 0;
     var pools = {};
@@ -3105,14 +3526,26 @@ async function refreshLivePlayerNews() {
       if (pools[r.key].length < need) shortage = true;
     });
     // Con il Modificatore attivo portiere e difesa si scelgono insieme, perché
-    // il bonus dipende da entrambi; gli altri reparti restano indipendenti.
+    // il bonus dipende da entrambi; con il Modificatore di centrocampo lo stesso
+    // vale per la mediana. Gli altri reparti restano indipendenti.
     var modAttivo = !!state.meta.modificatore && shape.D === 4;
+    var avvC = centrocampoAttivoRegole() ? centrocampoAvversario() : null;
+    var centroAttivo = !!avvC && (shape.C || 0) > 0;
     ROLES.forEach(function (r) {
       if (modAttivo && (r.key === "D" || r.key === "P")) return;
+      if (centroAttivo && r.key === "C") return;
       var need = shape[r.key] || 0;
       var ordered = orderRolePool(pools[r.key], need);
       var picked = ordered.order.slice(0, need);
-      picked.forEach(function (x) { totalConBonus += x.ev; totalSenzaBonus += x.evNoBonus; });
+      // orderRolePool serve a ORDINARE (chi entra nell'undici); il valore finale
+      // si ricalcola con valutaReparto, la stessa funzione usata dalla scelta
+      // congiunta e dalla formazione modificata a mano. Senza questo passaggio i
+      // due percorsi sceglievano il sostituto con criteri diversi — uno il
+      // migliore rimasto per valore atteso, l'altro il migliore rimasto per
+      // punteggio — e il totale in alto non coincideva col numero sul chip del
+      // modulo, per qualche decimo, senza che si capisse perché.
+      var v = valutaReparto(pools[r.key], picked);
+      totalConBonus += v.con; totalSenzaBonus += v.senza;
       chosen[r.key] = picked;
     });
     var mod;
@@ -3124,6 +3557,16 @@ async function refreshLivePlayerNews() {
     } else {
       mod = teamModificatoreBonus(chosen, shape.D);
     }
+    var modC = MOD_C_NULLO;
+    if (centroAttivo) {
+      var selC = scegliCentrocampo(pools.C, shape.C || 0, avvC);
+      chosen.C = selC.picked;
+      totalConBonus += selC.con; totalSenzaBonus += selC.senza;
+      modC = selC.mod;
+    } else if (avvC) {
+      modC = modificatoreCentrocampoDaSelezione(chosen.C || [], avvC);
+    }
+    totalConBonus += modC.bonus;
     // Bonus/malus modificatore difesa: una tantum sul totale squadra, non
     // distribuibile sui singoli giocatori. Nel totale mostrato entra il valore
     // a gradino — quello che prenderesti se la stima fosse esatta — mentre la
@@ -3139,6 +3582,7 @@ async function refreshLivePlayerNews() {
       modRealCount: mod.realCount || 0,
       modTotalCount: mod.totalCount || 0,
       modProssima: mod.prossima || null,
+      modC: modC,
       shortage: shortage
     };
   }
@@ -3268,6 +3712,10 @@ async function refreshLivePlayerNews() {
     });
     var mod = teamModificatoreBonus(chosen, shape.D);
     totalCon += mod.bonus;
+    var modC = centrocampoAttivoRegole()
+      ? modificatoreCentrocampoDaSelezione(chosen.C || [], centrocampoAvversario())
+      : MOD_C_NULLO;
+    totalCon += modC.bonus;
     var cvb = deriveCaptainViceBench(chosen);
     return {
       chosen: chosen,
@@ -3279,6 +3727,7 @@ async function refreshLivePlayerNews() {
       modRealCount: mod.realCount || 0,
       modTotalCount: mod.totalCount || 0,
       modProssima: mod.prossima || null,
+      modC: modC,
       overridden: overridden,
       captain: cvb.captain,
       vice: cvb.vice,
@@ -3459,6 +3908,7 @@ async function refreshLivePlayerNews() {
           '<span class="note-date" data-field="noteDataLabel">' + (p.noteData ? "Aggiornato: " + escapeHtml(p.noteData) : "") + '</span>' +
         '</div>' +
         '<textarea data-field="note" placeholder="es. titolare inamovibile per il tecnico; ballottaggio con X; squadra in forma dopo 3 vittorie...">' + escapeHtml(p.note || "") + '</textarea>' +
+        titoliHtml(p.name) +
         (showVoto ? '<div class="row-note-foot"><label>Voto reale (ultima giornata giocata) ' + campoDecimale("", 'data-field="votoReale" placeholder="—" title="Voto reale dell\'ultima giornata giocata: se compilato, sostituisce la fantamedia nel calcolo del Modificatore per questo giocatore"', p.votoReale) + '</label></div>' : '') +
       '</div>';
 
@@ -3829,7 +4279,10 @@ async function refreshLivePlayerNews() {
   function legaAvversario(g) {
     var n = parseInt(g, 10);
     if (!n || n < 1) return null;
-    var turno = LEGA_TURNI[(n - 1) % LEGA_TURNI.length];
+    // Una squadra senza lega collegata non ha avversari: senza questo controllo
+    // il resto (% 0 = NaN) andava a leggere un turno inesistente.
+    if (!LEGA_TURNI.length || !LEGA_MIA) return null;
+    var turno = LEGA_TURNI[(n - 1) % LEGA_TURNI.length] || [];
     for (var i = 0; i < turno.length; i++) {
       if (turno[i][0] === LEGA_MIA) return turno[i][1];
       if (turno[i][1] === LEGA_MIA) return turno[i][0];
@@ -3942,7 +4395,7 @@ async function refreshLivePlayerNews() {
     Object.keys(SHAPES).forEach(function (name) {
       var shape = SHAPES[name];
       if (state.meta.modificatore && shape.D !== 4) return;
-      var tot = 0, ok = true, difs = [], gk = null;
+      var tot = 0, ok = true, difs = [], gk = null, cents = [];
       ["P", "D", "C", "A"].forEach(function (r) {
         var need = shape[r] || 0;
         if (pool[r].length < need) { ok = false; return; }
@@ -3952,6 +4405,7 @@ async function refreshLivePlayerNews() {
         picked.forEach(function (x) { tot += x.raw * x.prob + (1 - x.prob) * subVal; });
         if (r === "D") difs = picked;
         if (r === "P") gk = picked[0];
+        if (r === "C") cents = picked;
       });
       if (!ok) return;
       var bonus = 0;
@@ -3963,7 +4417,9 @@ async function refreshLivePlayerNews() {
         if (usati.length === 4) bonus = modificatoreBonusFromAvg(usati.reduce(function (a, b) { return a + b; }, 0) / 4);
       }
       var totale = tot + bonus;
-      if (!best || totale > best.totale) best = { modulo: name, totale: totale, bonus: bonus };
+      // I voti puri dei suoi centrocampisti servono al modificatore di
+      // centrocampo, che è un confronto diretto fra le due mediane.
+      if (!best || totale > best.totale) best = { modulo: name, totale: totale, bonus: bonus, centro: cents.map(function (x) { return x.mv; }) };
     });
     if (!best) return null;
     best.mancanti = mancanti;
@@ -4048,8 +4504,8 @@ async function refreshLivePlayerNews() {
   var PUNTI_VITTORIA = 3, PUNTI_PAREGGIO = 1, PUNTI_SCONFITTA = 0;
   function coppieGiornata(g) {
     var gn = parseInt(g, 10);
-    if (!gn) return [];
-    return LEGA_TURNI[(gn - 1) % LEGA_TURNI.length];
+    if (!gn || !LEGA_TURNI.length) return [];
+    return LEGA_TURNI[(gn - 1) % LEGA_TURNI.length] || [];
   }
   // Esiti di una giornata: { squadra: {punti, esito, fanta, avversario, fantaAvv} }
   function esitiGiornata(g) {
@@ -4099,7 +4555,7 @@ async function refreshLivePlayerNews() {
     // Gli otto campi disposti come i quattro scontri diretti del turno, così il
     // confronto con l'avversario si legge senza cercarlo in un elenco.
     var coppie = coppieGiornata(g);
-    if (!coppie.length) coppie = LEGA_TURNI[0];
+    if (!coppie.length) coppie = LEGA_TURNI[0] || [];
     var eg = esitiGiornata(g);
 
     var sfideHtml = coppie.map(function (c) {
@@ -4300,6 +4756,40 @@ async function refreshLivePlayerNews() {
       '<p class="scale-note">Su ' + t.giornate + (t.giornate === 1 ? ' giornata chiusa' : ' giornate chiuse') + '. Con meno di ~10 casi per riga i numeri non dicono ancora niente: servono cinque o sei giornate prima che valga la pena guardarli.</p>';
   }
 
+  function renderLegaSelect() {
+    var sel = document.getElementById("legaSelect");
+    if (!sel) return;
+    var attiva = legaAttivaId();
+    var opts = '<option value="">— nessuna lega collegata —</option>';
+    Object.keys(RIF_LEGHE).forEach(function (id) {
+      opts += '<option value="' + escapeAttr(id) + '"' + (id === attiva ? " selected" : "") + '>' + escapeHtml(RIF_LEGHE[id].nome || id) + '</option>';
+    });
+    sel.innerHTML = opts;
+    sel.value = attiva;
+    var nota = document.getElementById("legaRegoleNota");
+    if (!nota) return;
+    if (!RIF_LEGHE[attiva]) { nota.textContent = "Senza lega non ci sono avversari di giornata: il modificatore di centrocampo resta spento e la classifica è vuota."; return; }
+    var r = regoleLega();
+    var pezzi = [];
+    if (r.fonteVoti) pezzi.push("voti: " + r.fonteVoti);
+    pezzi.push("scadenza: " + (r.scadenzaMinutiPrima ? r.scadenzaMinutiPrima + " min prima del via" : "al calcio d'inizio"));
+    pezzi.push("difesa: " + (r.difesa.portiere === "sempre" ? "portiere sempre incluso" : r.difesa.portiere === "mai" ? "senza portiere" : "portiere a scelta"));
+    pezzi.push("centrocampo: " + (r.centrocampo.attivo === false ? "non previsto" : "attivo"));
+    nota.textContent = pezzi.join(" · ");
+  }
+
+  function renderSquadraSelect() {
+    var sel = document.getElementById("squadraSelect");
+    if (!sel) return;
+    var attivaId = state.meta.squadraId || "carmy";
+    sel.innerHTML = elencoSquadre().map(function (s) {
+      var lega = RIF_LEGHE[s.legaId];
+      var etichetta = s.nome + (lega ? " · " + lega.nome : (s.legaId ? "" : " · lega da collegare"));
+      return '<option value="' + escapeAttr(s.id) + '"' + (s.attiva ? " selected" : "") + '>' + escapeHtml(etichetta) + '</option>';
+    }).join("") + '<option value="__nuova__">+ Aggiungi squadra…</option>';
+    sel.value = attivaId;
+  }
+
   function renderHistoryCard() {
     var host = document.getElementById("historyCardHost");
     if (!host) return;
@@ -4372,6 +4862,22 @@ async function refreshLivePlayerNews() {
     // sapere quanto manca alla fascia sopra dice più del bonus da solo. A 0,03
     // dalla soglia il +1 è quasi una monetina; a 0,20 è fuori portata.
     var pr = bestResult.modProssima;
+    // Modificatore di centrocampo: metà del confronto è una stima della
+    // formazione avversaria, e il testo deve dirlo — è un numero di natura
+    // diversa da quello della difesa, che guarda solo i miei giocatori.
+    var mc = bestResult.modC;
+    var modCTxt = "";
+    if (centrocampoAttivoRegole()) {
+      if (mc && mc.eligible) {
+        modCTxt = 'centrocampo: ' + mc.mio.toFixed(1) + ' contro ' + mc.suo.toFixed(1) +
+          ' (' + escapeHtml(mc.squadra || 'avversario') + ', ' + mc.nSuoi + ' mediani stimati)' +
+          ' → ' + (mc.bonus >= 0 ? '+' : '') + mc.bonus.toFixed(0) +
+          (mc.riempiti ? ' · ' + mc.riempiti + ' voti da 5 per pareggiare i numeri' : '') +
+          ' · sulla sua formazione è una stima';
+      } else {
+        modCTxt = 'centrocampo: avversario di giornata non determinato, modificatore non applicato';
+      }
+    }
     var modInfoTxt = bestResult.modEligible
       ? ('modificatore: media voto migliori difensori ' + bestResult.modAvg.toFixed(2) + ' → bonus +' + bestResult.modBonus.toFixed(1) +
          (bestResult.modRealCount > 0 ? ' (' + bestResult.modRealCount + '/' + bestResult.modTotalCount + ' su voto reale)' : ' (stima)') +
@@ -4401,13 +4907,18 @@ async function refreshLivePlayerNews() {
       '<span class="total-score">senza bonus/malus: <b>' + totalSenzaTxt + '</b></span>' +
       '<span class="total-score">con bonus/malus: <b>' + totalConTxt + '</b></span>' +
       '<span class="total-score total-score-note">' + modInfoTxt + '</span>' +
+      (modCTxt ? '<span class="total-score total-score-note">' + modCTxt + '</span>' : '') +
       '</div>';
 
     var pitchData = { results: {}, best: data.best, captain: bestResult.captain, vice: bestResult.vice };
     pitchData.results[data.best] = bestResult;
     html += '<div class="result-grid"><div class="side-col">';
     html += '<div class="callout-row">' + calloutHtml("captain", "Capitano", bestResult.captain) + calloutHtml("vice", "Vice capitano", bestResult.vice) + '</div>';
-    html += '<div class="formation-actions"><button type="button" class="btn btn-danger-lite" id="cancelFormationBtn">Annulla formazione manuale</button></div>';
+    // "Annulla formazione manuale" e "Ripristina auto" facevano esattamente la
+    // stessa cosa, ed erano sempre visibili anche senza niente da annullare:
+    // premerne uno non cambiava nulla e sembrava che il tool non rispondesse.
+    // Ne resta uno solo, nell'intestazione della card Formazione, e compare
+    // solo quando c'è davvero una scelta manuale da disfare.
     html += renderLineupEditorHtml(bestResult, bestShape);
 
     html += '<div class="bench-card"><h3>Riserve consigliate</h3><div class="bench-list">';
@@ -4422,7 +4933,8 @@ async function refreshLivePlayerNews() {
       var r = data.results[name], isWinner = name === data.best;
       html += '<tr class="' + (isWinner ? 'winner' : '') + '"><td>' + name + (isWinner ? (data.forced ? ' ●' : ' ✓') : '') + '</td><td class="num">' + r.totalSenzaBonus.toFixed(1) + '</td><td class="num">' + r.total.toFixed(1) + '</td><td>' +
         Object.keys(SHAPES[name]).map(function(k){return k+SHAPES[name][k];}).join(' · ') +
-        (r.modEligible ? '<div class="warn-note">modificatore +' + r.modBonus.toFixed(1) + ' (media ' + r.modAvg.toFixed(2) + ')</div>' : '') +
+        (r.modEligible ? '<div class="warn-note">difesa +' + r.modBonus.toFixed(1) + ' (media ' + r.modAvg.toFixed(2) + ')</div>' : '') +
+        (r.modC && r.modC.eligible ? '<div class="warn-note">centrocampo ' + (r.modC.bonus >= 0 ? '+' : '') + r.modC.bonus.toFixed(0) + ' (' + r.modC.mio.toFixed(1) + ' vs ' + r.modC.suo.toFixed(1) + ')</div>' : '') +
         (r.shortage ? '<div class="warn-note">rosa incompleta per questo modulo</div>' : '') + '</td></tr>';
     });
     html += '</tbody></table></div><p class="lineup-hint">La tabella resta sempre la scelta pura dell’algoritmo, senza sostituzioni manuali.</p>';
@@ -4430,8 +4942,7 @@ async function refreshLivePlayerNews() {
 
     host.innerHTML = html;
     wireLineupEditor(data, bestResult);
-    var cancel = document.getElementById('cancelFormationBtn');
-    if (cancel) cancel.addEventListener('click', function(){ state.meta.manualLineup = null; scheduleSave(); renderResult(); });
+
     host.querySelectorAll('[data-formation-shortcut]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var val = btn.dataset.formationShortcut;
@@ -4451,8 +4962,11 @@ async function refreshLivePlayerNews() {
   // Elenco selezionabile per ogni slot titolare del modulo vincente — vedi
   // buildManualXI/wireLineupEditor per come le scelte vengono applicate.
   function renderLineupEditorHtml(bestResult, shape) {
-    var html = '<div class="bench-card lineup-editor-card"><h3><span>Formazione</span><button type="button" class="btn btn-small reset-lineup-btn" id="resetLineupBtn">Ripristina auto</button></h3>';
-    html += '<p class="lineup-summary">Usa il menu a destra per cambiare qualsiasi titolare. Le modifiche vengono salvate automaticamente.</p>';
+    var manuale = !!bestResult.overridden;
+    var html = '<div class="bench-card lineup-editor-card"><h3><span>Formazione</span>' +
+      (manuale ? '<button type="button" class="btn btn-small btn-danger-lite reset-lineup-btn" id="resetLineupBtn">↺ Torna alla formazione automatica</button>' : '') +
+      '</h3>';
+    html += '<p class="lineup-summary">Tocca un giocatore per cambiarlo. Le modifiche vengono salvate automaticamente.</p>';
     var groupLabels = { P:'Portieri', D:'Difensori', C:'Centrocampisti', A:'Attaccanti' };
     var statusShort = {
       titolare: 'TIT',
@@ -4483,7 +4997,7 @@ async function refreshLivePlayerNews() {
           var sel=current&&current.p.id===x.p.id?' selected':'';
           return '<option value="'+x.p.id+'"'+sel+'>'+escapeHtml(specialistTags(x)+(x.p.name||'(senza nome)')+' — '+x.s.adj.toFixed(1))+'</option>';
         }).join('');
-        html += '<div class="lineup-slot pl-riga">' +
+        html += '<div class="lineup-slot pl-riga pl-riga-clic">' +
           (p ? rigaGiocatoreHtml(p, sc ? sc.raw : 0, { freccia: true })
              : '<span class="pl-ruolo" data-ruolo="' + r.key + '">' + r.key + '</span><div class="pl-main"><div class="pl-top"><span class="pl-nome">—</span></div><div class="pl-info">nessun giocatore disponibile</div></div><div class="pl-punteggio"><span class="pl-voto">—</span></div>') +
           '<select class="lineup-picker-select" data-role="'+r.key+'" data-slot="'+i+'" aria-label="Cambia giocatore">'+opts+'</select>'+
@@ -4566,6 +5080,15 @@ async function refreshLivePlayerNews() {
         '<span class="lg-desc"><b>' + escapeHtml(etichette[f.key]) + '</b> · ' + escapeHtml(f.label) + '</span>';
     });
     html += '</div>';
+    if (centrocampoAttivoRegole()) {
+      html += '<h4>Modificatore centrocampo</h4><div class="legenda-righe">' +
+        '<span class="legenda-pallino" style="background:var(--voto-buono)"></span><span class="lg-desc"><b>±1</b> · da 2 a 3,4 di differenza</span>' +
+        '<span class="legenda-pallino" style="background:var(--voto-ottimo)"></span><span class="lg-desc"><b>±2</b> · da 3,5 a 5,4</span>' +
+        '<span class="legenda-pallino" style="background:var(--voto-elite)"></span><span class="lg-desc"><b>±3</b> · da 5,5 a 7,4</span>' +
+        '<span class="legenda-pallino" style="background:var(--voto-elite)"></span><span class="lg-desc"><b>±4</b> · da 7,5 in su</span>' +
+        '</div>' +
+        '<p class="legenda-nota">Si confronta la somma dei <b>voti puri</b> dei centrocampisti con quella dell\'avversario di giornata. Chi ne schiera meno riceve 5 per ogni mediano mancante: siccome un centrocampista titolare in Serie A prende in media 6,1, <b>ogni mediano in più vale circa un punto di differenza</b>. La sua metà del confronto è una stima, non un dato.</p>';
+    }
     html += '<p class="legenda-nota">Il numero è il voto atteso <b>se scende in campo</b>. L\'ordine delle liste tiene conto anche della probabilità che giochi, che è quella del badge di stato: per questo un BAL può stare sotto un TIT con voto più basso.</p>';
     html += '</div>';
     return html;
@@ -4704,8 +5227,47 @@ async function refreshLivePlayerNews() {
       saveThemePref(themePref);
       applyTheme(themePref);
     });
+    // Selettore squadra: l'ultima voce apre la creazione di una squadra nuova.
+    var legaSel = document.getElementById("legaSelect");
+    if (legaSel) legaSel.addEventListener("change", function (e) {
+      state.meta.legaId = e.target.value;
+      applicaLega(legaAttivaId());
+      invalidaCentrocampoAvversario();
+      scheduleSave();
+      renderSquadraSelect();
+      renderLegaSelect();
+      renderLegaCard();
+      renderRisultatiCard();
+      renderResult();
+    });
+
+    var sqSel = document.getElementById("squadraSelect");
+    if (sqSel) sqSel.addEventListener("change", function (e) {
+      var v = e.target.value;
+      if (v === "__nuova__") {
+        var nome = prompt("Nome della squadra nuova (la rosa la aggiungi dopo):", "");
+        if (!nome) { renderSquadraSelect(); return; }
+        creaSquadra(nome.trim(), "");
+      } else if (!cambiaSquadra(v)) { renderSquadraSelect(); return; }
+      renderSquadraSelect();
+      renderLegaSelect();
+      document.getElementById("giornataInput").value = state.meta.giornata || "";
+      document.getElementById("moduloSelect").value = state.meta.modulo;
+      document.getElementById("modificatoreToggle").checked = state.meta.modificatore;
+      document.getElementById("includiPortiereToggle").checked = state.meta.includiPortiere;
+      document.getElementById("modificatoreCentrocampoToggle").checked = state.meta.modificatoreCentrocampo !== false;
+      document.getElementById("strategiaSelect").value = state.meta.strategia;
+      updateAutoOptionLabel();
+      renderSections();
+      renderHistoryCard();
+      renderLegaCard();
+      renderRisultatiCard();
+      renderResult();
+    });
+
     document.getElementById("giornataInput").addEventListener("input", function (e) {
       state.meta.giornata = e.target.value;
+      invalidaCentrocampoAvversario();
       renderLegaCard();
       renderRisultatiCard();
       scheduleSave();
@@ -4747,6 +5309,12 @@ async function refreshLivePlayerNews() {
       state.meta.includiPortiere = e.target.checked;
       scheduleSave();
     });
+    document.getElementById("modificatoreCentrocampoToggle").addEventListener("change", function (e) {
+      state.meta.modificatoreCentrocampo = e.target.checked;
+      invalidaCentrocampoAvversario();
+      scheduleSave();
+      renderResult();
+    });
     document.getElementById("strategiaSelect").addEventListener("change", function (e) {
       state.meta.strategia = e.target.value;
       updateAutoOptionLabel();
@@ -4775,8 +5343,12 @@ async function refreshLivePlayerNews() {
       document.getElementById("moduloSelect").value = state.meta.modulo;
       document.getElementById("modificatoreToggle").checked = state.meta.modificatore;
       document.getElementById("includiPortiereToggle").checked = state.meta.includiPortiere;
+      document.getElementById("modificatoreCentrocampoToggle").checked = state.meta.modificatoreCentrocampo !== false;
       document.getElementById("strategiaSelect").value = state.meta.strategia;
       updateAutoOptionLabel();
+      applicaLega(legaAttivaId());
+      renderSquadraSelect();
+      renderLegaSelect();
       renderSections();
       renderHistoryCard();
       renderLegaCard();
@@ -4808,29 +5380,47 @@ async function refreshLivePlayerNews() {
     if (btn) { btn.disabled = true; btn.textContent = "↻ Aggiorno…"; }
     if (pill) { pill.className = "status-pill busy"; pill.querySelector(".label").textContent = "News — aggiornamento"; }
     try {
-      var fn = await sb.functions.invoke("update-player-news", { body: { force: true } });
-      if (fn.error) throw fn.error;
-      var rows = await refreshLivePlayerNews();
-      renderSections();
-      renderResult();
-      var latest = rows && rows.length ? rows[0].updated_at : null;
-      var label = latest ? new Date(latest).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "nessuna news";
-      if (pill) { pill.className = "status-pill ok"; pill.querySelector(".label").textContent = "News " + label; }
-      setSaveStatus("ok", rows.length ? "News aggiornate" : "News già aggiornate");
+      // La raccolta gira dentro Postgres, non più nella Edge Function: Google
+      // News risponde 503 alle richieste che arrivano dalle Edge Function di
+      // Supabase (verificato il 30/08/2026, due query su due per tutti e 25 i
+      // giocatori) mentre risponde 200 a pg_net. raccogli_titoli() mette in coda
+      // le ricerche, assorbi_titoli() legge le risposte man mano che arrivano.
+      var acc = await sb.rpc("raccogli_titoli");
+      if (acc.error) throw acc.error;
+      var rows = [];
+      // Le risposte arrivano nell'arco di qualche decina di secondi: raccolgo a
+      // ondate invece di aspettare una volta sola a caso.
+      for (var giro = 0; giro < 6; giro++) {
+        await new Promise(function (r) { setTimeout(r, 6000); });
+        var ass = await sb.rpc("assorbi_titoli");
+        if (ass.error) throw ass.error;
+        rows = await refreshLivePlayerNews();
+        renderSections();
+        renderResult();
+        if (pill) pill.querySelector(".label").textContent = "News — raccolgo (" + (giro + 1) + "/6)";
+      }
+      var conTitoli = rows.filter(function (r) { return Array.isArray(r.titoli_json) && r.titoli_json.length; }).length;
+      var latest = rows.reduce(function (a, r) {
+        var t = Date.parse(r.titoli_updated_at || "");
+        return isNaN(t) ? a : Math.max(a, t);
+      }, 0);
+      var label = latest ? new Date(latest).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "nessun titolo";
+      if (pill) { pill.className = "status-pill ok"; pill.querySelector(".label").textContent = "Titoli " + label; }
+      setSaveStatus("ok", conTitoli + " giocatori con titoli nuovi da leggere");
     } catch (e) {
       console.error(e);
       if (pill) { pill.className = "status-pill danger"; pill.querySelector(".label").textContent = "News — errore"; }
       setSaveStatus("warn", "Impossibile aggiornare le news");
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = "↻ Aggiorna news"; }
+      if (btn) { btn.disabled = false; btn.textContent = "↻ Raccogli titoli"; }
     }
   }
 
   async function downloadPlayerNewsCsv() {
     var rows = await loadLivePlayerNews();
-    var headers = ["Giocatore","Status","Nota","Fonte","Data","Aggiornato"];
+    var headers = ["Giocatore","Status","Nota","Fonte","Data","Aggiornato","Titoli raccolti","Titoli aggiornati"];
     var csv = [headers].concat((rows || []).map(function (r) {
-      return [r.player || "", r.status || "", r.note || "", r.fonte || "", r.noteData || "", r.updated_at || ""];
+      return [r.player || "", r.status || "", r.note || "", r.fonte || "", r.noteData || "", r.updated_at || "", r.titoli || "", r.titoli_updated_at || ""];
     })).map(function (row) {
       return row.map(function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }).join(";");
     }).join("\r\n");
