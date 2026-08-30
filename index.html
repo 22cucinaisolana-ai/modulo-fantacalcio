@@ -600,6 +600,14 @@
     font-size: 11px;
     color: var(--text-muted);
   }
+  /* Riepilogo di cosa è stato riempito dal listone scegliendo un nome. */
+  .name-hint {
+    margin-top: 5px;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--text-muted);
+  }
+  .name-hint[data-tone="warn"] { color: var(--warn); }
   .row-note-foot {
     display: flex;
     align-items: center;
@@ -1923,6 +1931,7 @@
               <option value="equilibrato">Equilibrato</option>
               <option value="aggressivo">Aggressivo</option>
               <option value="prudente">Prudente</option>
+              <option value="sfavorito">Batti l'avversario</option>
             </select>
           </label>
         </div>
@@ -2154,6 +2163,34 @@
       candidates: ["4-5-1", "5-3-2", "5-4-1"],
       statusProb: { titolare: 0.95, ballottaggio_fav: 0.68, ballottaggio: 0.45, ballottaggio_sfav: 0.25, panchina: 0.08, assente: 0 },
       modScale: 0.75
+    },
+    // Aggiunta 30/08/2026, dopo il confronto fra le otto rose: la rosa di
+    // Salvo è sesta su otto per valore dell'undici ma PRIMA per titolarità.
+    // Cioè è costruita a bassa varianza — la forma giusta per chi parte
+    // favorito, sbagliata per chi insegue: quando la tua rosa vale meno di
+    // quella dell'avversario, giocare la partita "media" significa perdere
+    // quasi sempre. Servono le settimane strane, ed è la varianza a produrle.
+    //
+    // Le altre tre strategie fanno una cosa concettualmente sbagliata: per
+    // "rischiare di più" alterano le PROBABILITÀ (un ballottaggio diventa 65%
+    // invece di 55%). Ma quelle sono credenze sul mondo, non preferenze: un
+    // ballottaggio non diventa più probabile perché mi serve. Questa invece
+    // lascia le credenze in pace e cambia l'OBIETTIVO: non massimizza i punti
+    // attesi, massimizza la probabilità di fare più punti dell'avversario di
+    // giornata. Che è la cosa che decide la partita.
+    //
+    // Non è "gioca sempre rischioso": massimizzando
+    //     P(vinco) = Φ( (mio − suo) / √(var mia + var sua) )
+    // quando sei sotto conviene alzare la varianza (rende meno negativo il
+    // rapporto) e quando sei sopra conviene abbassarla. Il comportamento da
+    // favorito e quello da sfavorito escono dalla stessa formula, senza doverli
+    // scrivere a mano né scegliere una soglia arbitraria.
+    sfavorito: {
+      label: "Batti l'avversario",
+      candidates: ["3-4-3", "3-5-2", "4-3-3", "4-4-2", "4-5-1", "5-3-2", "5-4-1"],
+      statusProb: { titolare: 0.95, ballottaggio_fav: 0.75, ballottaggio: 0.55, ballottaggio_sfav: 0.35, panchina: 0.15, assente: 0 },
+      modScale: 1.0,
+      obiettivo: "probabilita"
     }
   };
   function strategyProfile() {
@@ -2453,7 +2490,7 @@
     if (L.miaSquadra && LEGA_SQUADRE[L.miaSquadra]) LEGA_MIA = L.miaSquadra;
     L.turni.forEach(function (t) { LEGA_TURNI.push(t); });
     Object.keys(L.risultati).forEach(function (g) { RISULTATI[g] = L.risultati[g]; });
-    invalidaCentrocampoAvversario();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
   }
   function legaAttivaId() {
     if (!state || !state.meta) return LEGA_PREDEFINITA;
@@ -2560,7 +2597,7 @@
     state.players = target.players;
     normalizzaStato();
     applicaLega(legaAttivaId());
-    invalidaCentrocampoAvversario();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
     scheduleSave();
     return true;
   }
@@ -2582,7 +2619,7 @@
     state.players = [];
     normalizzaStato();
     applicaLega(legaAttivaId());
-    invalidaCentrocampoAvversario();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
     scheduleSave();
     return id;
   }
@@ -3130,6 +3167,58 @@ async function refreshLivePlayerNews() {
     var y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
     return 0.5 * (1 + segno * y);
   }
+  // ---------- varianza di una formazione ----------
+  // Quanto può oscillare il punteggio di un giocatore attorno al suo valore
+  // atteso, per ruolo. Due fonti diverse:
+  //  1) il fantavoto di chi gioca (voto in pagella + bonus). Un attaccante che
+  //     segna prende +3: è lì che sta quasi tutta la varianza del fantacalcio.
+  //     Un difensore oscilla molto meno.
+  //  2) il fatto stesso di giocare o no, che è già dentro come p(1−p)·(lui −
+  //     chi subentra)². Un ballottaggio al 55% è una monetina, ed è la fonte
+  //     di varianza più grande che uno sfavorito abbia a disposizione.
+  //
+  // I numeri del punto 1 sono un GIUDIZIO, non una stima: i 19 fantavoti veri
+  // della giornata 1 danno l'ordine giusto (A 3,40 · P 1,77 · C 0,92 · D 0,38)
+  // ma con tre attaccanti e due portieri non si stima niente. Li ho ricavati
+  // dalla struttura dei bonus di lega (gol +3, assist +1, ammonizione −0,5,
+  // gol subito −1) e li ho tenuti prudenti. Da ricontrollare quando lo storico
+  // avrà cinque o sei giornate — la tabella "Dove sbaglia" darà l'errore medio
+  // per reparto, che è esattamente questa quantità misurata sul campo.
+  var SD_FANTAVOTO_RUOLO = { P: 1.30, D: 0.85, C: 1.15, A: 1.75 };
+
+  function varianzaFormazione(chosen) {
+    var tot = 0;
+    ROLES.forEach(function (r) {
+      var picked = (chosen && chosen[r.key]) || [];
+      if (!picked.length) return;
+      var dentro = {};
+      picked.forEach(function (e) { if (e && e.p) dentro[e.p.id] = true; });
+      var fuori = state.players
+        .filter(function (p) { return p.role === r.key && p.status !== "assente" && !dentro[p.id]; })
+        .map(function (p) { return scorePlayer(p); })
+        .sort(function (a, b) { return b.adj - a.adj; });
+      // Un solo sostituto per reparto: è il primo che entrerebbe. Se ne mancano
+      // due nella stessa giornata la stima resta ottimista, ma è il caso raro.
+      var sub = fuori.length ? fuori[0].raw * fuori[0].prob : 0;
+      var sd = SD_FANTAVOTO_RUOLO[r.key] || 1.0;
+      picked.forEach(function (e) {
+        if (!e || !e.s) return;
+        var p = e.s.prob, d = e.s.raw - sub;
+        tot += sd * sd + p * (1 - p) * d * d;
+      });
+    });
+    return tot;
+  }
+
+  // P(faccio più punti di lui). Differenza di due somme di undici contributi:
+  // per il teorema del limite centrale la normale è un'approssimazione
+  // ragionevole anche se i singoli fantavoti non lo sono affatto.
+  function probVittoria(mio, varMia, suo, varSua) {
+    var v = (varMia || 0) + (varSua || 0);
+    if (!(v > 0)) return mio > suo ? 1 : (mio < suo ? 0 : 0.5);
+    return normCdf((mio - suo) / Math.sqrt(v));
+  }
+
   // Somma di bonus_fascia × probabilità di finire in quella fascia.
   function modificatoreAtteso(avg, n) {
     if (avg == null) return 0;
@@ -3647,12 +3736,46 @@ async function refreshLivePlayerNews() {
     return { captain: captain, vice: vice, bench: bench };
   }
 
+  // Stima dell'avversario di giornata (punti attesi e varianza), in cache
+  // perché serve a ogni modulo confrontato.
+  var _avvCache = { chiave: null, valore: null };
+  function avversarioAtteso() {
+    var g = state.meta.giornata || "";
+    var chiave = g + "|" + LEGA_MIA + "|" + (state.meta.modificatore ? 1 : 0);
+    if (_avvCache.chiave === chiave) return _avvCache.valore;
+    var nome = legaAvversario(g);
+    var stima = nome ? legaValoreAtteso(nome, g) : null;
+    var valore = stima ? { squadra: nome, punti: stima.totale, varianza: stima.varianza || 0 } : null;
+    _avvCache = { chiave: chiave, valore: valore };
+    return valore;
+  }
+  function invalidaAvversarioAtteso() { _avvCache = { chiave: null, valore: null }; }
+
   function computeAll() {
     var results = {};
     Object.keys(SHAPES).forEach(function (name) { results[name] = buildXI(state.players, SHAPES[name]); });
+
+    // Con la strategia "Batti l'avversario" i moduli non si ordinano per punti
+    // attesi ma per probabilità di fare più punti di lui. È la stessa lista di
+    // formazioni, valutata con un metro diverso: se sei sotto premia quella che
+    // oscilla di più, se sei sopra quella che oscilla di meno, senza che nessuno
+    // debba deciderlo a mano.
+    // La probabilità di vittoria si calcola SEMPRE che ci sia un avversario di
+    // giornata: è un'informazione utile in qualunque strategia. Quello che
+    // cambia con "Batti l'avversario" è solo che i moduli vengono ORDINATI su
+    // quella invece che sui punti.
+    var avv = avversarioAtteso();
+    var ordinaSuProb = strategyProfile().obiettivo === "probabilita" && !!avv;
+    Object.keys(results).forEach(function (name) {
+      var r = results[name];
+      r.varianza = varianzaFormazione(r.chosen);
+      r.pVittoria = avv ? probVittoria(r.total, r.varianza, avv.punti, avv.varianza) : null;
+    });
+
     var order = autoCandidates().sort(function (a, b) {
       var ra = results[a], rb = results[b];
       if (ra.shortage !== rb.shortage) return ra.shortage ? 1 : -1;
+      if (ordinaSuProb && ra.pVittoria != null && rb.pVittoria != null) return rb.pVittoria - ra.pVittoria;
       return rb.total - ra.total;
     });
     var manualOk = state.meta.modulo && state.meta.modulo !== "auto" && SHAPES[state.meta.modulo] &&
@@ -3660,7 +3783,7 @@ async function refreshLivePlayerNews() {
     var forced = manualOk ? state.meta.modulo : null;
     var best = forced || order[0];
     var cvb = deriveCaptainViceBench(results[best].chosen);
-    return { results: results, best: best, forced: !!forced, captain: cvb.captain, vice: cvb.vice, bench: cvb.bench };
+    return { results: results, best: best, forced: !!forced, avversario: avv, captain: cvb.captain, vice: cvb.vice, bench: cvb.bench };
   }
 
   function playerById(id) {
@@ -3837,6 +3960,86 @@ async function refreshLivePlayerNews() {
       '</div>';
   }
 
+  // ---------- riempimento automatico dal listone ----------
+  // Il listone ha tutti i giocatori di Serie A con ruolo, squadra, fantamedia
+  // attesa, media voto, titolarità, rigorista e piazzati. Finché il nome si
+  // scriveva a mano in un campo libero, quei dati restavano lì senza che
+  // nessuno li andasse a prendere: chi sostituiva un giocatore doveva ricopiare
+  // squadra e fantamedia a mano, e sbagliare una lettera nel nome scollegava in
+  // silenzio la riga dal listone (niente media voto vera per il Modificatore,
+  // niente flag rigorista). Ora il campo nome propone i giocatori del reparto e
+  // alla conferma riempie tutto da solo.
+
+  // Una lista di completamento per reparto: nel reparto attaccanti compaiono
+  // solo attaccanti, che è quasi sempre quello che serve quando si sostituisce.
+  function datalistRuoloHtml(roleKey) {
+    var righe = LISTONE.filter(function (r) { return r[1] === roleKey; });
+    righe.sort(function (a, b) { return (b[3] || 0) - (a[3] || 0); });   // i più forti in cima
+    return '<datalist id="listone-' + roleKey + '">' +
+      righe.map(function (r) {
+        var etichetta = [r[2] || "", r[3] != null ? "FMV " + Number(r[3]).toFixed(2).replace(".", ",") : ""]
+          .filter(Boolean).join(" · ");
+        return '<option value="' + escapeAttr(r[0]) + '" label="' + escapeAttr(etichetta) + '"></option>';
+      }).join("") + '</datalist>';
+  }
+
+  // Avversario, difficoltà e casa per un singolo giocatore: la stessa cosa che
+  // fa "Applica calendario", ma per una riga sola.
+  function applicaCalendarioA(p) {
+    var n = parseInt(state.meta.giornata, 10);
+    if (!n || n < 1 || n > 38 || !p.team) return false;
+    var round = FIXTURES[n - 1];
+    if (!round) return false;
+    for (var i = 0; i < round.length; i++) {
+      var casa = round[i][0] === p.team, fuori = round[i][1] === p.team;
+      if (!casa && !fuori) continue;
+      var opp = teamByCode(casa ? round[i][1] : round[i][0]);
+      p.avversario = opp ? opp.name : (casa ? round[i][1] : round[i][0]);
+      p.difficolta = opp ? diffFromTier(opp.tier) : "media";
+      p.casa = casa;
+      return true;
+    }
+    return false;
+  }
+
+  // Cambiare il nome di una riga significa che è un ALTRO giocatore. Quindi non
+  // si riempiono solo i campi vuoti: si azzera anche quello che apparteneva al
+  // precedente. Senza questo, sostituire Nkunku con un altro attaccante
+  // lasciava al nuovo la nota "ceduto al Lipsia", lo stato "assente" e lo
+  // storico dei voti di Nkunku — dati sbagliati che sembrano giusti, il caso
+  // peggiore. Restituisce un riepilogo di cosa ha fatto, che la riga mostra:
+  // niente deve succedere in silenzio.
+  function riempiDaListone(p) {
+    var l = listoneGet(p.name);
+    var fatte = [];
+
+    // Roba del giocatore di prima: se ne va comunque, trovato o non trovato.
+    p.status = "titolare"; p.note = ""; p.fonte = "probabile"; p.noteData = "";
+    p.votiStorico = []; p.votoReale = ""; p.fantamediaAttuale = ""; p.forma = 3;
+    p.modificato = {};
+    p.pupillo = false;
+
+    var azzerato = "Nota, stato, forma e storico voti del giocatore precedente sono stati azzerati.";
+    if (!l) {
+      return { trovato: false, riepilogo: "Non è nel listone: squadra e fantamedia vanno messe a mano. " + azzerato };
+    }
+
+    if (l[2]) { p.team = l[2]; fatte.push(l[2]); }
+    if (l[3] != null) { p.fantamediaAttesa = Number(l[3]); fatte.push("FMV " + Number(l[3]).toFixed(2).replace(".", ",")); }
+    if (l[4] != null) fatte.push("media voto " + Number(l[4]).toFixed(2).replace(".", ","));
+    var flag = l[6] != null ? l[6] : 0;
+    p.rigorista = !!(flag & 1);
+    p.piazzati = !!(flag & 2);
+    if (p.rigorista) fatte.push("rigorista");
+    if (p.piazzati) fatte.push("piazzati");
+    if (applicaCalendarioA(p)) fatte.push("vs " + p.avversario + (p.casa ? " (casa)" : " (trasf.)"));
+
+    var avviso = (l[1] && l[1] !== p.role)
+      ? " Attenzione: nel listone è un " + (ROLES.filter(function (r) { return r.key === l[1]; })[0] || {}).singular + "."
+      : "";
+    return { trovato: true, riepilogo: "Dal listone: " + fatte.join(" · ") + "." + avviso + " " + azzerato };
+  }
+
   function renderSections() {
     var host = document.getElementById("sections");
     host.innerHTML = "";
@@ -3851,7 +4054,7 @@ async function refreshLivePlayerNews() {
       section.innerHTML =
         '<summary class="section-head section-summary"><span class="section-title-wrap"><h2>' + role.label + '</h2><span class="count">' + list.length + '</span></span>' +
         '<span class="section-head-actions"><span class="section-chevron">⌄</span><button type="button" class="btn btn-small add-btn" data-add="' + role.key + '">+ aggiungi ' + role.singular + '</button></span></summary>' +
-        '<div class="roster" id="roster-' + role.key + '"></div>';
+        '<div class="roster" id="roster-' + role.key + '"></div>' + datalistRuoloHtml(role.key);
       host.appendChild(section);
       var rosterEl = section.querySelector(".roster");
       if (list.length === 0) {
@@ -3888,11 +4091,12 @@ async function refreshLivePlayerNews() {
       '<div class="row-main">' +
       '<div class="f-name">' +
         '<div class="name-row">' +
-          '<input class="name-input" type="text" placeholder="Nome giocatore" value="' + escapeAttr(p.name) + '" data-field="name" />' +
+          '<input class="name-input" type="text" placeholder="Nome giocatore" value="' + escapeAttr(p.name) + '" data-field="name" list="listone-' + p.role + '" autocomplete="off" />' +
           '<button type="button" class="pupillo-btn' + (p.pupillo ? " active" : "") + '" data-field="pupillo" title="Pupillo/preferito dall\'asta: piccola priorità realistica nel calcolo, non un override">' + starSvg(!!p.pupillo) + '</button>' +
           '<button type="button" class="rigorista-btn' + (p.rigorista ? " active" : "") + '" data-field="rigorista" title="Rigorista: tira i calci di rigore della sua squadra, più probabilità di bonus gol">' + ballSvg(!!p.rigorista) + '</button>' +
           '<button type="button" class="piazzati-btn' + (p.piazzati ? " active" : "") + '" data-field="piazzati" title="Specialista piazzati: punizioni/corner, più probabilità di bonus gol o assist">' + curveSvg() + '</button>' +
-        '</div></div>' +
+        '</div>' +
+        '<div class="name-hint" data-field="nameHint" hidden></div></div>' +
       '<div class="f-status"><select class="status-select" data-field="status" data-tone="' + statusByKey(p.status).tone + '" title="Stato">' + statusOpts + '</select></div>' +
       '<div class="f-forma"><div class="stars" data-field="forma" title="Forma recente"></div></div>' +
       '<div class="f-fama2-inline">' +
@@ -3944,7 +4148,40 @@ async function refreshLivePlayerNews() {
       matchupEl.dataset.tone = p.avversario ? diffByKey(p.difficolta).tone : "";
     }
 
-    row.querySelector('[data-field="name"]').addEventListener("input", function (e) { p.name = e.target.value; scheduleSave(); });
+    // "input" salva quello che si sta scrivendo; il riempimento scatta su
+    // "change" (uscita dal campo, invio, o scelta dalla lista), altrimenti
+    // partirebbe a ogni lettera digitata. E scatta solo se il nome è davvero
+    // cambiato: correggere uno spazio non deve azzerare la storia della riga.
+    var nameInput = row.querySelector('[data-field="name"]');
+    var hintEl = row.querySelector('[data-field="nameHint"]');
+    var nomePrec = normalizeNameKey(p.name);
+    function mostraHint(testo, trovato) {
+      if (!hintEl) return;
+      if (!testo) { hintEl.hidden = true; hintEl.textContent = ""; return; }
+      hintEl.hidden = false;
+      hintEl.textContent = testo;
+      hintEl.dataset.tone = trovato ? "" : "warn";
+    }
+    nameInput.addEventListener("input", function (e) { p.name = e.target.value; scheduleSave(); });
+    nameInput.addEventListener("change", function (e) {
+      p.name = e.target.value;
+      var chiave = normalizeNameKey(p.name);
+      if (chiave === nomePrec) { scheduleSave(); return; }
+      nomePrec = chiave;
+      if (!chiave) { mostraHint("", true); scheduleSave(); return; }
+      var esito = riempiDaListone(p);
+      scheduleSave();
+      renderSections();
+      // renderSections ricostruisce la riga, quindi il messaggio va riscritto
+      // sulla riga nuova, non su questa che non esiste più.
+      var nuova = document.querySelector('.player-row[data-id="' + p.id + '"] [data-field="nameHint"]');
+      if (nuova) {
+        nuova.hidden = false;
+        nuova.textContent = esito.riepilogo;
+        nuova.dataset.tone = esito.trovato ? "" : "warn";
+      }
+      renderResult();
+    });
     row.querySelector('[data-field="team"]').addEventListener("change", function (e) { p.team = e.target.value; refreshMatchupChip(); scheduleSave(); });
     row.querySelector('[data-field="fantamediaAttesa"]').addEventListener("input", function (e) { var v = parseDecimale(e.target.value); p.fantamediaAttesa = v == null ? "" : v; scheduleSave(); });
     row.querySelector('[data-field="fantamediaAttuale"]').addEventListener("input", function (e) { var v = parseDecimale(e.target.value); p.fantamediaAttuale = v == null ? "" : v; scheduleSave(); });
@@ -4444,14 +4681,26 @@ async function refreshLivePlayerNews() {
     Object.keys(SHAPES).forEach(function (name) {
       var shape = SHAPES[name];
       if (state.meta.modificatore && shape.D !== 4) return;
-      var tot = 0, ok = true, difs = [], gk = null, cents = [];
+      var tot = 0, varianza = 0, ok = true, difs = [], gk = null, cents = [];
       ["P", "D", "C", "A"].forEach(function (r) {
         var need = shape[r] || 0;
         if (pool[r].length < need) { ok = false; return; }
         var picked = pool[r].slice(0, need);
         var sub = pool[r][need];
         var subVal = sub ? sub.raw * sub.prob : 0;
-        picked.forEach(function (x) { tot += x.raw * x.prob + (1 - x.prob) * subVal; });
+        var sd = SD_FANTAVOTO_RUOLO[r] || 1.0;
+        picked.forEach(function (x) {
+          tot += x.raw * x.prob + (1 - x.prob) * subVal;
+          // Stessa formula usata per la mia formazione, così le due varianze
+          // sono confrontabili. Con una differenza onesta: il suo `prob` è il
+          // peso di titolarità (0,86–1,00), non una vera probabilità di
+          // scendere in campo, quindi il termine di incertezza sulle presenze
+          // è più piccolo del mio e la sua varianza risulta sottostimata. Ne
+          // consegue che la probabilità di vittoria calcolata è un po' più
+          // estrema del vero: quando dice 35% il numero onesto è forse 38%.
+          var d = x.raw - subVal;
+          varianza += sd * sd + x.prob * (1 - x.prob) * d * d;
+        });
         if (r === "D") difs = picked;
         if (r === "P") gk = picked[0];
         if (r === "C") cents = picked;
@@ -4468,7 +4717,7 @@ async function refreshLivePlayerNews() {
       var totale = tot + bonus;
       // I voti puri dei suoi centrocampisti servono al modificatore di
       // centrocampo, che è un confronto diretto fra le due mediane.
-      if (!best || totale > best.totale) best = { modulo: name, totale: totale, bonus: bonus, centro: cents.map(function (x) { return x.mv; }) };
+      if (!best || totale > best.totale) best = { modulo: name, totale: totale, bonus: bonus, varianza: varianza, centro: cents.map(function (x) { return x.mv; }) };
     });
     if (!best) return null;
     best.mancanti = mancanti;
@@ -4948,6 +5197,18 @@ async function refreshLivePlayerNews() {
   }
 
   // ---------------- render: result ----------------
+  // Cambiare Strategia, Modificatore o "includi portiere" aggiornava lo stato e
+  // lo salvava, ma non ricalcolava niente: il pannello continuava a mostrare la
+  // formazione di prima finché non si toccava qualcos'altro. Sembrava che quei
+  // comandi non funzionassero (bug preesistente, trovato il 30/08/2026
+  // provando la strategia nuova). Ricalcolo solo se il risultato è già a
+  // schermo: chi non ha ancora premuto "Calcola formazione" non se lo trova
+  // comparire addosso perché ha toccato un interruttore.
+  function ricalcolaSeVisibile() {
+    var host = document.getElementById("resultContent");
+    if (host && host.children.length) renderResult();
+  }
+
   var ROW_ORDER = ["A", "C", "D", "P"]; // attack at top of the pitch
 
   function renderResult() {
@@ -4986,6 +5247,21 @@ async function refreshLivePlayerNews() {
          (pr ? ' · fascia +' + pr.bonus.toFixed(1) + ' a ' + pr.distanza.toFixed(2) + ' di media (' + Math.round(pr.prob * 100) + '% stimato)' : ''))
       : (state.meta.modificatore ? 'modificatore: non applicabile a questo modulo (serve difesa a 4)' : 'modificatore disattivato');
 
+    // Probabilità di vincere la partita di lega con QUESTA formazione — quella
+    // vera, comprese le sostituzioni fatte a mano. Si aggiorna a ogni cambio,
+    // quindi il campetto diventa uno strumento per cercare varianza: sposti un
+    // giocatore e vedi subito se la probabilità sale o scende.
+    var probTxt = "";
+    if (data.avversario) {
+      var varMia = varianzaFormazione(bestResult.chosen);
+      var pv = probVittoria(bestResult.total, varMia, data.avversario.punti, data.avversario.varianza);
+      var scarto = bestResult.total - data.avversario.punti;
+      probTxt = 'contro ' + escapeHtml(data.avversario.squadra) + ': <b>' + Math.round(pv * 100) + '%</b> di vittoria' +
+        ' · ' + (scarto >= 0 ? '+' : '') + scarto.toFixed(1) + ' punti attesi, oscillazione ±' + Math.sqrt(varMia).toFixed(1) +
+        ' contro ±' + Math.sqrt(data.avversario.varianza || 0).toFixed(1) +
+        (scarto < 0 ? ' — parti sotto, quindi qui la varianza gioca a tuo favore' : ' — parti sopra, quindi conviene ridurre la varianza');
+    }
+
     var html = '';
     html += '<div class="formation-shortcuts-label">Moduli consigliati · almeno 4 difensori</div>';
     html += '<div class="formation-shortcuts">';
@@ -4994,9 +5270,15 @@ async function refreshLivePlayerNews() {
       if (!allowed) return;
       var rr = data.results[name];
       var active = name === data.best ? ' active' : '';
-      html += '<button type="button" class="shortcut'+active+'" data-formation-shortcut="'+name+'">' +
+      // Con "Batti l'avversario" il numero grande sul chip è la probabilità di
+      // vincere, non i punti: è quello su cui i moduli sono ordinati, e mettere
+      // in evidenza un criterio diverso da quello usato per decidere sarebbe
+      // solo un modo per confondere.
+      var mostraProb = strategyProfile().obiettivo === "probabilita" && rr && rr.pVittoria != null;
+      html += '<button type="button" class="shortcut'+active+'" data-formation-shortcut="'+name+'"' +
+        (mostraProb ? ' title="' + rr.total.toFixed(1) + ' punti attesi, oscillazione ±' + Math.sqrt(rr.varianza).toFixed(1) + '"' : '') + '>' +
         '<span class="sc-modulo">'+name+'</span>' +
-        (rr ? '<span class="sc-punti">'+rr.total.toFixed(1)+'</span>' : '') +
+        (rr ? '<span class="sc-punti">' + (mostraProb ? Math.round(rr.pVittoria * 100) + '%' : rr.total.toFixed(1)) + '</span>' : '') +
         '</button>';
     });
     html += '</div>';
@@ -5010,6 +5292,7 @@ async function refreshLivePlayerNews() {
       '<span class="total-score">con bonus/malus: <b>' + totalConTxt + '</b></span>' +
       '<span class="total-score total-score-note">' + modInfoTxt + '</span>' +
       (modCTxt ? '<span class="total-score total-score-note">' + modCTxt + '</span>' : '') +
+      (probTxt ? '<span class="total-score total-score-note">' + probTxt + '</span>' : '') +
       '</div>';
 
     var pitchData = { results: {}, best: data.best, captain: bestResult.captain, vice: bestResult.vice };
@@ -5334,7 +5617,7 @@ async function refreshLivePlayerNews() {
     if (legaSel) legaSel.addEventListener("change", function (e) {
       state.meta.legaId = e.target.value;
       applicaLega(legaAttivaId());
-      invalidaCentrocampoAvversario();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
       scheduleSave();
       renderSquadraSelect();
       renderLegaSelect();
@@ -5369,7 +5652,7 @@ async function refreshLivePlayerNews() {
 
     document.getElementById("giornataInput").addEventListener("input", function (e) {
       state.meta.giornata = e.target.value;
-      invalidaCentrocampoAvversario();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
       renderLegaCard();
       renderRisultatiCard();
       scheduleSave();
@@ -5406,21 +5689,26 @@ async function refreshLivePlayerNews() {
       }
       updateAutoOptionLabel();
       scheduleSave();
+      ricalcolaSeVisibile();
     });
     document.getElementById("includiPortiereToggle").addEventListener("change", function (e) {
       state.meta.includiPortiere = e.target.checked;
+      invalidaAvversarioAtteso();
       scheduleSave();
+      ricalcolaSeVisibile();
     });
     document.getElementById("modificatoreCentrocampoToggle").addEventListener("change", function (e) {
       state.meta.modificatoreCentrocampo = e.target.checked;
-      invalidaCentrocampoAvversario();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
       scheduleSave();
       renderResult();
     });
     document.getElementById("strategiaSelect").addEventListener("change", function (e) {
       state.meta.strategia = e.target.value;
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
       updateAutoOptionLabel();
       scheduleSave();
+      ricalcolaSeVisibile();
     });
     document.getElementById("sections").addEventListener("click", function (e) {
       var btn = e.target.closest("[data-add]");
