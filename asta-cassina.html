@@ -397,6 +397,8 @@
     .top-picks, .my-squad, .owner-squads { grid-template-columns: 1fr; }
     header.top .sub { font-size: 12px; }
   }
+
+  a.btn { text-decoration:none; display:inline-flex; align-items:center; }
 </style>
 </head>
 <body>
@@ -418,6 +420,7 @@
       <div class="sub">10 squadre · 400 crediti · voti Statistico Alvin482 · il campionato parte dalla giornata 3</div>
     </div>
     <div class="toolbar">
+      <a class="btn" href="./" title="Vai al tool delle formazioni">← Modulo</a>
       <button class="btn theme-toggle" id="btnTheme">Tema scuro</button>
       <button class="btn" id="btnCopia">Copia riepilogo</button>
       <button class="btn primary" id="btnNextTarget" title="Suggerisce subito il miglior giocatore da prendere per reparto, in base agli slot ancora scoperti e al budget residuo">Prossimo obiettivo</button>
@@ -461,8 +464,8 @@
       <div class="regole-grid">
         <div class="regola">
           <div class="regola-tit">Il portiere entra <em>sempre</em> nel modificatore</div>
-          <p>Il modificatore difesa gira sulla <b>media voto</b> — il voto in pagella, non la fantamedia — dei migliori 3 difensori piu&#39; il portiere. Per un portiere i due numeri non c&#39;entrano niente: ogni gol subito vale &minus;1, quindi Carnesecchi ha fantamedia 5,19 ma in pagella prende 6,36.</p>
-          <p class="regola-fai"><b>Quindi:</b> il portiere si sceglie per media voto. Fra il primo e il decimo portiere ci sono 42 centesimi di Valore, ma fra i loro prezzi ce ne sono 38 di crediti: Falcone &egrave; il 5&deg; e costa <b>8cr</b> contro i 44 di Svilar. <b>Non pagare un portiere.</b></p>
+          <p>Il modificatore difesa gira sulla <b>media voto</b> — il voto in pagella, non la fantamedia — dei migliori 3 difensori pi&ugrave; il portiere. Ma il portiere prende anche <b>&minus;1 a gol subito</b>, quindi la squadra davanti conta doppio: un portiere molto impegnato guadagna sulla media voto (para tanto, viene votato bene) e perde sulla fantamedia. Falcone &egrave; il caso limite: media voto pi&ugrave; alta di tutti (6,35) e 1,32 gol subiti a partita, il peggior dato del gruppo di testa.</p>
+          <p class="regola-fai"><b>Scelto: Carnesecchi</b> (Atalanta, 36cr, 0,95 gol subiti, titolarit&agrave; 5). Rispetto a Skorupski a 10cr costa 26 crediti e vale 0,15 punti in meno sul totale: praticamente pari, e la squadra davanti &egrave; migliore. Se te lo soffiano: <b>Skorupski</b> 10cr, poi Butez 34cr (0,76 subiti, il dato migliore). <b>Vicario a 38cr no</b>: senza Serie A alle spalle, media voto e gol subiti nel listone sono vuoti e stimati.</p>
         </div>
         <div class="regola">
           <div class="regola-tit">Il modificatore di centrocampo &egrave; acceso</div>
@@ -481,7 +484,10 @@
         </div>
       </div>
       <div class="regola-muro">
-        <b>Dimarco &egrave; l&#39;unico per cui vale la pena fare a botte.</b> Se non lo prendi perdi <b>1,22 punti</b> a giornata; senza Calhanoglu ne perdi 0,35, senza Simeone 0,08, senza Milinkovic-Savic 0,03. Tutto il resto ha un sostituto quasi identico poche righe sotto — e sotto il vertice il mercato &egrave; piatto. <b>Una guerra sola, su un nome solo.</b>
+        <b>Dimarco &egrave; l&#39;unico per cui vale la pena fare a botte.</b> Se non lo prendi perdi <b>1,22 punti</b> a giornata; senza Calhanoglu ne perdi 0,35, senza Simeone 0,08, senza Carnesecchi 0,15. Tutto il resto ha un sostituto quasi identico poche righe sotto. <b>Una guerra sola, su un nome solo.</b>
+      </div>
+      <div class="regola-muro" style="border-left-color:var(--alert-text); background:var(--alert-bg)">
+        <b>Infortunati dell&#39;ultima ora — non sono nel listone.</b> <b>Orsolini</b> (Bologna, 4&deg; centrocampista per valore, 52cr): infortunato il 31/08, entit&agrave; da capire. Non era nell&#39;undici consigliato e toglierlo dal mercato non cambia il piano di un centesimo, ma a 52 crediti qualcuno lo chiamer&agrave; lo stesso: <b>lascialo andare</b> finch&eacute; non sai quante giornate salta.
       </div>
       <div class="regola-nota">
         <b>Occasioni evidenti nei prezzi:</b> Falcone &egrave; il 5&deg; portiere per Valore e costa <b>8cr</b>, contro i 44 di Svilar e i 38 di Maignan per due centesimi in pi&ugrave;. Stessa storia per Milinkovic-Savic (6cr), Gonzalez N. a centrocampo (7cr) e Kempf in difesa (2cr).<br><br>
@@ -620,10 +626,10 @@
 // campionato non pagano. Restano modificabili dalla riga in cima: se in sala i
 // prezzi vanno da un'altra parte, cambiali.
 const REPARTI = {
-  POR: { label: "Portieri", color: "var(--slot-por)", target: 10, count: 3 },
+  POR: { label: "Portieri", color: "var(--slot-por)", target: 40, count: 3 },
   DIF: { label: "Difensori", color: "var(--slot-dif)", target: 140, count: 8 },
-  CEN: { label: "Centrocampisti", color: "var(--slot-cen)", target: 195, count: 8 },
-  ATT: { label: "Attaccanti", color: "var(--slot-att)", target: 55, count: 6 },
+  CEN: { label: "Centrocampisti", color: "var(--slot-cen)", target: 175, count: 8 },
+  ATT: { label: "Attaccanti", color: "var(--slot-att)", target: 45, count: 6 },
 };
 
 // Listone aggiornato al 31/08/2026, dal foglio di Salvo. Ogni riga:
