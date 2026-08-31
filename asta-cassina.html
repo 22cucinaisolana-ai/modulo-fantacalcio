@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asta Cassina 2026/27 — Cruscotto Live</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --success:        #006300;
+    --danger:         #8a2a2a;
+    --alert-text:     #8a5b00;
+    --alert-bg:       rgba(250,178,25,0.18);
+    --badge-neutral-bg: rgba(11,11,11,0.06);
+    --picked-bg:      rgba(12,163,12,0.12);
+    --mine-row-bg:    rgba(12,163,12,0.05);
+    --danger-bg:      rgba(138,42,42,0.12);
+
+    --slot-por:  #2a78d6; /* blue */
+    --slot-dif:  #eb6834; /* orange */
+    --slot-cen:  #1baf7a; /* aqua */
+    --slot-att:  #eda100; /* yellow */
+
+    --seq-100: #cde2fb; --seq-200: #9ec5f4; --seq-300: #6da7ec;
+    --seq-400: #3987e5; --seq-450: #2a78d6; --seq-550: #1c5cab; --seq-650: #104281;
+
+    --status-good: #0ca30c; --status-warning: #fab219; --status-serious: #ec835a; --status-critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.12);
+      --success:        #0ca30c;
+      --danger:         #ff9b8a;
+      --alert-text:     #ffcf7a;
+      --alert-bg:       rgba(250,178,25,0.22);
+      --badge-neutral-bg: rgba(255,255,255,0.10);
+      --picked-bg:      rgba(12,163,12,0.22);
+      --mine-row-bg:    rgba(12,163,12,0.12);
+      --danger-bg:      rgba(255,155,138,0.16);
+
+      --slot-por:  #3987e5;
+      --slot-dif:  #d95926;
+      --slot-cen:  #199e70;
+      --slot-att:  #c98500;
+
+      --seq-300: #3987e5; --seq-450: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.12);
+    --success:        #0ca30c;
+    --danger:         #ff9b8a;
+    --alert-text:     #ffcf7a;
+    --alert-bg:       rgba(250,178,25,0.22);
+    --badge-neutral-bg: rgba(255,255,255,0.10);
+    --picked-bg:      rgba(12,163,12,0.22);
+    --mine-row-bg:    rgba(12,163,12,0.12);
+    --danger-bg:      rgba(255,155,138,0.16);
+
+    --slot-por:  #3987e5;
+    --slot-dif:  #d95926;
+    --slot-cen:  #199e70;
+    --slot-att:  #c98500;
+
+    --seq-300: #3987e5; --seq-450: #3987e5;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background: var(--page); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text-primary); }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 28px 20px 60px; }
+  .resume-banner { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; background: var(--alert-bg); border:1px solid var(--alert-text); border-radius:10px; padding:12px 16px; margin-bottom:18px; }
+  .resume-banner-text { font-size:13px; color: var(--text-primary); flex:1; min-width:240px; }
+  .resume-banner-actions { display:flex; gap:8px; flex:none; }
+
+  header.top { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:8px; }
+  header.top h1 { font-size:22px; margin:0; }
+  header.top .sub { color: var(--text-secondary); font-size:13px; }
+
+  .sticky-top-panel { position: sticky; top: 0; z-index: 50; background: var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:8px 14px 10px; margin-bottom:14px; box-shadow: 0 2px 10px rgba(0,0,0,.08); display:flex; flex-direction:column; gap:8px; }
+  .stb-budget-row { display:flex; align-items:center; gap:18px; flex-wrap:wrap; font-size:12.5px; }
+  .sbb-total { display:flex; align-items:baseline; gap:6px; }
+  .sbb-total-num { font-size:17px; font-weight:700; font-variant-numeric: tabular-nums; }
+  .sbb-total-label { color: var(--text-muted); text-transform:uppercase; letter-spacing:.03em; font-size:10px; font-weight:600; }
+  .sbb-reps { display:flex; gap:16px; flex-wrap:wrap; }
+  .sbb-rep { display:flex; align-items:center; gap:6px; }
+  .sbb-rep .dot { width:7px; height:7px; border-radius:50%; flex:none; }
+  .sbb-rep-label { font-weight:700; color: var(--text-secondary); }
+  .sbb-rep-nums { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .sbb-rep-bar-track { width:44px; height:5px; border-radius:3px; background: var(--gridline); overflow:hidden; }
+  .sbb-rep-bar-fill { height:100%; border-radius:3px; }
+  .sbb-rep-count { color: var(--text-muted); font-size:11.5px; }
+  .sbb-rep.over .sbb-rep-nums { color: var(--danger); font-weight:700; }
+
+  .stb-checker-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid var(--gridline); padding-top:8px; }
+  .stb-checker-row .checker-input { flex:1; min-width:200px; font-size:13.5px; padding:8px 11px; border:1px solid var(--border); border-radius:8px; background: var(--page); color: var(--text-primary); }
+  .checker-result { width:100%; }
+  .checker-card { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:9px 11px; border-radius:8px; margin-top:2px; }
+  .checker-card.verdict-yes { background: var(--picked-bg); }
+  .checker-card.verdict-warn { background: var(--alert-bg); }
+  .checker-card.verdict-no { background: var(--danger-bg); }
+  .checker-card.verdict-info { background: var(--badge-neutral-bg); }
+  .checker-badge { font-weight:800; font-size:12px; padding:4px 9px; border-radius:6px; white-space:nowrap; color:#fff; }
+  .checker-badge.yes { background: var(--success); }
+  .checker-badge.warn { background: var(--alert-text); }
+  .checker-badge.no { background: var(--danger); }
+  .checker-badge.info { background: var(--text-muted); }
+  .checker-name { font-weight:700; }
+  .checker-team { color: var(--text-secondary); font-size:12px; }
+  .checker-reason { color: var(--text-secondary); font-size:12.5px; width:100%; }
+  .checker-meta { color: var(--text-muted); font-size:11.5px; width:100%; }
+  .checker-trend { font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap; }
+  .checker-trend.sotto { background: var(--picked-bg); color: var(--success); }
+  .checker-trend.sopra { background: var(--danger-bg); color: var(--danger); }
+  .checker-trend.neutro { background: var(--badge-neutral-bg); color: var(--text-muted); }
+  .checker-notfound { color: var(--text-muted); font-size:12.5px; padding:8px 2px; }
+  .checker-suggest-btn { background:none; border:none; color: var(--text-primary); text-decoration:underline; cursor:pointer; font-size:12.5px; padding:0; }
+
+  .stat-row { display:grid; grid-template-columns: 1.1fr repeat(4, 1fr); gap:14px; margin-bottom:26px; }
+  .card { background: var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+  .hero-card .hero-num { font-size:40px; font-weight:700; font-variant-numeric: tabular-nums; line-height:1.1; }
+  .hero-card .hero-label { color: var(--text-secondary); font-size:13px; margin-top:2px; }
+  .hero-card .hero-pct { color: var(--text-muted); font-size:12px; margin-top:8px; }
+
+  .rep-card .rep-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .rep-dot { width:10px; height:10px; border-radius:3px; flex:none; }
+  .rep-name { font-weight:600; font-size:13px; }
+  .rep-nums { display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px; font-variant-numeric: tabular-nums; }
+  .rep-nums b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .bar-track { height:8px; border-radius:4px; background: var(--gridline); overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; }
+  .rep-target { font-size:11px; color: var(--text-muted); margin-top:6px; }
+
+  .market-general { display:flex; flex-direction:column; gap:5px; padding-bottom:16px; margin-bottom:16px; border-bottom:1px solid var(--gridline); }
+  .market-general .market-val { font-size:22px; }
+  .market-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:18px; }
+  .market-row { display:flex; flex-direction:column; gap:5px; }
+  .market-label { display:flex; align-items:center; gap:7px; font-weight:600; font-size:13px; }
+  .market-val { font-size:16px; font-weight:700; font-variant-numeric: tabular-nums; }
+  .market-val.up { color: var(--danger); }
+  .market-val.down { color: var(--success); }
+  .market-val.flat { color: var(--text-muted); font-weight:500; font-size:12.5px; }
+  .market-n { font-size:11px; color: var(--text-muted); }
+  .slot-trend-row { display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
+  .slot-trend-chip { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:600; padding:2px 6px; border-radius:5px; background: var(--badge-neutral-bg); color: var(--text-secondary); cursor:help; font-variant-numeric: tabular-nums; }
+  .slot-trend-chip-tag { font-weight:700; color: var(--text-muted); }
+  .slot-trend-chip.up { color: var(--danger); }
+  .slot-trend-chip.down { color: var(--success); }
+
+  .cost-adj { font-variant-numeric: tabular-nums; }
+  .cost-trend { font-size:10.5px; font-weight:700; margin-top:1px; cursor:help; }
+  .cost-trend.up { color: var(--danger); }
+  .cost-trend.down { color: var(--success); }
+  .cost-orig { font-size:10px; font-weight:400; color: var(--text-muted); margin-top:1px; }
+  .trend-general-tag { font-weight:500; color: var(--text-muted); text-transform:uppercase; letter-spacing:.02em; }
+
+  h2.section { font-size:15px; margin: 30px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--gridline); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  h2.section .section-hint { font-size:11px; font-weight:400; color: var(--text-muted); text-transform:none; letter-spacing:0; }
+  h2.collapsible-head { cursor:pointer; user-select:none; }
+  h3.subsection-head { font-size:13px; margin: 4px 0 12px; color: var(--text-secondary); display:flex; align-items:baseline; gap:8px; }
+  h3.subsection-head .section-hint { font-size:11px; font-weight:400; color: var(--text-muted); }
+  h2.collapsible-head:hover { color: var(--text-secondary); }
+  .collapse-icon { font-size:12px; color: var(--text-muted); transition: transform .15s ease; }
+  .collapse-icon.closed { transform: rotate(-90deg); }
+
+  .top-picks { display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-bottom:10px; }
+  .pick-card h3 { display:flex; align-items:center; gap:8px; font-size:13px; margin:0 0 10px; }
+  .pick-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px; }
+  .pick-list li { display:flex; align-items:center; justify-content:space-between; font-size:12.5px; padding:6px 8px; border-radius:7px; background: var(--page); }
+  .pick-name { font-weight:600; }
+  .pick-meta { color: var(--text-secondary); font-variant-numeric: tabular-nums; font-size:11.5px; }
+  .pick-pma { cursor:help; }
+  .pick-pma-trend { font-weight:700; font-size:10.5px; }
+  .pick-pma-trend.up { color: var(--danger); }
+  .pick-pma-trend.down { color: var(--success); }
+  .pick-pma-orig { font-weight:400; color: var(--text-muted); }
+  .badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; padding:2px 6px; border-radius:5px; white-space:nowrap; }
+  .badge.picked { background: var(--picked-bg); color: var(--success); }
+  .badge.target { background: var(--badge-neutral-bg); color: var(--text-secondary); }
+  .badge.alert { background: var(--alert-bg); color: var(--alert-text); }
+  .badge.opp { background: var(--badge-neutral-bg); color: var(--text-secondary); max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+
+  .tabs { display:flex; gap:6px; margin: 26px 0 14px; flex-wrap:wrap; }
+  .tab-btn { border:1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); font-size:13px; font-weight:600; padding:8px 16px; border-radius:999px; cursor:pointer; display:flex; align-items:center; gap:7px; }
+  .tab-btn .dot { width:9px; height:9px; border-radius:3px; }
+  .tab-btn.active { color: var(--text-primary); border-color: currentColor; background: var(--page); }
+
+  .filters { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .chip { border:1px solid var(--border); background: var(--surface-1); font-size:11.5px; font-weight:600; padding:5px 12px; border-radius:999px; cursor:pointer; color: var(--text-secondary); }
+  .chip.active { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+
+  table.listone { width:100%; border-collapse: collapse; background: var(--surface-1); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  table.listone th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color: var(--text-muted); font-weight:600; padding:9px 12px; border-bottom:1px solid var(--gridline); }
+  table.listone th.sortable-th { cursor:pointer; user-select:none; }
+  table.listone th.sortable-th:hover { color: var(--text-primary); }
+  table.listone th.sortable-th.sort-active { color: var(--text-primary); }
+  .sort-arrow { display:inline-block; width:9px; font-size:10px; letter-spacing:0; }
+  table.listone td { padding:8px 12px; font-size:12.5px; border-bottom:1px solid var(--gridline); vertical-align:middle; }
+  table.listone tbody tr:last-child td { border-bottom:none; }
+  table.listone tbody tr:hover { background: var(--page); }
+  .slot-chip { display:inline-block; min-width:34px; text-align:center; font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:5px; color:#fff; }
+  .pf-cell { display:flex; align-items:center; gap:8px; }
+  .pf-bar-track { width:60px; height:6px; border-radius:3px; background: var(--gridline); overflow:hidden; }
+  .pf-bar-fill { height:100%; border-radius:3px; background: var(--seq-450); }
+  .pf-num { font-variant-numeric: tabular-nums; font-weight:600; width:32px; text-align:right; }
+  .pf-est-num { font-variant-numeric: tabular-nums; color: var(--text-muted); text-align:right; font-size:12.5px; cursor:help; }
+  .cost-num { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+  .team-cell { color: var(--text-secondary); font-size:12px; }
+  .name-cell { font-weight:600; }
+
+  footer.note { margin-top:30px; font-size:11.5px; color: var(--text-muted); line-height:1.6; }
+
+  .toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .btn { border:1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); font-size:12px; font-weight:600; padding:7px 14px; border-radius:8px; cursor:pointer; }
+  .btn:hover { background: var(--page); }
+  .btn.danger { color: var(--danger); }
+  .btn.primary { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+  .btn.theme-toggle { display:inline-flex; align-items:center; gap:6px; }
+
+  table.listone th.actions-col, table.listone td.actions-col { width:230px; }
+  .row-actions { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+  .row-btn { border:1px solid var(--border); background: var(--surface-1); font-size:11px; font-weight:700; padding:4px 9px; border-radius:6px; cursor:pointer; white-space:nowrap; }
+  .row-btn.take { color: var(--success); }
+  .row-btn.other { color: var(--text-muted); }
+  .row-btn.undo { color: var(--danger); }
+  tr.is-taken { opacity:.6; }
+  tr.is-taken .name-cell { text-decoration: line-through; }
+  tr.is-flagged { background: var(--alert-bg); }
+  tr.is-mine { background: var(--mine-row-bg); }
+  .flag-btn { color: var(--text-muted); font-size:14px; line-height:1; padding:4px 7px; }
+  .flag-btn.flagged { color: var(--alert-text); background: var(--alert-bg); border-color: transparent; }
+  .price-input { width:52px; font-size:12px; padding:4px 5px; border:1px solid var(--border); border-radius:6px; font-variant-numeric: tabular-nums; background: var(--surface-1); color: var(--text-primary); }
+  .price-input:focus { outline:2px solid var(--seq-300); outline-offset:1px; }
+  .owner-select { font-size:11px; padding:4px 5px; border:1px solid var(--border); border-radius:6px; background: var(--surface-1); color: var(--text-primary); max-width:100px; }
+  .target-input { width:48px; font-size:11px; padding:2px 4px; border:1px solid var(--border); border-radius:5px; font-variant-numeric: tabular-nums; background: var(--surface-1); color: var(--text-primary); }
+
+  .my-squad, .owner-squads { display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-bottom:10px; }
+  .owner-squads { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .squad-card h3 { display:flex; align-items:center; justify-content:space-between; gap:6px 8px; font-size:13px; margin:0 0 10px; flex-wrap:wrap; }
+  .squad-card h3 .cnt { font-weight:600; color: var(--text-secondary); font-size:11.5px; white-space:normal; text-align:right; }
+  .squad-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px; min-height:20px; }
+  .squad-list li { display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:12.5px; padding:6px 8px; border-radius:7px; background: var(--page); }
+  .squad-empty { font-size:12px; color: var(--text-muted); padding:6px 2px; }
+  .squad-rm { border:none; background:none; color: var(--danger); font-size:14px; font-weight:700; cursor:pointer; padding:0 2px; line-height:1; }
+
+  .mini-rep-row { display:flex; gap:10px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--gridline); flex-wrap:wrap; }
+  .mini-rep { flex:1; min-width:44px; }
+  .mini-rep .mini-rep-label { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-secondary); font-weight:700; margin-bottom:3px; font-variant-numeric: tabular-nums; }
+  .mini-rep .mini-rep-dot { width:6px; height:6px; border-radius:2px; flex:none; }
+  .completion-card { margin-bottom:14px; }
+  .completion-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .completion-label { font-size:13px; font-weight:600; color: var(--text-primary); }
+  .completion-num { font-size:20px; font-weight:700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .completion-sub { font-size:12px; font-weight:500; color: var(--text-muted); margin-left:4px; }
+  .completion-card .bar-track { margin-bottom:12px; height:10px; }
+  .completion-card .mini-rep-row { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+
+  .strength-legend { font-size:12px; color: var(--text-muted); margin-bottom:14px; }
+  .strength-legend b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .strength-chart { display:grid; grid-template-columns: 150px 1fr 52px; row-gap:12px; align-items:center; }
+  .strength-row { display:contents; }
+  .strength-label { font-size:13px; color: var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .strength-track { position:relative; height:10px; border-radius:5px; background: var(--gridline); overflow:visible; }
+  .strength-fill { position:absolute; top:0; left:0; height:100%; border-radius:5px; }
+  .strength-avg-marker { position:absolute; top:-5px; bottom:-5px; width:0; border-left:2px dashed var(--baseline); }
+  .strength-value { font-size:12.5px; font-weight:600; color: var(--text-primary); text-align:right; font-variant-numeric: tabular-nums; }
+  .mini-bar-track { height:4px; border-radius:2px; background: var(--gridline); overflow:hidden; }
+  .mini-bar-fill { height:100%; border-radius:2px; }
+
+  .search-row { margin-bottom:12px; }
+  .search-input { width:100%; max-width:360px; font-size:13px; padding:9px 12px; border:1px solid var(--border); border-radius:9px; background: var(--surface-1); color: var(--text-primary); }
+  .search-input:focus { outline:2px solid var(--seq-300); outline-offset:1px; }
+  .hide-assigned-toggle { display:inline-flex; align-items:center; gap:6px; font-size:12px; color: var(--text-secondary); margin-left:12px; cursor:pointer; }
+  .hide-assigned-toggle input { cursor:pointer; }
+  .search-hint { margin-top:8px; font-size:12px; color: var(--text-secondary); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .search-hint .jump-btn { border:1px solid var(--border); background: var(--page); font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:999px; cursor:pointer; color: var(--text-primary); }
+
+  .opp-panel { background: var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:10px; }
+  .opp-add-row { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .opp-add-row input { flex:1; min-width:180px; font-size:13px; padding:8px 12px; border:1px solid var(--border); border-radius:8px; background: var(--page); color: var(--text-primary); }
+  .opp-list { display:flex; flex-wrap:wrap; gap:8px; }
+  .opp-chip { display:flex; align-items:center; gap:8px; background: var(--page); border:1px solid var(--border); border-radius:10px; padding:6px 8px 6px 12px; }
+  .opp-dot { width:9px; height:9px; border-radius:50%; flex:none; }
+  .opp-chip input.opp-name { border:none; background:none; font-size:12.5px; font-weight:600; color: var(--text-primary); width:110px; padding:2px 0; }
+  .opp-chip input.opp-name:focus { outline:none; border-bottom:1px solid var(--text-secondary); }
+  .opp-chip .opp-meta { font-size:11px; color: var(--text-secondary); white-space:nowrap; font-variant-numeric: tabular-nums; }
+  .opp-empty { font-size:12.5px; color: var(--text-muted); }
+
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background: var(--surface-1); border:1px solid var(--border); border-radius:14px; padding:22px 24px; width:100%; max-width:340px; box-shadow:0 12px 40px rgba(0,0,0,0.25); }
+  .modal-box h3 { margin:0 0 16px; font-size:16px; color: var(--text-primary); }
+  .modal-row { margin-bottom:14px; display:flex; flex-direction:column; gap:6px; }
+  .modal-row label { font-size:12px; color: var(--text-secondary); font-weight:600; }
+  .modal-row input, .modal-row select { font-size:14px; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background: var(--page); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+
+  .next-target-box { max-width:520px; }
+  .nt-rep-block { padding:12px 0; border-bottom:1px solid var(--gridline); }
+  .nt-rep-block:last-child { border-bottom:none; padding-bottom:0; }
+  .nt-rep-block:first-child { padding-top:0; }
+  .nt-rep-head { display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; margin-bottom:8px; }
+  .nt-rep-head .dot { width:8px; height:8px; border-radius:50%; }
+  .nt-slots { font-weight:500; color: var(--text-muted); font-size:11.5px; text-transform:none; letter-spacing:0; }
+  .nt-note { color: var(--text-muted); font-size:12.5px; }
+  .nt-pick { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .nt-name { font-weight:700; }
+  .nt-team { color: var(--text-secondary); font-size:12px; }
+  .nt-tag { font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color: var(--text-muted); background: var(--page); border:1px solid var(--border); border-radius:6px; padding:2px 6px; }
+  .nt-cost { font-weight:700; font-variant-numeric: tabular-nums; }
+  .nt-pf { color: var(--text-muted); font-size:12px; }
+  .nt-pick.nt-over .nt-cost { color: var(--danger); }
+  .nt-warn { color: var(--danger); font-size:11.5px; margin-top:6px; }
+  .nt-pick .nt-assign { margin-left:auto; }
+
+  /* --- pannello regole della lega --- */
+  .regole-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  .regola-tit { font-weight:700; font-size:13.5px; margin-bottom:5px; color:var(--text-primary); }
+  .regola p { margin:0 0 6px; font-size:12.5px; line-height:1.5; color:var(--text-secondary); }
+  .regola p:last-child { margin-bottom:0; }
+  .regola-fai { color:var(--text-primary) !important; }
+  .regola-muro {
+    margin-top:16px; padding:12px 14px; border-radius:8px;
+    background:var(--danger-bg); border-left:3px solid var(--danger);
+    font-size:12.5px; line-height:1.5;
+  }
+  .regola-nota {
+    margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+    font-size:12px; line-height:1.5; color:var(--text-muted);
+  }
+
+  /* ==========================================================
+     TELEFONO
+     Il cruscotto era pensato per lo schermo grande: cinque colonne
+     di riquadri, tabelle a tutta larghezza, barra degli strumenti su
+     una riga. All'asta pero' si guarda il telefono, quindi qui sotto
+     tutto quello che serve perche' regga anche a 380px.
+     ========================================================== */
+  .tab-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+  @media (max-width: 900px) {
+    .wrap { padding: 16px 12px 48px; }
+    header.top h1 { font-size: 18px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
+    .toolbar .btn { font-size: 12px; padding: 7px 10px; }
+
+    .stat-row { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .hero-card { grid-column: 1 / -1; }
+    .hero-card .hero-num { font-size: 34px; }
+    .card { padding: 12px 13px; }
+
+    .top-picks, .my-squad { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .owner-squads { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .regole-grid { grid-template-columns: 1fr; }
+
+    /* La barra appiccicata in alto e' la cosa che si guarda di piu' durante
+       un'asta: resta, ma compatta, e i reparti scorrono in orizzontale
+       dentro di se' invece di spingere fuori la pagina. */
+    .sticky-top-panel { padding: 7px 10px 8px; gap: 6px; }
+    .stb-budget-row { gap: 10px; }
+    /* Senza min-width:0 un elemento flex non scende sotto la larghezza del suo
+       contenuto: la striscia dei reparti restava larga com'e' e spingeva fuori
+       tutta la pagina invece di scorrere dentro di se'. */
+    .stb-budget-row { min-width: 0; }
+    .sbb-reps { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; gap: 12px; padding-bottom: 2px; }
+    .sbb-rep { flex: none; }
+    .market-row { min-width: 0; }
+    .stb-checker-row .checker-input { min-width: 0; }
+
+    table.listone th, table.listone td { padding: 7px 8px; font-size: 12px; }
+    .tabs { margin: 18px 0 10px; }
+  }
+  @media (max-width: 480px) {
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .top-picks, .my-squad, .owner-squads { grid-template-columns: 1fr; }
+    header.top .sub { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root wrap">
+
+  <div class="resume-banner" id="resumeBanner" style="display:none">
+    <div class="resume-banner-text">
+      <b>Questa scheda sembra vuota.</b> Se avevi già iniziato l'asta su un'altra scheda o sessione, carica qui l'ultimo backup salvato invece di ripartire da zero.
+    </div>
+    <div class="resume-banner-actions">
+      <button class="btn primary" id="btnResumeLoad">Carica ultimo backup</button>
+      <button class="btn" id="btnResumeDismiss">Ignora, è una sessione nuova</button>
+    </div>
+  </div>
+
+  <header class="top">
+    <div>
+      <h1>Asta Cassina 2026/27 — Cruscotto Live</h1>
+      <div class="sub">10 squadre · 400 crediti · voti Statistico Alvin482 · il campionato parte dalla giornata 3</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn theme-toggle" id="btnTheme">Tema scuro</button>
+      <button class="btn" id="btnCopia">Copia riepilogo</button>
+      <button class="btn primary" id="btnNextTarget" title="Suggerisce subito il miglior giocatore da prendere per reparto, in base agli slot ancora scoperti e al budget residuo">Prossimo obiettivo</button>
+      <button class="btn primary" id="btnExport" title="Salva su file lo stato attuale. Si salva anche da solo in automatico dopo ogni modifica, non serve cliccarlo sempre">Salva stato</button>
+      <button class="btn" id="btnImport" title="Ricarica uno stato salvato in precedenza">Carica stato</button>
+      <input type="file" id="importFileInput" accept="application/json" style="display:none">
+      <button class="btn danger" id="btnReset">Reset stato</button>
+    </div>
+  </header>
+
+  <div class="sticky-top-panel" id="stickyTopPanel">
+    <div class="stb-budget-row" id="stickyBudgetBar">
+      <div class="sbb-total">
+        <span class="sbb-total-num" id="sbbTotal">400cr</span>
+        <span class="sbb-total-label">rimanenti</span>
+      </div>
+      <div class="sbb-reps" id="sbbReps"></div>
+    </div>
+    <div class="stb-checker-row">
+      <input type="text" id="convieneInput" class="checker-input" placeholder="Nome del giocatore chiamato all'asta… (invio per controllare)" autocomplete="off">
+      <button class="btn primary" id="convieneBtn">Conviene?</button>
+      <div class="checker-result" id="convieneResult"></div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="card hero-card">
+      <div class="hero-num" id="creditiRimanenti">400</div>
+      <div class="hero-label">Crediti rimanenti su 400 (mia squadra)</div>
+      <div class="hero-pct" id="creditiPct">100% del budget ancora libero</div>
+    </div>
+    <div class="card rep-card" data-rep="POR"></div>
+    <div class="card rep-card" data-rep="DIF"></div>
+    <div class="card rep-card" data-rep="CEN"></div>
+    <div class="card rep-card" data-rep="ATT"></div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="regoleBody"><span>Regole Cassina <span class="section-hint">le quattro cose che qui fanno pagare giocatori diversi dalla Carmy</span></span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body" id="regoleBody">
+    <div class="card">
+      <div class="regole-grid">
+        <div class="regola">
+          <div class="regola-tit">Il portiere entra <em>sempre</em> nel modificatore</div>
+          <p>Il modificatore difesa gira sulla <b>media voto</b> — il voto in pagella, non la fantamedia — dei migliori 3 difensori piu&#39; il portiere. Per un portiere i due numeri non c&#39;entrano niente: ogni gol subito vale &minus;1, quindi Carnesecchi ha fantamedia 5,19 ma in pagella prende 6,36.</p>
+          <p class="regola-fai"><b>Quindi:</b> il portiere si sceglie per media voto. Fra il primo e il decimo portiere ci sono 42 centesimi di Valore, ma fra i loro prezzi ce ne sono 38 di crediti: Falcone &egrave; il 5&deg; e costa <b>8cr</b> contro i 44 di Svilar. <b>Non pagare un portiere.</b></p>
+        </div>
+        <div class="regola">
+          <div class="regola-tit">Il modificatore di centrocampo &egrave; acceso</div>
+          <p>Si confronta la somma dei voti puri dei tuoi centrocampisti con quella dell&#39;avversario: da +1 a +4 a chi ha la somma piu&#39; alta. Chi ne schiera meno prende 5 d&#39;ufficio per ogni uomo mancante, e un titolare in Serie A prende in media 6,1 — <b>ogni mediano in piu&#39; vale circa un punto</b>.</p>
+          <p class="regola-fai"><b>Quindi:</b> si gioca a cinque a centrocampo, e il centrocampista si valuta anche per la media voto. Un&#39;ala che segna ma prende 6,0 in pagella vale meno di un interno che prende 6,5.</p>
+        </div>
+        <div class="regola">
+          <div class="regola-tit">Il gol di un difensore vale 4</div>
+          <p>Nella Carmy tutti i gol valgono 3. Qui: <b>P e D +4 &middot; C +3,5 &middot; A +3</b>. Fino a ieri era l&#39;unica delle quattro di cui non riuscivo a tener conto; ora il foglio porta i <b>gol per giocatore</b>, quindi la colonna Valore li corregge da sola.</p>
+          <p class="regola-fai"><b>Quindi:</b> Dimarco (7 gol) e Pavlovic (5) guadagnano davvero rispetto alla loro fantamedia, e nella colonna Valore lo vedi gi&agrave;.</p>
+        </div>
+        <div class="regola">
+          <div class="regola-tit">I prezzi sono percentuali, non crediti</div>
+          <p>Nel foglio il PMA e&#39; una <b>percentuale del budget</b> — Malen 39,2%, Dimarco 14,5% — e qui diventa quella percentuale di 400. La somma dei PMA% dei 250 giocatori che verranno presi vale 947%, cio&egrave; 9,47 budget interi contro i 10 in gioco: il listone e&#39; tarato bene.</p>
+          <p class="regola-fai"><b>Quindi:</b> Malen costa 157 dei tuoi 400 — il <b>39% del budget su un giocatore solo</b>. O lo concentri l&igrave; e riempi il resto a 1-3 crediti, o rinunci al vertice. Le vie di mezzo non esistono.</p>
+        </div>
+      </div>
+      <div class="regola-muro">
+        <b>56 attaccanti credibili per 60 posti.</b> Non &egrave; un margine stretto, &egrave; un deficit: in attacco chi resta indietro non prende un ripiego, prende il fondo. Difensori 114 per 80 e centrocampisti 115 per 80 — l&igrave; il valore si pu&ograve; aspettare. Portieri: 19 credibili per 30 posti, ma il terzo portiere non gioca mai.
+      </div>
+      <div class="regola-nota">
+        <b>Occasioni evidenti nei prezzi:</b> Falcone &egrave; il 5&deg; portiere per Valore e costa <b>8cr</b>, contro i 44 di Svilar e i 38 di Maignan per due centesimi in pi&ugrave;. Stessa storia per Milinkovic-Savic (6cr), Gonzalez N. a centrocampo (7cr) e Kempf in difesa (2cr).<br><br>
+        <b>Da sapere:</b> i valori vengono dal tuo foglio aggiornato al 31/08, ma sono costruiti sui voti <b>Fantacalcio</b> mentre questa lega gioca con lo <b>Statistico Alvin482</b>: l&#39;ordine regge, i livelli no. E il foglio ha ancora <b>Kean alla Fiorentina</b>, mentre &egrave; passato al Como (ANSA 27/08). Mancano Lukaku, Dallinga, Petagna, Buksa e Albarracin; ci sono invece Ngonge, Birligea, Bobcek, Fatah e Raimondo.
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="marketBody"><span>Andamento mercato <span class="section-hint">quanto si sta pagando in più/meno rispetto al PMA atteso — generale, per reparto e per slot</span></span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body" id="marketBody">
+    <div class="card" id="marketCard"></div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="avversariBody"><span>Avversari</span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body opp-panel" id="avversariBody">
+    <div class="opp-add-row">
+      <input type="text" id="oppNameInput" placeholder="Nome avversario (es. Marco, Squadra di Luca…)" autocomplete="off">
+      <button class="btn primary" id="btnAddOpp">+ Aggiungi avversario</button>
+    </div>
+    <div class="opp-list" id="oppList"></div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="mySquadBody"><span>La mia rosa</span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body" id="mySquadBody">
+    <div class="card completion-card" id="myCompletionCard"></div>
+    <div class="my-squad" id="mySquad"></div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="strengthBody"><span>Confronto forza rose <span class="section-hint">FVM totale della rosa: io vs ogni avversario</span></span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body" id="strengthBody">
+    <div class="card" id="strengthCard"></div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="ownerSquadsBody"><span>Rose avversari <span class="section-hint">giocatori assegnati ai tuoi avversari, per tenerli tutti sotto controllo</span></span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body" id="ownerSquadsBody">
+    <div class="owner-squads" id="ownerSquads"></div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="myListBodyWrap"><span>La mia lista obiettivi <span class="section-hint">la tua shortlist personale (PF), separata dal listone ufficiale completo</span></span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body" id="myListBodyWrap">
+    <h3 class="subsection-head">Obiettivi reparto <span class="section-hint">tutti i giocatori che flaggi (★), per PF decrescente</span></h3>
+    <div class="top-picks" id="topPicks"></div>
+
+    <div class="tabs" id="myListTabs"></div>
+    <div class="search-row">
+      <input type="text" id="myListSearch" class="search-input" placeholder="Cerca nella tua lista…" autocomplete="off">
+      <label class="hide-assigned-toggle"><input type="checkbox" id="myListHideChk" checked> nascondi i giocatori già assegnati</label>
+      <div class="search-hint" id="myListSearchHint"></div>
+    </div>
+    <div class="filters" id="myListFilters"></div>
+    <div class="tab-scroll">
+    <table class="listone">
+      <thead>
+        <tr>
+          <th style="width:56px" data-sort="slot">Slot<span class="sort-arrow" data-arrow="slot"></span></th>
+          <th data-sort="name">Nome<span class="sort-arrow" data-arrow="name"></span></th>
+          <th style="width:110px" data-sort="team">Squadra<span class="sort-arrow" data-arrow="team"></span></th>
+          <th style="width:70px" data-sort="cost" title="Prezzo Massimo d'Asta ricalcolato sul budget totale di 400cr, aggiustato in base all'andamento del mercato d'asta">PMA attuale<span class="sort-arrow" data-arrow="cost"></span></th>
+          <th style="width:120px" data-sort="val" title="Valore Cassina: fantamedia attesa corretta per i modificatori e per il gol che qui pesa diverso">Valore<span class="sort-arrow" data-arrow="val"></span></th>
+          <th class="actions-col">Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="myListBody"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <h2 class="section collapsible-head" data-target="listoneBodyWrap"><span>Listone completo <span class="section-hint" id="listCountHint"></span></span><span class="collapse-icon">▾</span></h2>
+  <div class="section-body" id="listoneBodyWrap">
+    <div class="tabs" id="repTabs"></div>
+    <div class="search-row">
+      <input type="text" id="playerSearch" class="search-input" placeholder="Cerca giocatore per nome…" autocomplete="off">
+      <label class="hide-assigned-toggle"><input type="checkbox" id="hideAssignedChk" checked> nascondi i giocatori già assegnati (mia rosa + avversari)</label>
+      <div class="search-hint" id="searchHint"></div>
+    </div>
+    <div class="filters" id="slotFilters"></div>
+    <div class="tab-scroll">
+    <table class="listone">
+      <thead>
+        <tr>
+          <th style="width:56px" data-sort="slot">Slot<span class="sort-arrow" data-arrow="slot"></span></th>
+          <th data-sort="name">Nome<span class="sort-arrow" data-arrow="name"></span></th>
+          <th style="width:110px" data-sort="team">Squadra<span class="sort-arrow" data-arrow="team"></span></th>
+          <th style="width:70px" data-sort="cost" title="Prezzo Massimo d'Asta ricalcolato sul budget totale di 400cr, aggiustato in base all'andamento del mercato d'asta">PMA attuale<span class="sort-arrow" data-arrow="cost"></span></th>
+          <th style="width:120px" data-sort="val" title="Fantamedia attesa corretta per le regole Cassina: piu' il peso della media voto nel modificatore, piu' il gol che qui vale 4 per P e D e 3,5 per i C">Valore<span class="sort-arrow" data-arrow="val"></span></th>
+          <th style="width:60px" data-sort="pfEst" title="Media voto: il voto in pagella senza bonus. È il numero su cui girano tutti e due i modificatori">MV<span class="sort-arrow" data-arrow="pfEst"></span></th>
+          <th class="actions-col">Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="listoneBody"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <footer class="note">
+    Costo = PMA (Prezzo Massimo d'Asta). Nel foglio e' una <b>percentuale del budget</b> e qui diventa quella percentuale di 400cr — non un prezzo assoluto: la somma dei PMA% dei 250 giocatori che verranno presi vale 947%, cioe' 9,47 budget interi contro i 10 in gioco. La colonna <b>Valore</b> non e' il FVM: e' la fantamedia attesa corretta per le regole di QUESTA lega — piu' il peso della media voto nel modificatore (1,25 per portieri e difensori, 0,57 per i centrocampisti), piu' il gol, che qui vale 4 per P e D e 3,5 per i C mentre la fantamedia li conta tutti a 3. La colonna <b>MV</b> e' la media voto, il voto in pagella senza bonus: e' il numero su cui girano tutti e due i modificatori, ed e' per questo che un portiere si sceglie di li' e non dalla fantamedia. Media voto e gol sono <b>smorzati sulle presenze</b>: con due partite alle spalle un 7,5 di media e' rumore. La <b>mia lista obiettivi</b> parte dai 304 giocatori con titolarita' 3 o piu' e almeno 10 presenze — potala tu con la stella ☆. Le fasce 1/2/3/4/SCOMM sono la tua classificazione dal foglio (Top, Semi-Top, Terza, Quarta/Titolare scarso, Outsider e Scomm.).<br>
+    <b>Andamento mercato</b>: il prezzo mostrato per i giocatori non ancora presi si aggiusta in proporzione a quanto si sta pagando davvero rispetto al PMA atteso — se il mercato "scoppia" (si paga di più) i prezzi salgono, se è "freddo" (si paga meno) scendono; il pulsante "Assegna" propone già il prezzo aggiustato. L'aggiustamento è <b>relativo allo SLOT di appartenenza</b> (1/2/3/4/SCOMM) del giocatore, non all'intero reparto: se sui portieri SLOT 1 si spende il 10% in più non è detto che accada lo stesso sui portieri SLOT 4 — anzi, spendere di più sui big spesso lascia meno budget per gli altri. Finché lo SLOT specifico non ha almeno 3 giocatori assegnati, si usa provvisoriamente il trend dell'intero reparto (tag "rep."), e se anche il reparto non ha ancora dati si usa il trend <b>Generale</b> di tutte le squadre (tag "gen."). Guarda la sezione "Andamento mercato" per il quadro completo, con il dettaglio per slot sotto ogni reparto.<br>
+    <b>Cruscotto modificabile</b>: in entrambe le tabelle clicca "Assegna" per aprire la finestra dove inserisci i crediti pagati e scegli se il giocatore è tuo o di un avversario — tutto si aggiorna subito, ed è condiviso tra le due liste (assegnarlo in una lo segna anche nell'altra). Gestisci i tuoi avversari nel pannello "Avversari" e tieni sotto controllo le loro rose qui sopra. Le modifiche vivono solo in questa scheda del browser: pochi secondi dopo ogni modifica si scarica da solo un backup ("Salva stato" per farlo subito a mano, "Carica stato" per recuperarlo se serve).
+  </footer>
+
+</div>
+
+<div class="modal-overlay" id="assignModalOverlay">
+  <div class="modal-box">
+    <h3 id="assignModalTitle">Assegna giocatore</h3>
+    <div class="modal-row">
+      <label for="assignModalPrice">Crediti pagati</label>
+      <input type="number" id="assignModalPrice" min="0" step="1">
+    </div>
+    <div class="modal-row">
+      <label for="assignModalOwner">Assegna a</label>
+      <select id="assignModalOwner"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="assignModalCancel">Annulla</button>
+      <button class="btn primary" id="assignModalConfirm">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="nextTargetOverlay">
+  <div class="modal-box next-target-box">
+    <h3>Prossimo obiettivo suggerito</h3>
+    <div id="nextTargetBody"></div>
+    <div class="modal-actions">
+      <button class="btn" id="nextTargetClose">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Obiettivi di spesa per reparto — su 400 crediti, non 500. Sono diversi da
+// quelli della Carmy (45/55/150/250) perche' qui i due modificatori sono
+// accesi: il portiere entra SEMPRE nella media della difesa, e il modificatore
+// di centrocampo esiste. Difesa e centrocampo pagano in un modo che nell'altro
+// campionato non pagano. Restano modificabili dalla riga in cima: se in sala i
+// prezzi vanno da un'altra parte, cambiali.
+const REPARTI = {
+  POR: { label: "Portieri", color: "var(--slot-por)", target: 20, count: 3 },
+  DIF: { label: "Difensori", color: "var(--slot-dif)", target: 105, count: 8 },
+  CEN: { label: "Centrocampisti", color: "var(--slot-cen)", target: 110, count: 8 },
+  ATT: { label: "Attaccanti", color: "var(--slot-att)", target: 165, count: 6 },
+};
+
+// Listone aggiornato al 31/08/2026, dal foglio di Salvo. Ogni riga:
+//   [fascia, nome, squadra, PMA in crediti, valore Cassina, media voto]
+//
+// Il PMA e' una PERCENTUALE del budget, non un prezzo assoluto: il foglio la
+// da' come "11%%" e qui diventa 11%% x 400. Verificato prima di scegliere — la
+// somma dei PMA%% dei 250 giocatori che verranno presi vale 947%%, cioe' 9,47
+// budget interi contro i 10 disponibili. Nella versione precedente di questo
+// cruscotto i prezzi erano lasciati in scala 500: sbagliato, e la correzione
+// non e' uniforme (Malen sale da 151 a 157, Dimarco scende da 75 a 58).
+//
+// Il "valore Cassina" e' la fantamedia attesa corretta per le regole di QUESTA
+// lega, cosa che il FVM non fa:
+//   + peso x (media voto - 6)   il modificatore, che gira sul voto in pagella:
+//                               1,25 per P e D (uno su quattro nella media),
+//                               0,57 per i C (cinque giocatori, tetto piu' basso)
+//   + gol a partita x delta     il gol qui vale 4 per P e D, 3,5 per i C, 3 per
+//                               gli A: la fantamedia li conta tutti a 3
+// Media voto e gol sono smorzati sulle presenze (k=10, lo stesso principio di
+// FANTAMEDIA_SHRINK nel tool): con due partite alle spalle un 7,5 di media e'
+// rumore, e senza smorzamento il terzo portiere della Fiorentina risultava il
+// miglior portiere della lega.
+const DATA = {
+  POR: [
+    ["1","Svilar","ROM",44,5.69,6.28],["1","Maignan","MIL",38,5.64,6.27],["1","Vicario","JUV",38,5.61,6.27],["1","Carnesecchi","ATA",36,5.60,6.32],
+    ["3","Falcone","LEC",8,5.56,6.35],["1","Meret","NAP",35,5.52,6.23],["SCOMM","Milinkovic-Savic V.","NAP",6,5.52,6.21],
+    ["1","Martinez Jo.","INT",38,5.51,6.19],["SCOMM","Provedel","INT",6,5.50,6.24],["2","Skorupski","BOL",10,5.33,6.17],
+    ["1","Butez","COM",34,5.30,6.09],["2","Mandas","LAZ",14,5.29,6.13],["2","De Gea","FIO",17,5.27,6.20],["3","Caprile","CAG",8,5.21,6.22],
+    ["3","Okoye","UDI",13,5.01,6.04],["SCOMM","Grabara","JUV",1,5.00,6.00],["4","Muric","SAS",3,4.90,6.03],["4","Perri","TOR",1,4.82,5.92],
+    ["SCOMM","Montipò","VEN",1,4.81,6.09],["4","Corvi","PAR",2,4.79,6.02],["3","Bijlow","GEN",6,4.76,5.96],["SCOMM","Paleari","TOR",1,4.69,5.99],
+    ["4","Stankovic F.","VEN",2,4.64,5.84],["SCOMM","Motta","LAZ",1,4.59,5.87],["SCOMM","Pessina Mas.","BOL",1,4.57,5.86],
+    ["SCOMM","Turati","SAS",1,4.54,5.88],["SCOMM","Terracciano","MIL",1,4.49,5.79],["4","Palmisani","FRO",1,4.48,5.77],
+    ["SCOMM","Mascardi","TOR",1,4.46,5.76],["SCOMM","Padelli","UDI",1,4.44,5.79],["SCOMM","Desplanches","FRO",1,4.33,5.70],
+    ["SCOMM","Pinsoglio","JUV",1,4.33,5.70],["4","Thiam","MON",1,4.28,5.68],["SCOMM","Christensen O.","FIO",1,4.10,5.68],
+    ["SCOMM","Di Gennaro","INT",1,3.93,5.55],["SCOMM","Sommariva","GEN",1,3.93,5.54],["SCOMM","Daffara","PAR",1,3.88,5.50],
+    ["SCOMM","Satalino","SAS",1,3.88,5.50],["SCOMM","Bleve","LEC",1,3.88,5.50],["SCOMM","Contini","NAP",1,3.88,5.50],
+    ["SCOMM","De Marzi","ROM",1,3.88,5.50],["SCOMM","Gollini","ROM",1,3.88,5.50],["SCOMM","Grandi","VEN",1,3.88,5.50],
+    ["SCOMM","Happonen","BOL",1,3.88,5.50],["SCOMM","Lezzerini","FIO",1,3.88,5.50],["SCOMM","Lolic","FRO",1,3.88,5.50],
+    ["SCOMM","Mrozek","UDI",1,3.88,5.50],["SCOMM","Penev","LEC",1,3.88,5.50],["SCOMM","Piana","UDI",1,3.88,5.50],
+    ["SCOMM","Pisseri","FRO",1,3.88,5.50],["SCOMM","Pozzi","VEN",1,3.88,5.50],["SCOMM","Radunovic","CAG",1,3.88,5.50],
+    ["SCOMM","Renzetti","LAZ",1,3.88,5.50],["SCOMM","Russo A.","SAS",1,3.88,5.50],["SCOMM","Sherri","CAG",1,3.88,5.50],
+    ["SCOMM","Siviero","TOR",1,3.88,5.50],["SCOMM","Sportiello","ATA",1,3.88,5.50],["SCOMM","Stolz","GEN",1,3.88,5.50],
+    ["SCOMM","Strajnar","MON",1,3.88,5.50],["SCOMM","Tornqvist","COM",1,3.88,5.50],["SCOMM","Torriani","MIL",1,3.88,5.50],
+    ["SCOMM","Vigorito","COM",1,3.88,5.50],["SCOMM","Vismara","ATA",1,3.88,5.50],
+  ],
+  DIF: [
+    ["1","Dimarco","INT",58,8.44,6.74],["1","Molina N.","ROM",29,7.29,6.48],["1","Bremer","JUV",30,7.29,6.39],["2","Pavlovic","MIL",21,6.98,6.27],
+    ["1","Mancini","ROM",23,6.95,6.28],["1","Wesley","ROM",36,6.94,6.20],["1","Rrahmani","NAP",21,6.92,6.28],["1","Solet","UDI",23,6.79,6.21],
+    ["1","Bastoni","INT",25,6.76,6.23],["2","Bisseck","INT",18,6.75,6.22],["2","Ostigard","GEN",17,6.75,6.17],["2","Di Lorenzo","NAP",20,6.67,6.14],
+    ["1","Akanji","INT",24,6.65,6.25],["2","Spence","INT",18,6.65,6.22],["2","Spinazzola","NAP",12,6.56,6.16],["2","N'Dicka","ROM",18,6.56,6.11],
+    ["2","Kalulu","JUV",21,6.55,6.15],["2","Chalobah T.","COM",17,6.51,6.12],["2","Ramon","COM",17,6.43,6.14],["SCOMM","Kempf","COM",2,6.42,6.10],
+    ["2","Scalvini","ATA",10,6.41,6.07],["3","Hermoso","ROM",9,6.41,6.13],["2","Zappacosta","ATA",10,6.37,6.06],["3","Celik","JUV",8,6.30,6.12],
+    ["2","Valeri","PAR",8,6.27,6.06],["SCOMM","Carlos Augusto","INT",4,6.27,6.09],["3","Couto","COM",12,6.26,6.02],
+    ["SCOMM","Rensch","ROM",1,6.26,6.09],["SCOMM","Stones","INT",12,6.24,6.04],["3","Vojvoda","UDI",12,6.22,6.01],["3","Vasquez","GEN",9,6.20,6.05],
+    ["SCOMM","Lulli","ROM",1,6.17,6.01],["SCOMM","Obrador","SAS",2,6.15,6.01],["3","Bernasconi","ATA",9,6.14,6.04],["3","Valle","COM",5,6.14,6.02],
+    ["4","Tiago Gabriel","LEC",6,6.13,5.99],["4","Kristensen T.","ATA",6,6.12,5.97],["2","Gila","MIL",18,6.10,6.01],
+    ["3","Miranda J.","BOL",9,6.10,5.99],["3","Bartesaghi","MIL",6,6.09,5.96],["3","Norton-Cuffy","GEN",10,6.07,5.94],
+    ["SCOMM","Cabal","JUV",1,6.07,5.92],["3","Hainaut","VEN",1,6.05,5.91],["4","Kabasele","UDI",1,6.05,5.95],["4","Haps","VEN",1,6.04,5.89],
+    ["SCOMM","Pavard","INT",1,6.04,5.97],["SCOMM","Beukema","NAP",1,6.04,5.93],["3","Cambiaso","JUV",10,6.02,5.85],["3","Kelly L.","JUV",3,6.02,5.98],
+    ["4","Birindelli","MON",1,6.01,5.89],["SCOMM","Zanoli","UDI",1,6.01,5.98],["4","Delprato","PAR",6,6.00,5.91],["4","Ismajli","TOR",1,5.98,5.92],
+    ["4","Mina","CAG",5,5.98,5.95],["3","Gabbia","MIL",3,5.97,5.92],["SCOMM","Badiashile","NAP",5,5.97,5.92],["SCOMM","Romagnoli","LAZ",1,5.97,5.98],
+    ["SCOMM","Tomori","MIL",1,5.97,5.95],["2","Jimenez A.","FIO",10,5.96,5.90],["SCOMM","Gatti","JUV",1,5.96,5.91],
+    ["4","Kamara H.","UDI",6,5.95,5.89],["SCOMM","Holm","BOL",1,5.95,5.97],["SCOMM","Martin","GEN",1,5.95,5.94],["4","Idzes","SAS",2,5.93,5.92],
+    ["4","Mangas","MON",2,5.92,5.86],["SCOMM","Fortini","TOR",1,5.92,5.92],["SCOMM","Idrissi R.","CAG",1,5.92,5.85],
+    ["SCOMM","Dodò","FIO",4,5.91,5.95],["SCOMM","Theate","BOL",2,5.91,5.88],["SCOMM","Koulierakis","ROM",4,5.88,5.88],
+    ["SCOMM","Buongiorno","NAP",2,5.88,5.89],["4","Coco","TOR",2,5.86,5.85],["4","Obert","CAG",2,5.85,5.88],["SCOMM","Tavares N.","LAZ",1,5.85,5.89],
+    ["SCOMM","Bellanova","ATA",3,5.84,5.84],["4","Gallo","LEC",2,5.83,5.92],["SCOMM","Lucumì","JUV",8,5.83,5.86],
+    ["SCOMM","Smolcic I.","COM",1,5.82,5.91],["SCOMM","Kolasinac","ATA",1,5.81,5.93],["SCOMM","Ghilardi","ROM",1,5.80,5.91],
+    ["SCOMM","Van Der Brempt","SAS",1,5.80,5.89],["3","Valdepenas","FIO",6,5.79,5.84],["4","Zortea","BOL",3,5.78,5.85],
+    ["4","Marusic","LAZ",1,5.78,5.85],["3","Dragusin","FIO",8,5.75,5.82],["3","Marcandalli","GEN",2,5.75,5.85],["SCOMM","Kaiki","COM",3,5.75,5.82],
+    ["SCOMM","Hien","ATA",1,5.75,5.87],["SCOMM","Marin R.","NAP",1,5.74,5.79],["SCOMM","Provstgaard","LAZ",1,5.74,5.86],
+    ["SCOMM","Kossounou","ATA",1,5.73,5.86],["SCOMM","Balerdi","ROM",1,5.72,5.81],["SCOMM","Valenti","PAR",1,5.71,5.89],
+    ["SCOMM","Joao Mario","FIO",2,5.70,5.79],["SCOMM","Vitik","BOL",1,5.70,5.86],["4","Doekhi","LAZ",3,5.68,5.79],["4","Bracaglia","FRO",1,5.68,5.74],
+    ["4","Bella-Kotchap","VEN",2,5.67,5.80],["4","Sutalo J.","LAZ",2,5.65,5.78],["SCOMM","Favasuli","NAP",1,5.65,5.76],
+    ["SCOMM","Parisi","FIO",1,5.65,5.89],["4","Gaspar K.","LEC",1,5.64,5.80],["4","Oyono A.","FRO",1,5.63,5.76],
+    ["SCOMM","Correia T.","VEN",1,5.63,5.77],["SCOMM","Mitaj","GEN",1,5.63,5.77],["SCOMM","Bertola","UDI",1,5.62,5.81],
+    ["SCOMM","Pongracic","FIO",1,5.62,5.81],["SCOMM","Terracciano F.","MIL",1,5.61,5.81],["SCOMM","Goldaniga","COM",1,5.61,5.76],
+    ["SCOMM","Floriani Mussolini","LAZ",1,5.60,5.74],["4","Veiga D.","LEC",1,5.59,5.79],["SCOMM","De Winter","MIL",2,5.58,5.74],
+    ["SCOMM","Ranieri L.","FIO",1,5.58,5.80],["SCOMM","Ziolkowski","MON",1,5.58,5.80],["SCOMM","Walukiewicz","SAS",1,5.57,5.78],
+    ["SCOMM","Olivera","NAP",1,5.56,5.74],["SCOMM","Viery","FIO",1,5.54,5.73],["4","Doig","SAS",1,5.54,5.80],["4","Siebert","LEC",1,5.54,5.70],
+    ["SCOMM","Ahanor","ATA",1,5.54,5.76],["SCOMM","Pellegrini Lu.","LAZ",1,5.54,5.79],["4","Heggem","BOL",1,5.53,5.79],
+    ["4","Troilo","PAR",1,5.53,5.75],["SCOMM","De Silvestri","BOL",1,5.53,5.83],["4","Pedraza","LAZ",2,5.52,5.71],
+    ["4","Rodriguez Ju.","CAG",1,5.52,5.67],["4","Comuzzo","TOR",2,5.51,5.73],["4","Zè Pedro","CAG",1,5.51,5.74],["4","Monterisi","FRO",1,5.49,5.68],
+    ["SCOMM","Lazzari","LAZ",1,5.49,5.74],["4","Leysen F.","SAS",1,5.48,5.69],["SCOMM","Britschgi","PAR",1,5.48,5.73],
+    ["4","Schingtienne","VEN",1,5.47,5.69],["SCOMM","Terzic","FRO",1,5.45,5.69],["4","Carboni A.","MON",1,5.45,5.67],
+    ["SCOMM","Comert","TOR",1,5.45,5.69],["SCOMM","Abankwah","UDI",1,5.43,5.67],["SCOMM","Patric","LAZ",1,5.41,5.72],
+    ["4","Odenthal","SAS",1,5.40,5.65],["SCOMM","Mazzocchi","NAP",1,5.38,5.74],["SCOMM","Puczka","GEN",1,5.38,5.66],["4","Kouadio","MON",1,5.37,5.68],
+    ["SCOMM","Palma","UDI",1,5.37,5.63],["4","Helland","BOL",1,5.36,5.62],["SCOMM","Akpoguma","FRO",1,5.36,5.65],
+    ["SCOMM","Franjic","VEN",1,5.36,5.65],["SCOMM","Estupinan","MIL",1,5.35,5.63],["SCOMM","Sabelli","GEN",1,5.35,5.71],
+    ["SCOMM","Rugani","JUV",1,5.33,5.65],["SCOMM","Ebosse","UDI",1,5.32,5.68],["SCOMM","Mlacic","UDI",1,5.32,5.65],
+    ["SCOMM","Drobnic","PAR",1,5.32,5.63],["SCOMM","Halhal","VEN",1,5.32,5.62],["SCOMM","Tchato","FRO",1,5.32,5.63],["4","Bakoune","MON",1,5.27,5.61],
+    ["4","Delli Carri","MON",1,5.27,5.58],["4","Cinquegrano","SAS",1,5.25,5.60],["SCOMM","Sverko","VEN",1,5.25,5.60],
+    ["SCOMM","Aurelio","CAG",1,5.25,5.54],["SCOMM","Kambwala","COM",1,5.25,5.60],["SCOMM","Candè","SAS",1,5.23,5.62],["4","Ndiaye","PAR",1,5.21,5.59],
+    ["SCOMM","Lucchesi","MON",1,5.21,5.57],["SCOMM","Alhassane","BOL",1,5.21,5.58],["SCOMM","Jean","LEC",1,5.19,5.61],
+    ["SCOMM","Biraghi","TOR",1,5.18,5.58],["SCOMM","Marianucci","NAP",1,5.18,5.62],["4","Cittadini","FRO",1,5.16,5.56],
+    ["SCOMM","Dembelè A.","LEC",1,5.16,5.54],["SCOMM","Moreno M.","VEN",1,5.16,5.56],["SCOMM","Calvani","FRO",1,5.16,5.55],
+    ["SCOMM","Kofler","CAG",1,5.13,5.51],["SCOMM","Amey","FRO",1,5.12,5.54],["SCOMM","Casale","BOL",1,5.09,5.56],["SCOMM","Antov","MON",1,5.09,5.53],
+    ["SCOMM","Maye","MON",1,5.07,5.52],["SCOMM","Omar Fayed","FRO",1,5.05,5.51],["SCOMM","Otoa","GEN",1,4.99,5.52],
+    ["SCOMM","Sagrado","VEN",1,4.96,5.46],["SCOMM","Gomes","VEN",1,4.91,5.45],["SCOMM","Ndaba","LEC",1,4.91,5.46],
+    ["SCOMM","Arizala","UDI",1,4.88,5.50],["SCOMM","Carboni F.","PAR",1,4.82,5.46],["SCOMM","Pieragnolo","SAS",1,4.69,5.35],
+    ["SCOMM","Diawara S.","MIL",1,4.69,5.35],["SCOMM","Macchioni","SAS",1,4.69,5.35],
+  ],
+  CEN: [
+    ["1","Calhanoglu","INT",61,7.98,6.73],["1","Paz N.","COM",66,7.97,6.57],["1","McTominay","NAP",62,7.57,6.51],["1","Orsolini","BOL",52,7.54,6.28],
+    ["1","Pulisic","MIL",48,7.50,6.36],["2","Baturina","COM",40,7.47,6.46],["SCOMM","Gonzalez N.","JUV",7,7.45,6.72],
+    ["2","Alajbegovic","JUV",26,7.44,6.68],["2","De Bruyne","NAP",34,7.40,6.46],["2","Mora","ROM",34,7.33,6.68],["2","Zaniolo","UDI",26,7.23,6.37],
+    ["2","Rabiot","MIL",39,7.19,6.41],["2","Da Cunha","COM",29,7.14,6.40],["2","Zielinski","INT",24,7.10,6.33],["2","Mastantuono","FIO",28,7.07,6.52],
+    ["2","Ekkelenkamp","UDI",17,6.92,6.16],["2","Atta","FIO",30,6.91,6.37],["2","Conceicao","JUV",28,6.90,6.32],["2","Barella","INT",26,6.90,6.32],
+    ["2","Rowe","BOL",17,6.90,6.27],["2","Vlasic","TOR",27,6.88,6.12],["SCOMM","Zambo Anguissa","NAP",9,6.88,6.26],
+    ["2","Zaccagni","LAZ",32,6.86,6.06],["2","Vergara","NAP",9,6.84,6.32],["SCOMM","Thorstvedt","SAS",3,6.83,6.21],
+    ["2","Frattesi","LAZ",24,6.82,6.14],["2","Moreira","MIL",17,6.82,6.36],["2","Rodriguez Je.","COM",8,6.81,6.28],
+    ["3","Gudmundsson A.","FIO",14,6.81,6.03],["2","Diouf","INT",17,6.78,6.25],["2","Jones C.","INT",14,6.77,6.33],
+    ["3","Bernardeschi","BOL",8,6.75,6.13],["SCOMM","Kessiè","ATA",14,6.75,6.32],["2","McKennie","JUV",24,6.74,6.18],["3","Calò","FRO",6,6.72,6.23],
+    ["SCOMM","Politano","NAP",10,6.69,6.15],["SCOMM","Liberali","COM",3,6.68,6.24],["SCOMM","Konè I.","SAS",1,6.68,6.20],
+    ["3","Baldanzi","GEN",8,6.67,6.20],["3","Modric","MIL",12,6.65,6.38],["3","Ederson D.S.","ATA",16,6.63,6.24],["3","Taylor K.","LAZ",14,6.63,6.13],
+    ["SCOMM","Adzic","SAS",2,6.62,6.19],["3","Isaksen","LAZ",5,6.59,6.09],["3","Konè M.","ROM",15,6.58,6.24],
+    ["SCOMM","Loftus-Cheek","MIL",1,6.57,6.13],["4","Casadei","TOR",6,6.54,6.02],["4","Colpani","MON",3,6.54,6.17],
+    ["4","Mandragora","FIO",1,6.53,6.07],["SCOMM","Chukwueze","MIL",9,6.53,6.14],["4","Perrone","COM",6,6.52,6.20],
+    ["4","Cristante","ROM",2,6.52,6.12],["4","Locatelli","JUV",4,6.51,6.23],["SCOMM","Cambiaghi","BOL",2,6.51,6.04],
+    ["SCOMM","Pessina","MON",1,6.51,6.13],["3","Bernabè","PAR",5,6.50,6.16],["SCOMM","Diallo O.","PAR",1,6.50,6.16],
+    ["4","Thuram K.","JUV",5,6.49,6.11],["4","Cacciamani","TOR",2,6.49,6.14],["3","Saelemaekers","MIL",9,6.48,6.14],
+    ["SCOMM","Odgaard","BOL",2,6.48,5.99],["SCOMM","Cancellieri","LAZ",1,6.45,5.99],["SCOMM","Berisha M.","LEC",1,6.44,6.12],
+    ["SCOMM","Forson O.","MON",1,6.44,6.12],["SCOMM","Messias","GEN",1,6.44,6.14],["3","Samardzic","ATA",15,6.43,6.00],
+    ["SCOMM","Traorè Hj.","GEN",1,6.43,6.09],["SCOMM","Volpato","SAS",2,6.42,6.12],["SCOMM","Fini","FRO",1,6.42,6.07],
+    ["SCOMM","Dominguez B.","SAS",1,6.42,5.99],["SCOMM","Pisilli","ROM",2,6.39,6.08],["SCOMM","Njie","FIO",1,6.39,5.96],
+    ["SCOMM","Mkhitaryan","INT",1,6.39,6.15],["4","Busio","VEN",2,6.37,6.03],["4","Basic","VEN",1,6.37,6.08],["SCOMM","Sucic P.","INT",4,6.37,6.07],
+    ["SCOMM","Unai Gomez","UDI",1,6.37,6.07],["4","Gaetano","ATA",6,6.36,6.06],["SCOMM","Pasalic","ATA",2,6.36,5.98],
+    ["4","Fazzini","CAG",4,6.35,5.98],["SCOMM","Zerbin","FRO",1,6.34,5.87],["SCOMM","Zalewski","ATA",2,6.33,6.08],
+    ["SCOMM","Cissè A.","MIL",7,6.33,5.99],["SCOMM","Pellegrini Lo.","ROM",1,6.33,6.03],["4","Fagioli","FIO",1,6.32,6.03],
+    ["SCOMM","Douglas Luiz","JUV",3,6.31,6.03],["4","Lobotka","NAP",2,6.31,6.04],["SCOMM","Addai","COM",1,6.31,5.98],["4","Schmid","FRO",1,6.30,6.03],
+    ["4","Pobega","BOL",1,6.30,5.90],["SCOMM","Caqueret","COM",1,6.29,6.07],["SCOMM","Elmas","ATA",1,6.28,5.88],["SCOMM","Cataldi","LAZ",1,6.27,6.04],
+    ["SCOMM","Milla","COM",1,6.27,6.01],["SCOMM","Meichtry","GEN",1,6.25,5.94],["4","Coulibaly L.","LEC",1,6.24,6.02],
+    ["SCOMM","Sulemana I.","ATA",1,6.24,5.83],["SCOMM","Stankovic A.","INT",1,6.23,5.95],["4","Fitz-Jim","TOR",1,6.22,5.97],
+    ["SCOMM","Folorunsho","MON",1,6.22,6.01],["SCOMM","Zhegrova","JUV",1,6.21,5.97],["SCOMM","Ricci S.","COM",1,6.21,5.99],
+    ["SCOMM","Gandelman","LEC",1,6.20,5.96],["4","Ferguson","BOL",1,6.20,5.86],["SCOMM","De Roon","ROM",1,6.20,5.97],
+    ["SCOMM","Koopmeiners","JUV",1,6.20,5.76],["4","Romano","CAG",1,6.19,5.96],["4","Felici","CAG",1,6.19,5.98],["4","Gorter","LEC",1,6.19,5.94],
+    ["SCOMM","El Aynaoui","ROM",1,6.19,5.97],["SCOMM","Fadera","CAG",1,6.18,5.93],["SCOMM","Ilic","LEC",1,6.18,5.97],
+    ["SCOMM","Ciervo","CAG",1,6.16,5.91],["4","Frendrup","GEN",1,6.15,5.95],["SCOMM","Oristanio","TOR",1,6.14,5.84],
+    ["4","Piotrowski","UDI",1,6.12,5.89],["4","Bakola","SAS",1,6.11,5.95],["4","Sow","GEN",1,6.11,5.91],["SCOMM","Almqvist","PAR",1,6.10,5.92],
+    ["SCOMM","Gilmour","NAP",1,6.09,5.97],["SCOMM","Moro N.","BOL",1,6.09,5.91],["SCOMM","Ciurria","MON",1,6.08,5.88],
+    ["SCOMM","Fofana Y.","MIL",1,6.06,5.85],["SCOMM","Dagasso","VEN",1,6.05,5.85],["4","Keita M.","PAR",1,6.04,5.96],
+    ["SCOMM","Venturino","GEN",2,6.04,5.87],["SCOMM","Nicolussi Caviglia","PAR",1,6.03,5.88],["SCOMM","Tourè I.","MON",1,6.03,5.83],
+    ["SCOMM","Oulai","FIO",1,6.01,5.83],["SCOMM","Brescianini","FIO",1,6.01,5.90],["SCOMM","Koutsoupias","FRO",1,6.01,5.79],
+    ["SCOMM","Lipani","SAS",1,6.01,5.89],["SCOMM","Fabbian","PAR",1,6.01,5.81],["SCOMM","Ndour","FIO",2,6.00,5.80],
+    ["4","Gagliardini","CAG",1,6.00,5.88],["SCOMM","Deiola","CAG",1,6.00,5.92],["SCOMM","Luis Henrique","INT",1,6.00,5.87],
+    ["SCOMM","Miller L.","UDI",1,6.00,5.89],["4","Adopo","CAG",1,5.99,5.83],["SCOMM","Aboukhlal","TOR",1,5.99,5.81],
+    ["SCOMM","Iannoni","SAS",1,5.99,5.86],["SCOMM","Dele-Bashiru","LAZ",1,5.98,5.74],["SCOMM","Ilkhan","TOR",1,5.96,5.81],
+    ["SCOMM","Perez K.","VEN",1,5.94,5.78],["SCOMM","Helgason","VEN",1,5.94,5.77],["SCOMM","Amondarain","BOL",1,5.94,5.80],
+    ["4","Matic","SAS",1,5.93,5.91],["SCOMM","Mout","MON",1,5.92,5.79],["4","Karlstrom","UDI",1,5.92,5.91],["SCOMM","Hasa","FRO",1,5.92,5.75],
+    ["4","Pierotti","LEC",1,5.91,5.79],["SCOMM","Chakvetadze","UDI",1,5.91,5.78],["4","Ellertsson","GEN",1,5.90,5.82],
+    ["SCOMM","El Azzouzi A.","FRO",1,5.90,5.77],["SCOMM","Anjorin","TOR",1,5.89,5.77],["SCOMM","Masini","FRO",2,5.89,5.89],
+    ["SCOMM","Przyborek","LAZ",1,5.89,5.75],["4","Gineitis","TOR",1,5.87,5.83],["SCOMM","Boloca","SAS",1,5.87,5.76],
+    ["SCOMM","Cremaschi","PAR",1,5.87,5.77],["SCOMM","Laerke","LEC",1,5.86,5.75],["SCOMM","El Azzouzi O.","BOL",1,5.86,5.75],
+    ["SCOMM","Comotto","MIL",1,5.86,5.75],["SCOMM","Lahdo","COM",1,5.86,5.75],["SCOMM","Liteta","CAG",1,5.86,5.75],
+    ["SCOMM","Musah","MIL",1,5.85,5.84],["SCOMM","Rovella","LAZ",1,5.84,5.73],["SCOMM","Sohm","VEN",1,5.84,5.69],
+    ["4","Akinsanmiro","MON",1,5.83,5.77],["SCOMM","Fofana Sa.","LEC",1,5.83,5.71],["4","Winks","CAG",1,5.82,5.72],
+    ["SCOMM","Sorensen O.","PAR",1,5.82,5.80],["4","Grillitsch","FRO",1,5.81,5.71],["SCOMM","Foe Ondoa","MON",1,5.81,5.72],
+    ["SCOMM","Amorim","GEN",1,5.80,5.71],["SCOMM","Colombo L.","MON",1,5.79,5.70],["SCOMM","Gelli F.","FRO",1,5.79,5.70],
+    ["SCOMM","Jashari","MIL",1,5.76,5.70],["SCOMM","Zarraga","UDI",1,5.74,5.71],["SCOMM","Duncan","VEN",1,5.72,5.65],
+    ["SCOMM","Cichella","FRO",1,5.71,5.64],["4","Maleh","LEC",1,5.70,5.67],["SCOMM","Kaba","LEC",1,5.69,5.69],
+    ["SCOMM","Ordonez C.","PAR",1,5.66,5.72],["SCOMM","Konaté A.","PAR",1,5.64,5.61],["SCOMM","Belahyane","LAZ",1,5.62,5.67],
+    ["SCOMM","Ngom","LEC",1,5.53,5.61],["SCOMM","Kone B.","FRO",1,5.48,5.50],["SCOMM","Massolin","CAG",1,-3.52,-0.25],
+  ],
+  ATT: [
+    ["1","Malen","ROM",157,8.48,7.15],["1","Martinez L.","INT",138,8.13,6.71],["1","Thuram","INT",96,7.89,6.66],["1","Kolo Muani","JUV",94,7.68,7.13],
+    ["1","Ramos G.","MIL",114,7.64,7.09],["2","Hojlund","NAP",102,7.58,6.40],["2","Douvikas","COM",56,7.54,6.36],["2","Kean","FIO",72,7.43,6.16],
+    ["2","Scamacca","ATA",49,7.42,6.40],["2","Simeone","TOR",42,7.38,6.26],["2","Dybala","ROM",56,7.32,6.42],["SCOMM","Krstovic","ATA",41,7.28,6.30],
+    ["2","Davis K.","UDI",51,7.22,6.41],["SCOMM","Esposito F.P.","INT",55,7.19,6.35],["SCOMM","Yildiz","JUV",34,7.18,6.44],
+    ["3","Berardi","SAS",34,7.11,6.38],["3","Raspadori","ATA",26,7.07,6.29],["3","Santos A.","NAP",24,7.01,6.40],["3","Diao","COM",14,6.96,6.16],
+    ["3","Laurientè","SAS",26,6.91,6.26],["3","Dovbyk","BOL",26,6.91,6.16],["SCOMM","Boga","JUV",6,6.89,6.26],["SCOMM","Soulè","ROM",9,6.87,6.18],
+    ["3","De Ketelaere","ATA",29,6.86,6.23],["SCOMM","Neres","NAP",2,6.83,6.22],["SCOMM","Castro S.","ROM",16,6.80,6.00],
+    ["3","Pinamonti","LAZ",34,6.79,5.96],["SCOMM","Pellegrino M.","FIO",25,6.73,6.03],["3","Colombo","GEN",22,6.72,5.97],
+    ["SCOMM","Bonny","INT",8,6.71,6.15],["SCOMM","Zapata D.","TOR",1,6.71,5.93],["3","Adams A.","VEN",11,6.69,6.14],
+    ["4","Varela G.","MON",7,6.68,6.13],["SCOMM","Esposito Se.","SAS",11,6.65,6.23],["4","Yeboah J.","VEN",6,6.64,6.09],
+    ["SCOMM","Piccoli","BOL",10,6.64,5.86],["4","Raimondo","FRO",3,6.62,6.07],["3","Bowie","SAS",7,6.59,5.99],["SCOMM","Romero D.","PAR",3,6.59,6.04],
+    ["4","Kvernadze","FRO",2,6.56,6.01],["SCOMM","Rrahmani Al.","VEN",1,6.56,6.01],["4","Geubbels","LEC",4,6.54,5.99],
+    ["4","Maldini","CAG",5,6.54,5.96],["4","Tourè E.","PAR",7,6.53,5.98],["4","Kevin Carlos","CAG",2,6.53,5.98],["SCOMM","Bobcek","FRO",1,6.52,5.97],
+    ["SCOMM","Ghedjemis","FRO",1,6.50,5.95],["SCOMM","Milik","JUV",1,6.50,5.96],["SCOMM","Mota","MON",1,6.49,5.94],
+    ["SCOMM","Borrelli","CAG",1,6.46,5.92],["SCOMM","Adams C.","TOR",6,6.43,5.96],["4","Vitinha O.","GEN",5,6.42,5.93],
+    ["SCOMM","Frigan","PAR",1,6.41,5.86],["SCOMM","Stulic","LEC",1,6.41,5.76],["SCOMM","N'Dri","LEC",1,6.40,5.83],["SCOMM","Lucca","NAP",1,6.40,5.79],
+    ["SCOMM","Ngonge","MON",1,6.39,5.83],["SCOMM","Cutrone","MON",2,6.38,5.76],["SCOMM","Lontani","PAR",1,6.38,5.83],
+    ["SCOMM","Elphege","PAR",1,6.36,5.89],["SCOMM","Dia","LAZ",2,6.36,5.72],["SCOMM","Vaz","ROM",1,6.36,5.86],["SCOMM","Mendy P.","CAG",1,6.34,5.86],
+    ["SCOMM","Camarda","MIL",1,6.33,5.71],["SCOMM","Noslin","LAZ",1,6.33,5.95],["SCOMM","Adorante","VEN",1,6.33,5.78],
+    ["SCOMM","Lang","NAP",1,6.33,5.93],["SCOMM","Robinson J.","MON",1,6.33,5.78],["SCOMM","Sulemana K.","ATA",1,6.33,5.93],
+    ["SCOMM","Ekhator","JUV",1,6.29,5.90],["SCOMM","Giovane","NAP",1,6.29,5.94],["SCOMM","Kuhn","COM",1,6.27,5.86],
+    ["SCOMM","David","JUV",2,6.25,5.75],["SCOMM","Lauberbach","VEN",1,6.25,5.70],["SCOMM","Osmajic","GEN",1,6.25,5.70],
+    ["SCOMM","Birligea","FRO",1,6.25,5.70],["SCOMM","Havel","GEN",1,6.20,5.65],["SCOMM","Fatah","LEC",1,6.17,5.62],["SCOMM","Azon","COM",1,6.15,5.60],
+    ["SCOMM","Lisman","VEN",1,6.15,5.60],["SCOMM","Gueye","UDI",1,6.10,5.67],["SCOMM","Bayo V.","UDI",1,6.06,5.64],
+    ["SCOMM","Kulenovic","TOR",1,6.00,5.56],["SCOMM","Ratkov","LAZ",1,6.00,5.53],["SCOMM","Trepy","CAG",1,6.00,5.64],
+    ["SCOMM","De Martis","PAR",1,6.00,5.45],["SCOMM","Mutandwa","CAG",1,0.00,-0.55],
+  ],
+};
+
+const MY_TARGETS_DATA = {
+  POR: [
+    ["1","Svilar","ROM",44,5.69],["1","Maignan","MIL",38,5.64],["1","Vicario","JUV",38,5.61],["1","Carnesecchi","ATA",36,5.60],
+    ["3","Falcone","LEC",8,5.56],["1","Meret","NAP",35,5.52],["SCOMM","Milinkovic-Savic V.","NAP",6,5.52],["2","Skorupski","BOL",10,5.33],
+    ["1","Butez","COM",34,5.30],["2","De Gea","FIO",17,5.27],["3","Caprile","CAG",8,5.21],["3","Okoye","UDI",13,5.01],["4","Muric","SAS",3,4.90],
+    ["4","Perri","TOR",1,4.82],["4","Corvi","PAR",2,4.79],["3","Bijlow","GEN",6,4.76],["4","Stankovic F.","VEN",2,4.64],
+    ["4","Palmisani","FRO",1,4.48],["4","Thiam","MON",1,4.28],
+  ],
+  DIF: [
+    ["1","Dimarco","INT",58,8.44],["1","Molina N.","ROM",29,7.29],["1","Bremer","JUV",30,7.29],["2","Pavlovic","MIL",21,6.98],
+    ["1","Mancini","ROM",23,6.95],["1","Wesley","ROM",36,6.94],["1","Rrahmani","NAP",21,6.92],["1","Solet","UDI",23,6.79],
+    ["1","Bastoni","INT",25,6.76],["2","Bisseck","INT",18,6.75],["2","Ostigard","GEN",17,6.75],["2","Di Lorenzo","NAP",20,6.67],
+    ["1","Akanji","INT",24,6.65],["2","Spence","INT",18,6.65],["2","Spinazzola","NAP",12,6.56],["2","N'Dicka","ROM",18,6.56],
+    ["2","Kalulu","JUV",21,6.55],["2","Chalobah T.","COM",17,6.51],["2","Ramon","COM",17,6.43],["SCOMM","Kempf","COM",2,6.42],
+    ["2","Scalvini","ATA",10,6.41],["3","Hermoso","ROM",9,6.41],["2","Zappacosta","ATA",10,6.37],["3","Celik","JUV",8,6.30],
+    ["2","Valeri","PAR",8,6.27],["SCOMM","Carlos Augusto","INT",4,6.27],["3","Couto","COM",12,6.26],["SCOMM","Rensch","ROM",1,6.26],
+    ["3","Vojvoda","UDI",12,6.22],["3","Vasquez","GEN",9,6.20],["SCOMM","Obrador","SAS",2,6.15],["3","Bernasconi","ATA",9,6.14],
+    ["3","Valle","COM",5,6.14],["4","Tiago Gabriel","LEC",6,6.13],["4","Kristensen T.","ATA",6,6.12],["2","Gila","MIL",18,6.10],
+    ["3","Miranda J.","BOL",9,6.10],["3","Bartesaghi","MIL",6,6.09],["3","Norton-Cuffy","GEN",10,6.07],["3","Hainaut","VEN",1,6.05],
+    ["4","Kabasele","UDI",1,6.05],["4","Haps","VEN",1,6.04],["SCOMM","Beukema","NAP",1,6.04],["3","Cambiaso","JUV",10,6.02],
+    ["3","Kelly L.","JUV",3,6.02],["4","Birindelli","MON",1,6.01],["4","Delprato","PAR",6,6.00],["4","Ismajli","TOR",1,5.98],
+    ["4","Mina","CAG",5,5.98],["3","Gabbia","MIL",3,5.97],["4","Kamara H.","UDI",6,5.95],["4","Idzes","SAS",2,5.93],["4","Mangas","MON",2,5.92],
+    ["SCOMM","Fortini","TOR",1,5.92],["SCOMM","Theate","BOL",2,5.91],["SCOMM","Koulierakis","ROM",4,5.88],["SCOMM","Buongiorno","NAP",2,5.88],
+    ["4","Coco","TOR",2,5.86],["4","Obert","CAG",2,5.85],["SCOMM","Tavares N.","LAZ",1,5.85],["SCOMM","Bellanova","ATA",3,5.84],
+    ["4","Gallo","LEC",2,5.83],["SCOMM","Lucumì","JUV",8,5.83],["SCOMM","Smolcic I.","COM",1,5.82],["SCOMM","Ghilardi","ROM",1,5.80],
+    ["SCOMM","Van Der Brempt","SAS",1,5.80],["4","Zortea","BOL",3,5.78],["4","Marusic","LAZ",1,5.78],["3","Dragusin","FIO",8,5.75],
+    ["3","Marcandalli","GEN",2,5.75],["SCOMM","Marin R.","NAP",1,5.74],["SCOMM","Provstgaard","LAZ",1,5.74],["SCOMM","Kossounou","ATA",1,5.73],
+    ["SCOMM","Balerdi","ROM",1,5.72],["SCOMM","Joao Mario","FIO",2,5.70],["SCOMM","Vitik","BOL",1,5.70],["4","Doekhi","LAZ",3,5.68],
+    ["4","Bracaglia","FRO",1,5.68],["4","Bella-Kotchap","VEN",2,5.67],["4","Sutalo J.","LAZ",2,5.65],["SCOMM","Favasuli","NAP",1,5.65],
+    ["4","Gaspar K.","LEC",1,5.64],["4","Oyono A.","FRO",1,5.63],["SCOMM","Correia T.","VEN",1,5.63],["SCOMM","Bertola","UDI",1,5.62],
+    ["SCOMM","Pongracic","FIO",1,5.62],["SCOMM","Floriani Mussolini","LAZ",1,5.60],["4","Veiga D.","LEC",1,5.59],["SCOMM","De Winter","MIL",2,5.58],
+    ["SCOMM","Olivera","NAP",1,5.56],["4","Doig","SAS",1,5.54],["4","Siebert","LEC",1,5.54],["4","Heggem","BOL",1,5.53],["4","Troilo","PAR",1,5.53],
+    ["4","Pedraza","LAZ",2,5.52],["4","Rodriguez Ju.","CAG",1,5.52],["4","Comuzzo","TOR",2,5.51],["4","Zè Pedro","CAG",1,5.51],
+    ["4","Monterisi","FRO",1,5.49],["4","Leysen F.","SAS",1,5.48],["SCOMM","Britschgi","PAR",1,5.48],["4","Schingtienne","VEN",1,5.47],
+    ["SCOMM","Terzic","FRO",1,5.45],["4","Carboni A.","MON",1,5.45],["SCOMM","Comert","TOR",1,5.45],["SCOMM","Abankwah","UDI",1,5.43],
+    ["4","Odenthal","SAS",1,5.40],["SCOMM","Halhal","VEN",1,5.32],["4","Bakoune","MON",1,5.27],["4","Delli Carri","MON",1,5.27],
+    ["4","Ndiaye","PAR",1,5.21],["SCOMM","Lucchesi","MON",1,5.21],["SCOMM","Moreno M.","VEN",1,5.16],["SCOMM","Calvani","FRO",1,5.16],
+  ],
+  CEN: [
+    ["1","Calhanoglu","INT",61,7.98],["1","Paz N.","COM",66,7.97],["1","McTominay","NAP",62,7.57],["1","Orsolini","BOL",52,7.54],
+    ["1","Pulisic","MIL",48,7.50],["2","Baturina","COM",40,7.47],["SCOMM","Gonzalez N.","JUV",7,7.45],["2","Alajbegovic","JUV",26,7.44],
+    ["2","De Bruyne","NAP",34,7.40],["2","Mora","ROM",34,7.33],["2","Zaniolo","UDI",26,7.23],["2","Rabiot","MIL",39,7.19],
+    ["2","Da Cunha","COM",29,7.14],["2","Zielinski","INT",24,7.10],["2","Mastantuono","FIO",28,7.07],["2","Ekkelenkamp","UDI",17,6.92],
+    ["2","Atta","FIO",30,6.91],["2","Conceicao","JUV",28,6.90],["2","Barella","INT",26,6.90],["2","Rowe","BOL",17,6.90],["2","Vlasic","TOR",27,6.88],
+    ["SCOMM","Zambo Anguissa","NAP",9,6.88],["2","Zaccagni","LAZ",32,6.86],["SCOMM","Thorstvedt","SAS",3,6.83],["2","Frattesi","LAZ",24,6.82],
+    ["2","Moreira","MIL",17,6.82],["2","Rodriguez Je.","COM",8,6.81],["3","Gudmundsson A.","FIO",14,6.81],["2","Diouf","INT",17,6.78],
+    ["2","Jones C.","INT",14,6.77],["3","Bernardeschi","BOL",8,6.75],["2","McKennie","JUV",24,6.74],["3","Calò","FRO",6,6.72],
+    ["SCOMM","Politano","NAP",10,6.69],["SCOMM","Liberali","COM",3,6.68],["3","Baldanzi","GEN",8,6.67],["3","Modric","MIL",12,6.65],
+    ["3","Ederson D.S.","ATA",16,6.63],["3","Taylor K.","LAZ",14,6.63],["3","Isaksen","LAZ",5,6.59],["3","Konè M.","ROM",15,6.58],
+    ["SCOMM","Loftus-Cheek","MIL",1,6.57],["4","Casadei","TOR",6,6.54],["4","Colpani","MON",3,6.54],["4","Perrone","COM",6,6.52],
+    ["4","Cristante","ROM",2,6.52],["4","Locatelli","JUV",4,6.51],["SCOMM","Cambiaghi","BOL",2,6.51],["SCOMM","Pessina","MON",1,6.51],
+    ["3","Bernabè","PAR",5,6.50],["4","Thuram K.","JUV",5,6.49],["4","Cacciamani","TOR",2,6.49],["3","Saelemaekers","MIL",9,6.48],
+    ["SCOMM","Odgaard","BOL",2,6.48],["SCOMM","Cancellieri","LAZ",1,6.45],["SCOMM","Berisha M.","LEC",1,6.44],["SCOMM","Messias","GEN",1,6.44],
+    ["3","Samardzic","ATA",15,6.43],["SCOMM","Volpato","SAS",2,6.42],["SCOMM","Pisilli","ROM",2,6.39],["SCOMM","Njie","FIO",1,6.39],
+    ["4","Busio","VEN",2,6.37],["4","Basic","VEN",1,6.37],["SCOMM","Sucic P.","INT",4,6.37],["SCOMM","Unai Gomez","UDI",1,6.37],
+    ["4","Gaetano","ATA",6,6.36],["SCOMM","Pasalic","ATA",2,6.36],["4","Fazzini","CAG",4,6.35],["SCOMM","Zerbin","FRO",1,6.34],
+    ["SCOMM","Zalewski","ATA",2,6.33],["SCOMM","Cissè A.","MIL",7,6.33],["4","Fagioli","FIO",1,6.32],["SCOMM","Douglas Luiz","JUV",3,6.31],
+    ["4","Lobotka","NAP",2,6.31],["4","Schmid","FRO",1,6.30],["4","Pobega","BOL",1,6.30],["SCOMM","Milla","COM",1,6.27],
+    ["SCOMM","Meichtry","GEN",1,6.25],["4","Coulibaly L.","LEC",1,6.24],["4","Fitz-Jim","TOR",1,6.22],["SCOMM","Folorunsho","MON",1,6.22],
+    ["SCOMM","Gandelman","LEC",1,6.20],["4","Ferguson","BOL",1,6.20],["SCOMM","De Roon","ROM",1,6.20],["SCOMM","Koopmeiners","JUV",1,6.20],
+    ["4","Romano","CAG",1,6.19],["4","Frendrup","GEN",1,6.15],["SCOMM","Oristanio","TOR",1,6.14],["4","Piotrowski","UDI",1,6.12],
+    ["4","Sow","GEN",1,6.11],["SCOMM","Moro N.","BOL",1,6.09],["SCOMM","Ciurria","MON",1,6.08],["SCOMM","Dagasso","VEN",1,6.05],
+    ["4","Keita M.","PAR",1,6.04],["SCOMM","Nicolussi Caviglia","PAR",1,6.03],["SCOMM","Tourè I.","MON",1,6.03],["SCOMM","Oulai","FIO",1,6.01],
+    ["SCOMM","Ndour","FIO",2,6.00],["4","Gagliardini","CAG",1,6.00],["SCOMM","Deiola","CAG",1,6.00],["SCOMM","Luis Henrique","INT",1,6.00],
+    ["4","Adopo","CAG",1,5.99],["SCOMM","Perez K.","VEN",1,5.94],["4","Matic","SAS",1,5.93],["4","Karlstrom","UDI",1,5.92],
+    ["4","Pierotti","LEC",1,5.91],["4","Ellertsson","GEN",1,5.90],["SCOMM","Masini","FRO",2,5.89],["4","Gineitis","TOR",1,5.87],
+    ["SCOMM","Rovella","LAZ",1,5.84],["4","Akinsanmiro","MON",1,5.83],["4","Winks","CAG",1,5.82],["SCOMM","Colombo L.","MON",1,5.79],
+    ["SCOMM","Jashari","MIL",1,5.76],["4","Maleh","LEC",1,5.70],
+  ],
+  ATT: [
+    ["1","Malen","ROM",157,8.48],["1","Martinez L.","INT",138,8.13],["1","Thuram","INT",96,7.89],["1","Kolo Muani","JUV",94,7.68],
+    ["1","Ramos G.","MIL",114,7.64],["2","Hojlund","NAP",102,7.58],["2","Douvikas","COM",56,7.54],["2","Kean","FIO",72,7.43],
+    ["2","Scamacca","ATA",49,7.42],["2","Simeone","TOR",42,7.38],["2","Dybala","ROM",56,7.32],["SCOMM","Krstovic","ATA",41,7.28],
+    ["2","Davis K.","UDI",51,7.22],["SCOMM","Esposito F.P.","INT",55,7.19],["SCOMM","Yildiz","JUV",34,7.18],["3","Berardi","SAS",34,7.11],
+    ["3","Raspadori","ATA",26,7.07],["3","Santos A.","NAP",24,7.01],["3","Diao","COM",14,6.96],["3","Laurientè","SAS",26,6.91],
+    ["3","Dovbyk","BOL",26,6.91],["SCOMM","Boga","JUV",6,6.89],["SCOMM","Soulè","ROM",9,6.87],["3","De Ketelaere","ATA",29,6.86],
+    ["SCOMM","Neres","NAP",2,6.83],["SCOMM","Castro S.","ROM",16,6.80],["3","Pinamonti","LAZ",34,6.79],["SCOMM","Pellegrino M.","FIO",25,6.73],
+    ["3","Colombo","GEN",22,6.72],["SCOMM","Zapata D.","TOR",1,6.71],["3","Adams A.","VEN",11,6.69],["4","Varela G.","MON",7,6.68],
+    ["SCOMM","Esposito Se.","SAS",11,6.65],["4","Yeboah J.","VEN",6,6.64],["SCOMM","Piccoli","BOL",10,6.64],["4","Raimondo","FRO",3,6.62],
+    ["3","Bowie","SAS",7,6.59],["4","Kvernadze","FRO",2,6.56],["4","Geubbels","LEC",4,6.54],["4","Maldini","CAG",5,6.54],
+    ["4","Tourè E.","PAR",7,6.53],["4","Kevin Carlos","CAG",2,6.53],["SCOMM","Bobcek","FRO",1,6.52],["SCOMM","Ghedjemis","FRO",1,6.50],
+    ["SCOMM","Mota","MON",1,6.49],["4","Vitinha O.","GEN",5,6.42],["SCOMM","Stulic","LEC",1,6.41],["SCOMM","N'Dri","LEC",1,6.40],
+    ["SCOMM","Ngonge","MON",1,6.39],["SCOMM","Cutrone","MON",2,6.38],["SCOMM","Dia","LAZ",2,6.36],["SCOMM","Noslin","LAZ",1,6.33],
+    ["SCOMM","Lang","NAP",1,6.33],["SCOMM","David","JUV",2,6.25],["SCOMM","Osmajic","GEN",1,6.25],["SCOMM","Fatah","LEC",1,6.17],
+  ],
+};
+
+const SLOT_COLOR = { "1": "#c96a5d", "2": "#f0d375", "3": "#a6c48a", "4": "#93b7d6", "SCOMM": "#6d3450" };
+const SLOT_TEXT  = { "1": "#ffffff", "2": "#3a2f10", "3": "#1e3312", "4": "#0b2c47", "SCOMM": "#ffffff" };
+
+const ME = 'me';
+const BUDGET_TOTALE = 400;
+
+// avversari: {id, name}
+// La Cassina ha 10 squadre: io piu' nove avversari (la Carmy ne aveva sette).
+let OPPONENTS = [1,2,3,4,5,6,7,8,9].map(n => ({ id: 'opp' + n, name: 'Avversario ' + n }));
+let nextOppId = 10;
+
+// assegnazioni: nome -> {owner, rep, cost}
+// Asta nuova, tabellone vuoto: Carnesecchi e Sportiello erano acquisti della Carmy.
+const ASSIGN_INIT = {};
+let ASSIGN = JSON.parse(JSON.stringify(ASSIGN_INIT));
+// i miei obiettivi flaggati a mano nel Listone completo (nome giocatore -> true)
+let MY_FLAGS = {};
+
+// --- andamento mercato: quanto si sta pagando sul serio rispetto al PMA atteso, per slot, per reparto e in generale ---
+// sotto MIN_SAMPLE giocatori assegnati il trend non è affidabile: nessun aggiustamento
+const MARKET_MIN_SAMPLE = 3;
+let MARKET_FACTOR = {};      // rep -> factor (tutti gli slot del reparto insieme)
+let MARKET_FACTOR_SLOT = {}; // "rep|slot" -> factor (granularità fine, es. "POR|1")
+function computeMarketFactors(){
+  let totalExpected = 0, totalActual = 0, totalN = 0;
+  MARKET_FACTOR_SLOT = {};
+  Object.keys(REPARTI).forEach(rep => {
+    let sumExpected = 0, sumActual = 0, n = 0;
+    const slotSums = {};
+    Object.keys(ASSIGN).forEach(name => {
+      const a = ASSIGN[name];
+      if (a.rep !== rep) return;
+      const row = DATA[rep].find(r => r[1] === name);
+      if (!row) return;
+      const slot = row[0];
+      sumExpected += row[3];
+      sumActual += (a.cost || 0);
+      n++;
+      if (!slotSums[slot]) slotSums[slot] = { sumExpected: 0, sumActual: 0, n: 0 };
+      slotSums[slot].sumExpected += row[3];
+      slotSums[slot].sumActual += (a.cost || 0);
+      slotSums[slot].n++;
+    });
+    const ready = n >= MARKET_MIN_SAMPLE && sumExpected > 0;
+    MARKET_FACTOR[rep] = { factor: ready ? sumActual / sumExpected : 1, n, sumExpected, sumActual, ready };
+    totalExpected += sumExpected; totalActual += sumActual; totalN += n;
+    Object.keys(slotSums).forEach(slot => {
+      const s = slotSums[slot];
+      const sReady = s.n >= MARKET_MIN_SAMPLE && s.sumExpected > 0;
+      MARKET_FACTOR_SLOT[rep + '|' + slot] = { factor: sReady ? s.sumActual / s.sumExpected : 1, n: s.n, sumExpected: s.sumExpected, sumActual: s.sumActual, ready: sReady };
+    });
+  });
+  // andamento generale: tutti i reparti insieme (tutte le squadre) — usato come indicatore complessivo
+  // e come ultimo fallback quando né lo slot né il reparto hanno ancora abbastanza dati propri
+  const generalReady = totalN >= MARKET_MIN_SAMPLE && totalExpected > 0;
+  MARKET_FACTOR.GENERAL = { factor: generalReady ? totalActual / totalExpected : 1, n: totalN, sumExpected: totalExpected, sumActual: totalActual, ready: generalReady };
+}
+// prezzo di un giocatore aggiustato in base all'andamento del mercato: usa prima il trend del suo
+// slot specifico (es. "SLOT 1 Portieri"), poi quello dell'intero reparto, infine quello generale
+function marketFactorFor(rep, slot){
+  const sf = MARKET_FACTOR_SLOT[rep + '|' + slot];
+  if (sf && sf.ready) return { mf: sf, level: 'slot' };
+  const rf = MARKET_FACTOR[rep];
+  if (rf && rf.ready) return { mf: rf, level: 'rep' };
+  const gf = MARKET_FACTOR.GENERAL;
+  if (gf && gf.ready) return { mf: gf, level: 'general' };
+  return { mf: null, level: null };
+}
+function marketAdjustedCost(rep, slot, baseCost){
+  const { mf } = marketFactorFor(rep, slot);
+  if (!mf) return baseCost;
+  return Math.max(1, Math.round(baseCost * mf.factor));
+}
+
+function findRepOf(name){ return Object.keys(REPARTI).find(k => DATA[k].some(r=>r[1]===name)); }
+function ownerLabel(id){
+  if (id === ME) return 'Io';
+  const o = OPPONENTS.find(o=>o.id===id);
+  return o ? (o.name || '(senza nome)') : '—';
+}
+// palette categoriale per distinguere colpo d'occhio i vari avversari (colore stabile per id, non ricalcolato in base alla posizione)
+const OPPONENT_COLORS = ['#7b6fce','#d1637f','#4fa8a0','#c98a3e','#6a8f4f','#5b7fd6','#b5566e','#3f9b6e','#a67c52','#7d5ba6'];
+function oppColor(id){
+  const n = parseInt(String(id).replace('opp',''), 10);
+  const idx = (Number.isFinite(n) ? n - 1 : 0 ) % OPPONENT_COLORS.length;
+  return OPPONENT_COLORS[idx < 0 ? 0 : idx];
+}
+function speso(ownerId, rep){
+  return Object.values(ASSIGN).filter(a => a.owner===ownerId && (!rep || a.rep===rep)).reduce((s,a)=>s+a.cost,0);
+}
+function pickCount(ownerId, rep){
+  return Object.values(ASSIGN).filter(a => a.owner===ownerId && (!rep || a.rep===rep)).length;
+}
+function remPct(ownerId){
+  return Math.max(0, Math.round((BUDGET_TOTALE - speso(ownerId)) / BUDGET_TOTALE * 100));
+}
+function spentPct(ownerId, rep){
+  return Math.round(speso(ownerId, rep) / BUDGET_TOTALE * 100);
+}
+function isMine(rep,name){ const a = ASSIGN[name]; return !!a && a.owner===ME; }
+function assignedTo(name){ return ASSIGN[name] ? ASSIGN[name].owner : null; }
+
+// --- render reparto stat cards (mie, target in % editabile in tempo reale) ---
+// Era 500 scritto a mano: con un budget diverso la percentuale del target
+// sarebbe stata sbagliata senza che niente lo segnalasse.
+function targetPct(key){ return Math.round(REPARTI[key].target/BUDGET_TOTALE*100); }
+
+function renderRepCards(){
+  document.querySelectorAll('.rep-card').forEach(card => {
+    const key = card.dataset.rep;
+    const r = REPARTI[key];
+    const spent = speso(ME, key);
+    const pct = r.target > 0 ? Math.min(100, Math.round(spent/r.target*100)) : 0;
+    card.innerHTML = `
+      <div class="rep-head"><span class="rep-dot" style="background:${r.color}"></span><span class="rep-name">${r.label}</span></div>
+      <div class="rep-nums"><span>Speso</span><b>${spent}cr</b></div>
+      <div class="bar-track"><div class="bar-fill rc-bar" style="width:${pct}%; background:${r.color}"></div></div>
+      <div class="rep-target">Target <input type="number" class="target-input" data-rep="${key}" value="${targetPct(key)}" min="0" max="100" step="1">%
+        (<span class="rc-cr">${r.target}</span>cr) · ${pickCount(ME,key)}/${r.count} scelti</div>
+    `;
+  });
+}
+
+document.querySelector('.stat-row').addEventListener('input', (e) => {
+  const inp = e.target.closest('.target-input');
+  if (!inp) return;
+  const key = inp.dataset.rep;
+  const pctVal = Math.max(0, Math.min(100, parseFloat((inp.value||'0').replace(',','.')) || 0));
+  const crVal = Math.round(pctVal/100*BUDGET_TOTALE);
+  REPARTI[key].target = crVal;
+  const card = inp.closest('.rep-card');
+  const spent = speso(ME, key);
+  const pct = crVal > 0 ? Math.min(100, Math.round(spent/crVal*100)) : 0;
+  card.querySelector('.rc-bar').style.width = pct + '%';
+  card.querySelector('.rc-cr').textContent = crVal;
+  renderStickyBudgetBar();
+});
+
+// --- render hero card (budget mio) ---
+function renderHero(){
+  const totSpeso = Object.keys(REPARTI).reduce((s,k)=>s+speso(ME,k),0);
+  const rimanenti = BUDGET_TOTALE - totSpeso;
+  document.getElementById('creditiRimanenti').textContent = rimanenti;
+  document.getElementById('creditiPct').textContent = `${(rimanenti/BUDGET_TOTALE*100).toFixed(1).replace('.',',')}% del budget ancora libero`;
+}
+
+// --- barra budget fissata in alto: sempre visibile mentre scorri le liste durante l'asta ---
+function renderStickyBudgetBar(){
+  const totSpeso = Object.keys(REPARTI).reduce((s,k)=>s+speso(ME,k),0);
+  const rimanenti = BUDGET_TOTALE - totSpeso;
+  document.getElementById('sbbTotal').textContent = `${rimanenti}cr`;
+  const el = document.getElementById('sbbReps');
+  el.innerHTML = Object.keys(REPARTI).map(key => {
+    const r = REPARTI[key];
+    const spent = speso(ME, key);
+    const pct = r.target > 0 ? Math.min(100, Math.round(spent/r.target*100)) : 0;
+    const over = r.target > 0 && spent > r.target;
+    const picks = pickCount(ME, key);
+    return `<div class="sbb-rep ${over?'over':''}" title="${r.label}: ${spent}cr speso di ${r.target}cr target (${picks}/${r.count} scelti)">
+      <span class="dot" style="background:${r.color}"></span>
+      <span class="sbb-rep-label">${key}</span>
+      <span class="sbb-rep-nums">${spent}/${r.target}cr</span>
+      <div class="sbb-rep-bar-track"><div class="sbb-rep-bar-fill" style="width:${pct}%; background:${over?'var(--danger)':r.color}"></div></div>
+      <span class="sbb-rep-count">${picks}/${r.count}</span>
+    </div>`;
+  }).join('');
+}
+
+// --- "Conviene?": digiti il nome chiamato dal banditore e ti dice se conviene prenderlo e fino a che prezzo, in base alla tua rosa e al mercato ---
+
+// cerca il giocatore nel listone completo (tutti i reparti): prima match esatto sul nome, altrimenti match parziale
+function findPlayerCandidates(term){
+  const t = norm(term);
+  if (!t) return [];
+  const exact = [], partial = [];
+  Object.keys(DATA).forEach(rep => {
+    DATA[rep].forEach(row => {
+      const n = norm(row[1]);
+      if (n === t) exact.push({ rep, row });
+      else if (n.includes(t)) partial.push({ rep, row });
+    });
+  });
+  return exact.length ? exact : partial;
+}
+
+// PF "vero" se il giocatore è nella tua lista curata, altrimenti PF~ stimato dal listone (stessa gerarchia usata ovunque nel cruscotto)
+function pfOf(name, rep){
+  const myRow = MY_TARGETS_DATA[rep] && MY_TARGETS_DATA[rep].find(rr => rr[1] === name);
+  if (myRow) return myRow[4] || 0;
+  const listRow = DATA[rep] && DATA[rep].find(rr => rr[1] === name);
+  if (listRow) return (listRow[5] ?? listRow[4] ?? 0);
+  return 0;
+}
+
+// il tuo PF accumulato finora: totale su tutta la rosa e media nel singolo reparto, per capire se un giocatore è un vero upgrade
+function myPfStatsFor(rep){
+  const mine = Object.keys(ASSIGN).filter(n => ASSIGN[n].owner === ME);
+  const totPf = mine.reduce((s, n) => s + pfOf(n, ASSIGN[n].rep), 0);
+  const repNames = mine.filter(n => ASSIGN[n].rep === rep);
+  const repPf = repNames.reduce((s, n) => s + pfOf(n, rep), 0);
+  return {
+    totPf, totCount: mine.length, totAvg: mine.length ? totPf / mine.length : null,
+    repPf, repCount: repNames.length, repAvg: repNames.length ? repPf / repNames.length : null,
+  };
+}
+
+// verdetto: conviene / attenzione / sconsigliato, e fino a che prezzo — combina slot ancora scoperti, budget di reparto residuo,
+// andamento mercato (sottoprezzato / a prezzo di mercato / sovrastimato) e il PF del giocatore rispetto al tuo PF già preso (totale e di reparto)
+function checkConvenienza(rep, row){
+  const name = row[1], slot = row[0], team = row[2], baseCost = row[3];
+  const r = REPARTI[rep];
+  const a = ASSIGN[name];
+  if (a) return { status: 'taken', name, team, slot, rep, owner: a.owner, cost: a.cost, mine: a.owner === ME };
+
+  const flagged = !!MY_FLAGS[name];
+  const myListRow = MY_TARGETS_DATA[rep].find(rr => rr[1] === name);
+  const pf = myListRow ? myListRow[4] : (row[5] ?? row[4] ?? 0);
+  const pfLabel = myListRow ? 'PF' : 'PF~';
+
+  const adjCost = marketAdjustedCost(rep, slot, baseCost);
+  const { mf } = marketFactorFor(rep, slot);
+  const trendPct = mf && mf.ready ? Math.round((mf.factor - 1) * 100) : 0;
+  // "andazzo" del mercato tradotto in un giudizio sul prezzo di QUESTO giocatore: se si sta pagando meno del PMA è un'occasione, se si paga di più è sopra stima
+  const trendLabel = trendPct <= -5 ? 'sotto' : (trendPct >= 5 ? 'sopra' : 'mercato');
+
+  const myPf = myPfStatsFor(rep);
+  // il PF di questo giocatore alza o abbassa la tua media di reparto già presa? (soglia ±15% per non reagire a differenze trascurabili)
+  let pfSignal = 'none';
+  if (myPf.repAvg != null) {
+    pfSignal = pf >= myPf.repAvg * 1.15 ? 'above' : (pf < myPf.repAvg * 0.85 ? 'below' : 'neutral');
+  }
+
+  const spent = speso(ME, rep);
+  const picks = pickCount(ME, rep);
+  const slotsLeft = r.count - picks;
+  const remReparto = Math.max(0, r.target - spent);
+  const perSlot = slotsLeft > 0 ? remReparto / slotsLeft : 0;
+  const totRimanenti = BUDGET_TOTALE - Object.keys(REPARTI).reduce((s, k) => s + speso(ME, k), 0);
+
+  const base = { name, team, slot, rep, adjCost, cost: baseCost, pf, pfLabel, flagged, trendPct, trendLabel, myPf, pfSignal, slotsLeft, perSlot: Math.round(perSlot), remReparto, totRimanenti };
+
+  if (slotsLeft <= 0) {
+    return { ...base, status: 'no', reason: `Reparto ${r.label} già al completo (${r.count}/${r.count}): non ti serve un altro slot qui, anche se il giocatore è forte.` };
+  }
+  if (totRimanenti < adjCost) {
+    return { ...base, status: 'no', reason: `Budget insufficiente: ti restano ${totRimanenti}cr in totale, il prezzo di mercato attuale è ${adjCost}cr.` };
+  }
+
+  // tetto di spesa: premio base se è un obiettivo flaggato, poi aggiustato in su/giù in base a quanto il PF è sopra/sotto la tua media di reparto
+  // e a quanto il mercato lo sta già scontando o sovrapprezzando
+  let premiumFactor = flagged ? 1.20 : 1.05;
+  if (pfSignal === 'above') premiumFactor += 0.05;
+  else if (pfSignal === 'below') premiumFactor = Math.min(premiumFactor, 1.00);
+  if (trendLabel === 'sotto') premiumFactor += 0.03;
+  else if (trendLabel === 'sopra') premiumFactor = Math.max(1.00, premiumFactor - 0.03);
+  premiumFactor = Math.max(0.95, Math.min(1.35, premiumFactor));
+
+  const maxPrezzo = Math.max(1, Math.min(Math.round(adjCost * premiumFactor), totRimanenti));
+  const warnThreshold = Math.max(1, Math.round(perSlot * 1.5));
+
+  let status = 'yes';
+  const reasonParts = [];
+
+  if (adjCost > warnThreshold && slotsLeft > 1) {
+    status = 'warn';
+    reasonParts.push(`Ti servono ancora ${slotsLeft} ${r.label.toLowerCase()} con ${remReparto}cr a disposizione (~${Math.round(perSlot)}cr/slot in media): qui spenderesti più della media.`);
+  } else if (flagged) {
+    reasonParts.push(`È un tuo obiettivo flaggato (★): puoi spingerti sopra il prezzo di mercato attuale.`);
+  } else {
+    reasonParts.push(`Prezzo in linea col budget e reparto ${r.label.toLowerCase()} ancora scoperto (${slotsLeft} da prendere).`);
+  }
+
+  // il PF rispetto alla tua media di reparto può rinforzare o raffreddare il "sì" sul prezzo
+  if (pfSignal === 'below') {
+    if (status === 'yes') status = 'warn';
+    reasonParts.push(`Il suo PF (${pf}) è sotto la tua media attuale a ${r.label.toLowerCase()} (${Math.round(myPf.repAvg)} su ${myPf.repCount}): non sarebbe un vero upgrade.`);
+  } else if (pfSignal === 'above') {
+    reasonParts.push(`Il suo PF (${pf}) è sopra la tua media a ${r.label.toLowerCase()} (${Math.round(myPf.repAvg)} su ${myPf.repCount}): alzerebbe il livello del reparto.`);
+  } else if (pfSignal === 'none') {
+    reasonParts.push(`È il primo giocatore che valuti in ${r.label.toLowerCase()}: nessuna media di reparto ancora per confrontarlo.`);
+  }
+
+  // l'andamento di mercato spiegato in chiaro
+  if (trendLabel === 'sotto') {
+    reasonParts.push(`Il mercato su questo slot sta pagando meno del PMA (${trendPct}%): è sottoprezzato, occasione.`);
+  } else if (trendLabel === 'sopra') {
+    if (status === 'yes' && pfSignal !== 'above') status = 'warn';
+    reasonParts.push(`Il mercato su questo slot sta pagando più del PMA (+${trendPct}%): è sopra stima, rischi di pagarlo più di quanto vale davvero.`);
+  } else {
+    reasonParts.push(`Nessuno scostamento rilevante dal PMA: è a prezzo di mercato.`);
+  }
+
+  return { ...base, status, reason: reasonParts.join(' '), maxPrezzo };
+}
+
+function renderConvenienzaFor(rep, row){
+  const el = document.getElementById('convieneResult');
+  const c = checkConvenienza(rep, row);
+  if (c.status === 'taken') {
+    el.innerHTML = `<div class="checker-card verdict-info">
+      <span class="checker-badge info">GIÀ PRESO</span>
+      <span class="checker-name">${c.name}</span><span class="checker-team">${c.team}</span>
+      <div class="checker-reason">${c.mine ? 'È già nella tua rosa.' : `Preso da ${ownerLabel(c.owner)} a ${c.cost}cr.`}</div>
+    </div>`;
+    return;
+  }
+  const badgeLabel = c.status === 'yes' ? 'CONVIENE' : (c.status === 'warn' ? 'ATTENZIONE' : 'SCONSIGLIATO');
+  const cardClass = c.status === 'yes' ? 'verdict-yes' : (c.status === 'warn' ? 'verdict-warn' : 'verdict-no');
+  const badgeClass = c.status === 'yes' ? 'yes' : (c.status === 'warn' ? 'warn' : 'no');
+  const priceLine = (c.status === 'no')
+    ? `PMA attuale ${c.adjCost}cr`
+    : `Fino a <b>${c.maxPrezzo}cr</b> (PMA attuale ${c.adjCost}cr)`;
+  const trendTagLabel = c.trendLabel === 'sotto' ? `SOTTOPREZZATO ${c.trendPct}%` : (c.trendLabel === 'sopra' ? `SOVRASTIMATO +${c.trendPct}%` : 'A PREZZO DI MERCATO');
+  const trendTagClass = c.trendLabel === 'sotto' ? 'sotto' : (c.trendLabel === 'sopra' ? 'sopra' : 'neutro');
+  const pfVsRep = c.myPf.repAvg != null
+    ? `${c.pfLabel} ${c.pf} vs tua media ${REPARTI[c.rep].label.toLowerCase()} ${Math.round(c.myPf.repAvg)} (${c.myPf.repCount} pres${c.myPf.repCount===1?'o':'i'})`
+    : `${c.pfLabel} ${c.pf} · nessun giocatore ancora preso in ${REPARTI[c.rep].label.toLowerCase()}`;
+  const pfTotLine = c.myPf.totCount ? ` · PF totale rosa finora: ${c.myPf.totPf} (${c.myPf.totCount} pres${c.myPf.totCount===1?'o':'i'})` : '';
+  el.innerHTML = `<div class="checker-card ${cardClass}">
+    <span class="checker-badge ${badgeClass}">${badgeLabel}</span>
+    <span class="slot-chip" style="background:${SLOT_COLOR[c.slot]}; color:${SLOT_TEXT[c.slot]}">${c.slot}</span>
+    <span class="checker-name">${c.name}${c.flagged ? ' ★' : ''}</span>
+    <span class="checker-team">${c.team} · ${REPARTI[c.rep].label}</span>
+    <span>${priceLine}</span>
+    <span class="checker-trend ${trendTagClass}">${trendTagLabel}</span>
+    <div class="checker-meta">${pfVsRep}${pfTotLine}</div>
+    <div class="checker-reason">${c.reason}</div>
+  </div>`;
+}
+
+function runConvenienzaCheck(){
+  const input = document.getElementById('convieneInput');
+  const term = input.value.trim();
+  const el = document.getElementById('convieneResult');
+  if (!term) { el.innerHTML = ''; return; }
+  const candidates = findPlayerCandidates(term);
+  if (!candidates.length) {
+    el.innerHTML = `<div class="checker-notfound">Nessun giocatore trovato per "${term}" nel listone.</div>`;
+    return;
+  }
+  if (candidates.length === 1) {
+    renderConvenienzaFor(candidates[0].rep, candidates[0].row);
+    return;
+  }
+  el.innerHTML = `<div class="checker-notfound">${candidates.length} risultati per "${term}": ` +
+    candidates.slice(0, 8).map((c, i) => `<button class="checker-suggest-btn" data-idx="${i}">${c.row[1]} (${c.row[2]})</button>`).join(' · ') +
+    `</div>`;
+  el.querySelectorAll('.checker-suggest-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => renderConvenienzaFor(candidates[i].rep, candidates[i].row));
+  });
+}
+
+document.getElementById('convieneBtn').addEventListener('click', runConvenienzaCheck);
+document.getElementById('convieneInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runConvenienzaCheck();
+});
+// il risultato può diventare "vecchio" (prezzo/reparto/budget cambiati) dopo un'assegnazione: lo ricalcola in automatico se c'è già una ricerca attiva
+function refreshConvenienzaIfActive(){
+  const term = document.getElementById('convieneInput').value.trim();
+  if (term) runConvenienzaCheck();
+}
+
+// --- pannello avversari: aggiungi / rinomina / rimuovi ---
+function renderOpponentsPanel(){
+  const el = document.getElementById('oppList');
+  if (!OPPONENTS.length) {
+    el.innerHTML = `<div class="opp-empty">Nessun avversario ancora aggiunto. Aggiungili qui sopra per assegnargli i giocatori che comprano durante l'asta.</div>`;
+    return;
+  }
+  el.innerHTML = OPPONENTS.map(o => {
+    const sp = speso(o.id);
+    const rimPct = Math.max(0, Math.round((BUDGET_TOTALE-sp)/BUDGET_TOTALE*100));
+    return `<div class="opp-chip">
+      <span class="opp-dot" style="background:${oppColor(o.id)}"></span>
+      <input type="text" class="opp-name" data-opp="${o.id}" value="${o.name.replace(/"/g,'&quot;')}">
+      <span class="opp-meta">${sp}/${BUDGET_TOTALE}cr · ${rimPct}% rimanente · ${pickCount(o.id)} presi</span>
+      <button class="squad-rm" data-opp-rm="${o.id}" title="Rimuovi avversario">✕</button>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btnAddOpp').addEventListener('click', () => {
+  const inp = document.getElementById('oppNameInput');
+  const name = (inp.value || '').trim();
+  if (!name) return;
+  OPPONENTS.push({ id: 'opp' + (nextOppId++), name });
+  inp.value = '';
+  renderAll();
+});
+document.getElementById('oppNameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('btnAddOpp').click();
+});
+
+document.getElementById('oppList').addEventListener('input', (e) => {
+  const inp = e.target.closest('.opp-name');
+  if (!inp) return;
+  const o = OPPONENTS.find(o => o.id === inp.dataset.opp);
+  if (o) o.name = inp.value;
+  renderOwnerSquads(); // aggiorna le intestazioni delle card "Rose avversari" senza toccare il pannello (mantiene il focus)
+});
+
+document.getElementById('oppList').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-opp-rm]');
+  if (!btn) return;
+  const id = btn.dataset.oppRm;
+  const label = ownerLabel(id);
+  if (!confirm(`Rimuovere "${label}"? I giocatori a lui assegnati torneranno liberi.`)) return;
+  Object.keys(ASSIGN).forEach(name => { if (ASSIGN[name].owner === id) delete ASSIGN[name]; });
+  OPPONENTS = OPPONENTS.filter(o => o.id !== id);
+  renderAll();
+});
+
+// --- indice di completamento rosa (mia): quanti slot ho riempito sul totale, complessivo + per reparto ---
+const TOTAL_SLOT = Object.values(REPARTI).reduce((s,r)=>s+r.count,0);
+function renderMyCompletion(){
+  const el = document.getElementById('myCompletionCard');
+  if (!el) return;
+  const totPresi = pickCount(ME);
+  const pct = TOTAL_SLOT > 0 ? Math.min(100, Math.round(totPresi/TOTAL_SLOT*100)) : 0;
+  el.innerHTML = `
+    <div class="completion-head">
+      <span class="completion-label">Indice di completamento rosa</span>
+      <span class="completion-num">${pct}%<span class="completion-sub">${totPresi}/${TOTAL_SLOT} giocatori</span></span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:var(--seq-450)"></div></div>
+    ${repCompletionRow(ME)}
+  `;
+}
+
+// --- render "La mia rosa": giocatori assegnati a me, per reparto, con costo editabile ---
+function renderMySquad(){
+  renderMyCompletion();
+  const el = document.getElementById('mySquad');
+  el.innerHTML = '';
+  Object.keys(REPARTI).forEach(key => {
+    const r = REPARTI[key];
+    const names = Object.keys(ASSIGN).filter(n => ASSIGN[n].owner===ME && ASSIGN[n].rep===key);
+    const items = names.length
+      ? names.map(name => {
+          const row = DATA[key].find(x => x[1] === name);
+          const slot = row ? row[0] : '';
+          const cost = ASSIGN[name].cost;
+          return `<li>
+            <div><div class="pick-name">${name}</div><div class="pick-meta">SLOT ${slot}</div></div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" class="price-input" data-rep="${key}" data-name="${name}" value="${cost}" min="0" step="1">
+              <span class="pick-meta">cr</span>
+              <button class="squad-rm" data-rep="${key}" data-name="${name}" title="Rimuovi">✕</button>
+            </div>
+          </li>`;
+        }).join('')
+      : `<div class="squad-empty">Nessun giocatore preso</div>`;
+    const card = document.createElement('div');
+    card.className = 'card squad-card';
+    card.innerHTML = `<h3><span style="display:flex;align-items:center;gap:8px;"><span class="rep-dot" style="background:${r.color}"></span>${r.label}</span><span class="cnt">${names.length}/${r.count} · ${speso(ME,key)}cr · ${spentPct(ME,key)}% speso</span></h3><ul class="squad-list">${items}</ul>`;
+    el.appendChild(card);
+  });
+}
+
+document.getElementById('mySquad').addEventListener('input', (e) => {
+  const inp = e.target.closest('.price-input');
+  if (!inp) return;
+  const name = inp.dataset.name;
+  const cost = Math.max(0, Math.round(parseFloat((inp.value||'0').replace(',','.')) || 0));
+  if (ASSIGN[name]) ASSIGN[name].cost = cost;
+  renderHero();
+  renderRepCards();
+  const cntEl = inp.closest('.squad-card').querySelector('.cnt');
+  if (cntEl) { const key = inp.dataset.rep; const n = Object.keys(ASSIGN).filter(x=>ASSIGN[x].owner===ME && ASSIGN[x].rep===key).length; cntEl.textContent = `${n}/${REPARTI[key].count} · ${speso(ME,key)}cr · ${spentPct(ME,key)}% speso`; }
+});
+
+// a modifica prezzo conclusa (blur/invio), ricalcola l'andamento mercato e i prezzi aggiustati mostrati altrove
+document.getElementById('mySquad').addEventListener('change', (e) => {
+  if (!e.target.closest('.price-input')) return;
+  renderAll();
+});
+
+document.getElementById('mySquad').addEventListener('click', (e) => {
+  const btn = e.target.closest('.squad-rm');
+  if (!btn) return;
+  delete ASSIGN[btn.dataset.name];
+  renderAll();
+});
+
+// --- render "Rose avversari": una card per avversario con i giocatori assegnati ---
+// riga con l'indice di completamento per reparto (n/target + barra) di un owner
+function repCompletionRow(ownerId){
+  return `<div class="mini-rep-row">` + Object.keys(REPARTI).map(key => {
+    const r = REPARTI[key];
+    const n = pickCount(ownerId, key);
+    const pct = r.count > 0 ? Math.min(100, Math.round(n/r.count*100)) : 0;
+    return `<div class="mini-rep" title="${r.label}: ${n}/${r.count}">
+      <div class="mini-rep-label"><span class="mini-rep-dot" style="background:${r.color}"></span>${key} ${n}/${r.count}</div>
+      <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${pct}%; background:${r.color}"></div></div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function renderOwnerSquads(){
+  const el = document.getElementById('ownerSquads');
+  if (!OPPONENTS.length) {
+    el.innerHTML = `<div class="squad-empty">Aggiungi un avversario nel pannello qui sopra per iniziare a tracciare i suoi acquisti.</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  OPPONENTS.forEach(o => {
+    const names = Object.keys(ASSIGN).filter(n => ASSIGN[n].owner === o.id);
+    const items = names.length
+      ? names.map(name => {
+          const rep = ASSIGN[name].rep;
+          const cost = ASSIGN[name].cost;
+          return `<li>
+            <div><div class="pick-name">${name}</div><div class="pick-meta">${REPARTI[rep] ? REPARTI[rep].label : rep}</div></div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="number" class="price-input" data-owner="${o.id}" data-name="${name}" value="${cost}" min="0" step="1">
+              <span class="pick-meta">cr</span>
+              <button class="squad-rm" data-owner="${o.id}" data-name="${name}" title="Rimuovi">✕</button>
+            </div>
+          </li>`;
+        }).join('')
+      : `<div class="squad-empty">Nessun giocatore preso</div>`;
+    const card = document.createElement('div');
+    card.className = 'card squad-card';
+    card.innerHTML = `<h3><span style="display:flex;align-items:center;gap:8px;"><span class="opp-dot" style="background:${oppColor(o.id)}"></span>${(o.name||'(senza nome)')}</span><span class="cnt">${names.length} · ${speso(o.id)}cr · ${spentPct(o.id)}% speso · ${remPct(o.id)}% rim.</span></h3>${repCompletionRow(o.id)}<ul class="squad-list">${items}</ul>`;
+    el.appendChild(card);
+  });
+}
+
+document.getElementById('ownerSquads').addEventListener('input', (e) => {
+  const inp = e.target.closest('.price-input');
+  if (!inp) return;
+  const name = inp.dataset.name;
+  const cost = Math.max(0, Math.round(parseFloat((inp.value||'0').replace(',','.')) || 0));
+  if (ASSIGN[name]) ASSIGN[name].cost = cost;
+  renderOpponentsPanel();
+  const cntEl = inp.closest('.squad-card').querySelector('.cnt');
+  if (cntEl) { const oid = inp.dataset.owner; const n = Object.keys(ASSIGN).filter(x=>ASSIGN[x].owner===oid).length; cntEl.textContent = `${n} · ${speso(oid)}cr · ${spentPct(oid)}% speso · ${remPct(oid)}% rim.`; }
+});
+
+// a modifica prezzo conclusa (blur/invio), ricalcola l'andamento mercato e i prezzi aggiustati mostrati altrove
+document.getElementById('ownerSquads').addEventListener('change', (e) => {
+  if (!e.target.closest('.price-input')) return;
+  renderAll();
+});
+
+document.getElementById('ownerSquads').addEventListener('click', (e) => {
+  const btn = e.target.closest('.squad-rm');
+  if (!btn) return;
+  delete ASSIGN[btn.dataset.name];
+  renderAll();
+});
+
+// --- render TOP obiettivi cards: solo dalla MIA lista, solo miei o ancora liberi (esclude i presi dagli avversari) ---
+function renderTopPicks(){
+  const topPicksEl = document.getElementById('topPicks');
+  topPicksEl.innerHTML = '';
+  Object.keys(REPARTI).forEach(key => {
+    const r = REPARTI[key];
+    const flaggedInRep = MY_TARGETS_DATA[key].filter(row => MY_FLAGS[row[1]]);
+    const rows = flaggedInRep.slice().sort((a,b)=>b[4]-a[4]);
+    const html = rows.map(row => {
+      const [slot, name, team, cost, pf] = row;
+      const owner = assignedTo(name);
+      let badge;
+      if (owner === ME) badge = `<span class="badge picked">✓ preso</span>`;
+      else if (owner) badge = `<span class="badge alert">✗ ${ownerLabel(owner)}</span>`;
+      else badge = `<span class="badge target">obiettivo</span>`;
+      let priceLabel;
+      if (owner) {
+        priceLabel = `${cost}cr`;
+      } else {
+        const adjCost = marketAdjustedCost(key, slot, cost);
+        const { mf, level } = marketFactorFor(key, slot);
+        const trendPct = mf && mf.ready ? Math.round((mf.factor - 1) * 100) : 0;
+        const trendArrow = trendPct > 0 ? '▲' : (trendPct < 0 ? '▼' : '');
+        const levelLabel = level === 'slot' ? `SLOT ${slot} ${r.label}` : (level === 'rep' ? `mercato ${r.label}` : 'mercato generale');
+        const levelTag = level === 'rep' ? ' rep.' : (level === 'general' ? ' gen.' : '');
+        const trendTitle = mf && mf.ready ? `title="${levelLabel} ${trendPct>0?'+':''}${trendPct}%"` : '';
+        priceLabel = (mf && mf.ready && trendPct !== 0)
+          ? `<span class="pick-pma" ${trendTitle}>${adjCost}cr <span class="pick-pma-trend ${trendPct>0?'up':'down'}">${trendArrow}${Math.abs(trendPct)}%${levelTag}</span> <span class="pick-pma-orig">(PMA ${cost}cr)</span></span>`
+          : `${adjCost}cr`;
+      }
+      return `<li><div><div class="pick-name">${name}</div><div class="pick-meta">SLOT ${slot} · ${priceLabel} · PF ${pf}</div></div>${badge}</li>`;
+    }).join('');
+    const card = document.createElement('div');
+    card.className = 'card pick-card';
+    card.innerHTML = `<h3><span class="rep-dot" style="background:${r.color}"></span>${r.label}</h3><ul class="pick-list">${html || '<div class="squad-empty">Nessun obiettivo flaggato nella tua lista</div>'}</ul>`;
+    topPicksEl.appendChild(card);
+  });
+}
+
+// --- confronto forza rose: FVM totale (valore ufficiale di mercato) della rosa di ognuno, io vs avversari ---
+function totalFVM(ownerId){
+  return Object.keys(ASSIGN).filter(n => ASSIGN[n].owner === ownerId).reduce((s,n) => {
+    const a = ASSIGN[n];
+    const row = DATA[a.rep] && DATA[a.rep].find(x => x[1] === n);
+    return s + (row ? row[4] : 0);
+  }, 0);
+}
+
+function renderStrength(){
+  const el = document.getElementById('strengthCard');
+  if (!el) return;
+  const owners = [{ id: ME, name: 'La mia squadra', mine: true }, ...OPPONENTS.map(o => ({ id: o.id, name: o.name || '(senza nome)', mine: false }))];
+  const rows = owners.map(o => ({ ...o, fvm: totalFVM(o.id) }));
+  if (!rows.some(r => r.fvm > 0)) {
+    el.innerHTML = `<div class="squad-empty">Assegna qualche giocatore (a te o ai tuoi avversari) per vedere il confronto di forza tra le rose.</div>`;
+    return;
+  }
+  rows.sort((a,b) => b.fvm - a.fvm);
+  const max = Math.max(...rows.map(r => r.fvm), 1);
+  const avg = rows.reduce((s,r) => s + r.fvm, 0) / rows.length;
+  const avgPct = Math.min(100, Math.round(avg / max * 100));
+  el.innerHTML = `
+    <div class="strength-legend">Media di tutte le rose: <b>${Math.round(avg)}</b> FVM &nbsp;·&nbsp; la linea tratteggiata segna la media</div>
+    <div class="strength-chart">
+      ${rows.map(r => {
+        const pct = Math.round(r.fvm / max * 100);
+        const color = r.mine ? 'var(--text-primary)' : oppColor(r.id);
+        return `<div class="strength-row">
+          <div class="strength-label" style="display:flex;align-items:center;gap:6px;${r.mine ? 'font-weight:700; color:var(--text-primary);' : ''}"><span class="opp-dot" style="background:${color}"></span>${r.name}</div>
+          <div class="strength-track">
+            <div class="strength-fill" style="width:${pct}%; background:${color}"></div>
+            <div class="strength-avg-marker" style="left:${avgPct}%"></div>
+          </div>
+          <div class="strength-value">${Math.round(r.fvm)}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderMarket(){
+  const el = document.getElementById('marketCard');
+  const gf = MARKET_FACTOR.GENERAL || { factor: 1, n: 0, ready: false };
+  const gpct = Math.round((gf.factor - 1) * 100);
+  const gdir = gpct > 0 ? 'up' : (gpct < 0 ? 'down' : 'flat');
+  const garrow = gpct > 0 ? '▲' : (gpct < 0 ? '▼' : '—');
+  const gStatusText = gf.ready
+    ? `${garrow} ${gpct > 0 ? '+' : ''}${gpct}% sul PMA`
+    : `in attesa di dati (${gf.n}/${MARKET_MIN_SAMPLE} presi)`;
+  const generalHtml = `<div class="market-general">
+    <div class="market-label"><span class="rep-dot" style="background:var(--text-primary)"></span>Generale <span class="section-hint">tutti i reparti insieme, tutte le squadre</span></div>
+    <div class="market-val ${gf.ready ? gdir : 'flat'}">${gStatusText}</div>
+    <div class="market-n">${gf.n} giocatori assegnati in totale</div>
+  </div>`;
+  const gridHtml = `<div class="market-grid">` + Object.keys(REPARTI).map(key => {
+    const r = REPARTI[key];
+    const mf = MARKET_FACTOR[key] || { factor: 1, n: 0, ready: false };
+    const pct = Math.round((mf.factor - 1) * 100);
+    const dir = pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat');
+    const arrow = pct > 0 ? '▲' : (pct < 0 ? '▼' : '—');
+    const statusText = mf.ready
+      ? `${arrow} ${pct > 0 ? '+' : ''}${pct}% sul PMA`
+      : `in attesa di dati (${mf.n}/${MARKET_MIN_SAMPLE} presi)`;
+    const slotChips = ['1','2','3','4','SCOMM'].map(slot => {
+      const sf = MARKET_FACTOR_SLOT[key + '|' + slot];
+      const spct = sf && sf.ready ? Math.round((sf.factor - 1) * 100) : null;
+      const sdir = spct === null ? '' : (spct > 0 ? 'up' : (spct < 0 ? 'down' : ''));
+      const sarrow = spct === null ? '' : (spct > 0 ? '▲' : (spct < 0 ? '▼' : '—'));
+      const label = spct === null ? '—' : `${sarrow}${Math.abs(spct)}%`;
+      const title = sf && sf.ready ? `SLOT ${slot} ${r.label}: ${spct>0?'+':''}${spct}% su ${sf.n} giocatori` : `SLOT ${slot} ${r.label}: dati insufficienti`;
+      return `<span class="slot-trend-chip ${sdir}" title="${title}"><span class="slot-trend-chip-tag">${slot}</span>${label}</span>`;
+    }).join('');
+    return `<div class="market-row">
+      <div class="market-label"><span class="rep-dot" style="background:${r.color}"></span>${r.label}</div>
+      <div class="market-val ${mf.ready ? dir : 'flat'}">${statusText}</div>
+      <div class="market-n">${mf.n} giocatori assegnati nel reparto (tutte le squadre)</div>
+      <div class="slot-trend-row">${slotChips}</div>
+    </div>`;
+  }).join('') + `</div>`;
+  el.innerHTML = generalHtml + gridHtml;
+}
+
+let appInitialized = false;
+function renderAll(opts){
+  computeMarketFactors();
+  renderHero();
+  renderStickyBudgetBar();
+  renderRepCards();
+  renderOpponentsPanel();
+  renderMySquad();
+  renderStrength();
+  renderMarket();
+  renderOwnerSquads();
+  renderTopPicks();
+  renderTableFor('listone');
+  renderTableFor('mylist');
+  refreshConvenienzaIfActive();
+  // ogni mutazione reale dello stato (dopo il primo caricamento) programma un backup automatico su file
+  // e nasconde l'avviso "sessione vuota", perché ormai la sessione non lo è più
+  if (appInitialized) {
+    if (!(opts && opts.skipAutoExport)) scheduleAutoExport();
+    hideResumeBanner();
+  }
+  appInitialized = true;
+}
+
+// --- tabs + filters + ricerca + table: generico, condiviso tra "Listone completo" e "La mia lista obiettivi" ---
+const DATASETS = {
+  listone: { data: DATA,            valueLabel: 'FVM', bodyId: 'listoneBody', tabsId: 'repTabs',    filtersId: 'slotFilters',    searchId: 'playerSearch', hintId: 'searchHint',    countHintId: 'listCountHint', hideChkId: 'hideAssignedChk', showPf: true, showFlag: true },
+  mylist:  { data: MY_TARGETS_DATA, valueLabel: 'PF',  bodyId: 'myListBody', tabsId: 'myListTabs', filtersId: 'myListFilters', searchId: 'myListSearch', hintId: 'myListSearchHint', countHintId: null,           hideChkId: 'myListHideChk', showFlag: true },
+};
+const STATE = {
+  listone: { rep: 'POR', slot: 'ALL', search: '', hide: true, sortCol: null, sortDir: null },
+  mylist:  { rep: 'POR', slot: 'ALL', search: '', hide: true, sortCol: null, sortDir: null },
+};
+
+function renderTabsFor(key){
+  const cfg = DATASETS[key], st = STATE[key];
+  const el = document.getElementById(cfg.tabsId);
+  el.innerHTML = Object.keys(REPARTI).map(rk => {
+    const r = REPARTI[rk];
+    return `<button class="tab-btn ${rk===st.rep?'active':''}" data-rep="${rk}" style="color:${rk===st.rep?r.color:''}">
+      <span class="dot" style="background:${r.color}"></span>${r.label} <span style="color:var(--text-muted); font-weight:400;">(${cfg.data[rk].length})</span></button>`;
+  }).join('');
+  el.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => { st.rep = btn.dataset.rep; st.slot='ALL'; renderTabsFor(key); renderFiltersFor(key); renderTableFor(key); });
+}
+
+function renderFiltersFor(key){
+  const cfg = DATASETS[key], st = STATE[key];
+  const el = document.getElementById(cfg.filtersId);
+  const slots = ['ALL','1','2','3','4','SCOMM'];
+  el.innerHTML = slots.map(s => `<button class="chip ${s===st.slot?'active':''}" data-slot="${s}">${s==='ALL'?'Tutti':'SLOT '+s}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(btn => btn.onclick = () => { st.slot = btn.dataset.slot; renderFiltersFor(key); renderTableFor(key); });
+}
+
+// normalizza per confronto (case/accenti-insensitive)
+function norm(s){ return (s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase(); }
+
+function ownerSelectOptions(selectedVal){
+  let opts = `<option value="${ME}" ${selectedVal===ME?'selected':''}>Io</option>`;
+  opts += OPPONENTS.map(o => `<option value="${o.id}" ${selectedVal===o.id?'selected':''}>${(o.name||'(senza nome)').replace(/</g,'&lt;')}</option>`).join('');
+  return opts;
+}
+
+// ordina le righe della tabella secondo la colonna/direzione scelta cliccando l'intestazione (nome A-Z/Z-A, valori crescente/decrescente...)
+function sortRowsFor(key, rep, rows){
+  const st = STATE[key];
+  if (!st.sortCol) return rows;
+  const col = st.sortCol;
+  const dir = st.sortDir === 'asc' ? 1 : -1;
+  const slotOrder = { '1':1, '2':2, '3':3, '4':4, 'SCOMM':5 };
+  const sorted = rows.slice();
+  sorted.sort((a, b) => {
+    switch (col) {
+      case 'name': return dir * norm(a[1]).localeCompare(norm(b[1]));
+      case 'team': return dir * norm(a[2]).localeCompare(norm(b[2])) || norm(a[1]).localeCompare(norm(b[1]));
+      case 'slot': {
+        const d = dir * ((slotOrder[a[0]] || 99) - (slotOrder[b[0]] || 99));
+        return d || norm(a[1]).localeCompare(norm(b[1]));
+      }
+      case 'cost': {
+        const av = marketAdjustedCost(rep, a[0], a[3]);
+        const bv = marketAdjustedCost(rep, b[0], b[3]);
+        return dir * (av - bv);
+      }
+      case 'val': return dir * ((a[4] || 0) - (b[4] || 0));
+      case 'pfEst': return dir * ((a[5] || 0) - (b[5] || 0));
+      default: return 0;
+    }
+  });
+  return sorted;
+}
+
+// aggiorna le frecce ▲▼ nelle intestazioni cliccabili per riflettere l'ordinamento attivo
+function updateSortArrowsFor(key){
+  const cfg = DATASETS[key], st = STATE[key];
+  const table = document.getElementById(cfg.bodyId).closest('table');
+  table.querySelectorAll('th[data-sort]').forEach(th => {
+    const col = th.dataset.sort;
+    const active = st.sortCol === col;
+    th.classList.toggle('sort-active', active);
+    const arrowEl = th.querySelector('.sort-arrow');
+    if (arrowEl) arrowEl.textContent = active ? (st.sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+  });
+}
+
+function renderTableFor(key){
+  const cfg = DATASETS[key], st = STATE[key];
+  const term = norm(st.search);
+  let rows = cfg.data[st.rep].filter(r => (st.slot==='ALL' || r[0]===st.slot) && norm(r[1]).includes(term) && (!st.hide || !ASSIGN[r[1]]));
+  rows = sortRowsFor(key, st.rep, rows);
+  const maxVal = Math.max(...cfg.data[st.rep].map(r=>r[4]), 1);
+  const body = document.getElementById(cfg.bodyId);
+  body.innerHTML = rows.map(([slot, name, team, cost, val, pfEst]) => {
+    const pct = Math.round(val/maxVal*100);
+    const a = ASSIGN[name];
+    const mine = !!a && a.owner===ME;
+    const taken = !!a && !mine;
+    const flagged = !!MY_FLAGS[name];
+    const flagBtn = cfg.showFlag ? `<button class="row-btn flag-btn ${flagged?'flagged':''}" data-act="flag" data-name="${name}" title="${flagged?'Rimuovi dai miei obiettivi':'Aggiungi ai miei obiettivi'}">${flagged?'★':'☆'}</button>` : '';
+    const { mf, level: mfLevel } = marketFactorFor(st.rep, slot);
+    const adjCost = marketAdjustedCost(st.rep, slot, cost);
+    let actions, costCell;
+    if (mine) {
+      actions = `<div class="row-actions">
+        ${flagBtn}
+        <input type="number" class="price-input" data-act="cost" data-name="${name}" value="${a.cost}" min="0" step="1">
+        <span class="pick-meta">cr · Io</span>
+        <button class="row-btn undo" data-act="undo" data-name="${name}">Annulla</button>
+      </div>`;
+      costCell = `<td class="cost-num">${cost}cr</td>`;
+    } else if (taken) {
+      actions = `<div class="row-actions">
+        ${flagBtn}
+        <span class="badge opp" style="background:${oppColor(a.owner)}; color:#fff" title="${ownerLabel(a.owner)}">${ownerLabel(a.owner)}</span>
+        <input type="number" class="price-input" data-act="cost" data-name="${name}" value="${a.cost}" min="0" step="1">
+        <button class="row-btn undo" data-act="undo" data-name="${name}">Annulla</button>
+      </div>`;
+      costCell = `<td class="cost-num">${cost}cr</td>`;
+    } else {
+      actions = `<div class="row-actions">
+        ${flagBtn}
+        <button class="row-btn take" data-act="assign" data-name="${name}" data-cost="${adjCost}">Assegna</button>
+      </div>`;
+      const trendPct = mf && mf.ready ? Math.round((mf.factor - 1) * 100) : 0;
+      const trendDir = trendPct > 0 ? 'up' : (trendPct < 0 ? 'down' : '');
+      const trendArrow = trendPct > 0 ? '▲' : (trendPct < 0 ? '▼' : '');
+      const trendSource = mfLevel === 'slot' ? `SLOT ${slot} ${REPARTI[st.rep].label}` : (mfLevel === 'rep' ? `mercato ${REPARTI[st.rep].label} (dati insufficienti sullo SLOT ${slot})` : `mercato generale (dati insufficienti su SLOT ${slot} ${REPARTI[st.rep].label})`);
+      const levelTag = mfLevel === 'rep' ? ' <span class="trend-general-tag">rep.</span>' : (mfLevel === 'general' ? ' <span class="trend-general-tag">gen.</span>' : '');
+      const trendBadge = (mf && mf.ready && trendPct !== 0)
+        ? `<div class="cost-trend ${trendDir}" title="${trendSource} ${trendPct>0?'+':''}${trendPct}% su ${mf.n} giocatori già assegnati">${trendArrow} ${Math.abs(trendPct)}%${levelTag}</div>`
+        : '';
+      const origLine = (mf && mf.ready && trendPct !== 0) ? `<div class="cost-orig">PMA ${cost}cr</div>` : '';
+      costCell = `<td class="cost-num"><div class="cost-adj">${adjCost}cr</div>${trendBadge}${origLine}</td>`;
+    }
+    return `<tr class="${mine?'is-mine':''} ${taken?'is-taken':''} ${flagged?'is-flagged':''}">
+      <td><span class="slot-chip" style="background:${SLOT_COLOR[slot]}; color:${SLOT_TEXT[slot]}">${slot}</span></td>
+      <td class="name-cell">${name}${mine?' <span class="badge picked" style="margin-left:6px">✓ preso</span>':''}</td>
+      <td class="team-cell">${team}</td>
+      ${costCell}
+      <td><div class="pf-cell"><div class="pf-bar-track"><div class="pf-bar-fill" style="width:${pct}%"></div></div><span class="pf-num">${val}</span></div></td>
+      ${cfg.showPf ? `<td class="pf-est-num" title="Media voto, smorzata sulle presenze">${pfEst ?? '—'}</td>` : ''}
+      <td class="actions-col">${actions}</td>
+    </tr>`;
+  }).join('');
+
+  if (cfg.countHintId) {
+    const hiddenCount = cfg.data[st.rep].filter(r => (st.slot==='ALL' || r[0]===st.slot) && ASSIGN[r[1]]).length;
+    document.getElementById(cfg.countHintId).textContent = `${cfg.data[st.rep].length} giocatori in ${REPARTI[st.rep].label.toLowerCase()} · ${rows.length} mostrati` + (st.hide && hiddenCount ? ` · ${hiddenCount} assegnati nascosti` : '');
+  }
+  renderSearchHintFor(key, term, rows.length);
+  updateSortArrowsFor(key);
+}
+
+// se la ricerca non trova nulla nel reparto attivo, controlla se è solo nascosto (già assegnato) o se sta in un altro reparto, e propone la soluzione
+function renderSearchHintFor(key, term, matchCount){
+  const cfg = DATASETS[key], st = STATE[key];
+  const hintEl = document.getElementById(cfg.hintId);
+  if (!term) { hintEl.innerHTML = ''; return; }
+  if (matchCount > 0) { hintEl.innerHTML = `${matchCount} risultat${matchCount===1?'o':'i'} in ${REPARTI[st.rep].label}`; return; }
+  if (st.hide) {
+    const hiddenMatch = cfg.data[st.rep].find(r => (st.slot==='ALL' || r[0]===st.slot) && norm(r[1]).includes(term) && ASSIGN[r[1]]);
+    if (hiddenMatch) {
+      hintEl.innerHTML = `"${hiddenMatch[1]}" è già assegnato (${ownerLabel(ASSIGN[hiddenMatch[1]].owner)}) — per questo è nascosto. <button class="jump-btn" id="btnShowAssignedHint-${key}">Mostra assegnati</button>`;
+      const b = document.getElementById(`btnShowAssignedHint-${key}`);
+      if (b) b.onclick = () => { st.hide = false; document.getElementById(cfg.hideChkId).checked = false; renderTableFor(key); };
+      return;
+    }
+  }
+  const others = Object.keys(REPARTI).filter(k => k !== st.rep && cfg.data[k].some(r => norm(r[1]).includes(term)));
+  if (others.length) {
+    hintEl.innerHTML = `Nessun risultato in ${REPARTI[st.rep].label}. Trovato in: ` +
+      others.map(k => `<button class="jump-btn" data-jump="${k}">${REPARTI[k].label}</button>`).join(' ');
+    hintEl.querySelectorAll('.jump-btn').forEach(btn => btn.onclick = () => {
+      st.rep = btn.dataset.jump; st.slot = 'ALL';
+      renderTabsFor(key); renderFiltersFor(key); renderTableFor(key);
+    });
+  } else {
+    hintEl.innerHTML = `Nessun giocatore trovato per "${term}"`;
+  }
+}
+
+function wireDataset(key){
+  const cfg = DATASETS[key], st = STATE[key];
+
+  // clic sull'intestazione di colonna: ordina (nome alfabetico, valori crescente/decrescente); un secondo clic inverte, un terzo torna all'ordine originale
+  document.getElementById(cfg.bodyId).closest('table').querySelectorAll('th[data-sort]').forEach(th => {
+    th.classList.add('sortable-th');
+    th.addEventListener('click', () => {
+      const col = th.dataset.sort;
+      const isTextCol = (col === 'name' || col === 'team' || col === 'slot');
+      const primaryDir = isTextCol ? 'asc' : 'desc';
+      const secondaryDir = isTextCol ? 'desc' : 'asc';
+      if (st.sortCol === col) {
+        if (st.sortDir === primaryDir) {
+          st.sortDir = secondaryDir;
+        } else {
+          st.sortCol = null;
+          st.sortDir = null;
+        }
+      } else {
+        st.sortCol = col;
+        st.sortDir = primaryDir;
+      }
+      renderTableFor(key);
+    });
+  });
+
+  document.getElementById(cfg.searchId).addEventListener('input', (e) => {
+    st.search = e.target.value;
+    renderTableFor(key);
+  });
+
+  document.getElementById(cfg.hideChkId).addEventListener('change', (e) => {
+    st.hide = e.target.checked;
+    renderTableFor(key);
+  });
+
+  // prezzo di un giocatore già assegnato, modificabile in tempo reale dalla tabella
+  document.getElementById(cfg.bodyId).addEventListener('input', (e) => {
+    const inp = e.target.closest('.price-input[data-act="cost"]');
+    if (!inp) return;
+    const name = inp.dataset.name;
+    const cost = Math.max(0, Math.round(parseFloat((inp.value||'0').replace(',','.')) || 0));
+    if (ASSIGN[name]) ASSIGN[name].cost = cost;
+    renderHero();
+    renderRepCards();
+    renderOpponentsPanel();
+    renderMySquad();
+    renderOwnerSquads();
+  });
+
+  // a modifica prezzo conclusa (blur/invio), ricalcola l'andamento mercato e i prezzi aggiustati mostrati altrove
+  document.getElementById(cfg.bodyId).addEventListener('change', (e) => {
+    if (!e.target.closest('.price-input[data-act="cost"]')) return;
+    renderAll();
+  });
+
+  // --- interazioni: Assegna (apre il pop-up) / Annulla (delegazione sul tbody) ---
+  document.getElementById(cfg.bodyId).addEventListener('click', (e) => {
+    const btn = e.target.closest('.row-btn');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    const name = btn.dataset.name;
+    if (act === 'assign') {
+      openAssignModal(name, st.rep, parseFloat(btn.dataset.cost) || 0);
+    } else if (act === 'undo') {
+      delete ASSIGN[name];
+      renderAll();
+    } else if (act === 'flag') {
+      const turningOn = !MY_FLAGS[name];
+      if (turningOn) {
+        MY_FLAGS[name] = true;
+        // se flagghi un giocatore che non è ancora nella tua lista personale (es. dal Listone completo),
+        // lo aggiungiamo lì, non solo tra gli obiettivi — usando come PF il PF~ stimato se non ne hai uno reale
+        const alreadyInMyList = MY_TARGETS_DATA[st.rep].some(r => r[1] === name);
+        if (!alreadyInMyList) {
+          const sourceRow = cfg.data[st.rep].find(r => r[1] === name);
+          if (sourceRow) {
+            const [slot, rname, team, cost] = sourceRow;
+            const pfValue = key === 'listone' ? (sourceRow[5] ?? 0) : sourceRow[4];
+            MY_TARGETS_DATA[st.rep].push([slot, rname, team, cost, pfValue]);
+            renderTabsFor('mylist'); // aggiorna i conteggi per reparto della tua lista personale
+          }
+        }
+      } else {
+        delete MY_FLAGS[name];
+      }
+      renderTableFor('listone');
+      renderTableFor('mylist');
+      renderTopPicks();
+    }
+  });
+}
+wireDataset('listone');
+wireDataset('mylist');
+
+// --- pop-up "Assegna giocatore": crediti pagati + a chi (Io / avversario) ---
+let pendingAssign = null;
+
+function openAssignModal(name, rep, suggestedCost){
+  pendingAssign = { name, rep };
+  document.getElementById('assignModalTitle').textContent = `Assegna ${name}`;
+  document.getElementById('assignModalPrice').value = suggestedCost;
+  document.getElementById('assignModalOwner').innerHTML = ownerSelectOptions(ME);
+  document.getElementById('assignModalOverlay').classList.add('open');
+  document.getElementById('assignModalPrice').focus();
+}
+function closeAssignModal(){
+  pendingAssign = null;
+  document.getElementById('assignModalOverlay').classList.remove('open');
+}
+
+document.getElementById('assignModalConfirm').addEventListener('click', () => {
+  if (!pendingAssign) return;
+  const priceInp = document.getElementById('assignModalPrice');
+  const ownerSel = document.getElementById('assignModalOwner');
+  const cost = Math.max(0, Math.round(parseFloat((priceInp.value||'0').replace(',','.')) || 0));
+  const owner = ownerSel.value;
+  ASSIGN[pendingAssign.name] = { owner, rep: pendingAssign.rep, cost };
+  closeAssignModal();
+  renderAll();
+});
+document.getElementById('assignModalCancel').addEventListener('click', closeAssignModal);
+document.getElementById('assignModalOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'assignModalOverlay') closeAssignModal();
+});
+document.getElementById('assignModalPrice').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('assignModalConfirm').click();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('assignModalOverlay').classList.contains('open')) closeAssignModal();
+});
+
+// --- "Prossimo obiettivo": suggerisce il miglior giocatore da prendere ora per ogni reparto ancora scoperto, in base a slot rimasti e budget residuo ---
+
+// budget "per slot" ancora libero in un reparto: quanto ti resta diviso per quanti giocatori ti mancano in quel reparto
+function getReparBudgetPerSlot(key){
+  const r = REPARTI[key];
+  const spent = speso(ME, key);
+  const picks = pickCount(ME, key);
+  const slotsLeft = r.count - picks;
+  const remReparto = Math.max(0, r.target - spent);
+  const perSlot = slotsLeft > 0 ? remReparto / slotsLeft : 0;
+  return { slotsLeft, remReparto, perSlot, spent, picks };
+}
+
+// miglior candidato per un reparto: prima tra i tuoi obiettivi flaggati (★) entro il budget stimato per slot, poi dal listone completo,
+// e se nessuno rientra nel budget, il migliore in assoluto comunque (segnalato come "fuori budget")
+function suggestFor(key){
+  const { slotsLeft, perSlot } = getReparBudgetPerSlot(key);
+  if (slotsLeft <= 0) return { slotsLeft: 0 };
+  const budgetCap = Math.max(3, Math.round(perSlot * 1.3));
+
+  const rank = (list, pfIdx) => list
+    .filter(row => !ASSIGN[row[1]])
+    .map(row => ({ row, adjCost: marketAdjustedCost(key, row[0], row[3]), pf: row[pfIdx] || 0 }))
+    .sort((a, b) => b.pf - a.pf);
+
+  const flaggedAll = rank(MY_TARGETS_DATA[key].filter(row => MY_FLAGS[row[1]]), 4);
+  const flaggedInBudget = flaggedAll.filter(c => c.adjCost <= budgetCap);
+  if (flaggedInBudget.length) return { ...flaggedInBudget[0], source: 'obiettivo', slotsLeft, perSlot, budgetCap, overBudget: false };
+
+  const listoneAll = rank(DATA[key], 5);
+  const listoneInBudget = listoneAll.filter(c => c.adjCost <= budgetCap);
+  if (listoneInBudget.length) return { ...listoneInBudget[0], source: 'listone', slotsLeft, perSlot, budgetCap, overBudget: false };
+
+  if (flaggedAll.length) return { ...flaggedAll[0], source: 'obiettivo', slotsLeft, perSlot, budgetCap, overBudget: true };
+  if (listoneAll.length) return { ...listoneAll[0], source: 'listone', slotsLeft, perSlot, budgetCap, overBudget: true };
+
+  return { slotsLeft, perSlot, budgetCap, none: true };
+}
+
+function renderNextTargetModal(){
+  const body = document.getElementById('nextTargetBody');
+  body.innerHTML = Object.keys(REPARTI).map(key => {
+    const r = REPARTI[key];
+    const s = suggestFor(key);
+    if (s.slotsLeft === 0) {
+      return `<div class="nt-rep-block nt-done">
+        <div class="nt-rep-head"><span class="dot" style="background:${r.color}"></span>${r.label}</div>
+        <div class="nt-note">Reparto completo (${r.count}/${r.count}).</div>
+      </div>`;
+    }
+    if (s.none) {
+      return `<div class="nt-rep-block">
+        <div class="nt-rep-head"><span class="dot" style="background:${r.color}"></span>${r.label} <span class="nt-slots">${s.slotsLeft} da prendere</span></div>
+        <div class="nt-note">Nessun giocatore disponibile in questo reparto.</div>
+      </div>`;
+    }
+    const name = s.row[1], team = s.row[2], slot = s.row[0];
+    const pfLabel = s.source === 'obiettivo' ? 'PF' : 'PF~';
+    return `<div class="nt-rep-block">
+      <div class="nt-rep-head"><span class="dot" style="background:${r.color}"></span>${r.label} <span class="nt-slots">${s.slotsLeft} da prendere · budget ~${Math.round(s.perSlot)}cr/slot</span></div>
+      <div class="nt-pick ${s.overBudget?'nt-over':''}">
+        <span class="slot-chip" style="background:${SLOT_COLOR[slot]}; color:${SLOT_TEXT[slot]}">${slot}</span>
+        <span class="nt-name">${name}</span>
+        <span class="nt-team">${team}</span>
+        <span class="nt-tag">${s.source === 'obiettivo' ? '★ obiettivo' : 'listone'}</span>
+        <span class="nt-cost">${s.adjCost}cr</span>
+        <span class="nt-pf">${pfLabel} ${s.pf}</span>
+        <button class="btn primary nt-assign" data-act="nt-assign" data-name="${name}" data-rep="${key}" data-cost="${s.adjCost}">Assegna</button>
+      </div>
+      ${s.overBudget ? `<div class="nt-warn">Sopra il budget stimato per slot (~${s.budgetCap}cr) — valuta se conviene aspettare un'alternativa più economica.</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btnNextTarget').addEventListener('click', () => {
+  renderNextTargetModal();
+  document.getElementById('nextTargetOverlay').classList.add('open');
+});
+document.getElementById('nextTargetClose').addEventListener('click', () => {
+  document.getElementById('nextTargetOverlay').classList.remove('open');
+});
+document.getElementById('nextTargetOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'nextTargetOverlay') document.getElementById('nextTargetOverlay').classList.remove('open');
+});
+document.getElementById('nextTargetBody').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-act="nt-assign"]');
+  if (!btn) return;
+  document.getElementById('nextTargetOverlay').classList.remove('open');
+  openAssignModal(btn.dataset.name, btn.dataset.rep, parseFloat(btn.dataset.cost) || 0);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('nextTargetOverlay').classList.contains('open')) document.getElementById('nextTargetOverlay').classList.remove('open');
+});
+
+// --- toolbar: copia riepilogo / reset ---
+document.getElementById('btnCopia').addEventListener('click', () => {
+  let txt = `ASTA FANTACALCIO — riepilogo (${new Date().toLocaleString('it-IT')})\n\n`;
+  txt += `LA MIA ROSA\n`;
+  Object.keys(REPARTI).forEach(key => {
+    const r = REPARTI[key];
+    txt += `${r.label} — speso ${speso(ME,key)}/${r.target}cr, ${pickCount(ME,key)}/${r.count} scelti\n`;
+    Object.keys(ASSIGN).filter(n=>ASSIGN[n].owner===ME && ASSIGN[n].rep===key).forEach(n => txt += `  - ${n}: ${ASSIGN[n].cost}cr\n`);
+  });
+  const totSpeso = Object.keys(REPARTI).reduce((s,k)=>s+speso(ME,k),0);
+  txt += `\nTotale speso: ${totSpeso}cr — Rimanenti: ${500-totSpeso}cr\n`;
+  if (OPPONENTS.length) {
+    txt += `\nAVVERSARI\n`;
+    OPPONENTS.forEach(o => {
+      txt += `${o.name} — speso ${speso(o.id)}/${BUDGET_TOTALE}cr, ${pickCount(o.id)} presi\n`;
+      Object.keys(ASSIGN).filter(n=>ASSIGN[n].owner===o.id).forEach(n => txt += `  - ${n} (${REPARTI[ASSIGN[n].rep].label}): ${ASSIGN[n].cost}cr\n`);
+    });
+  }
+  navigator.clipboard?.writeText(txt).then(() => {
+    btn_copia_feedback();
+  }).catch(() => {
+    prompt('Copia manualmente il testo:', txt);
+  });
+});
+function btn_copia_feedback(){
+  const btn = document.getElementById('btnCopia');
+  const old = btn.textContent;
+  btn.textContent = 'Copiato ✓';
+  setTimeout(() => btn.textContent = old, 1500);
+}
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  if (!confirm('Ripristinare lo stato iniziale (annulla tutte le assegnazioni, i flag e riporta gli avversari ai 7 slot di default "Avversario 1..7")?')) return;
+  ASSIGN = JSON.parse(JSON.stringify(ASSIGN_INIT));
+  MY_FLAGS = {};
+  OPPONENTS = [1,2,3,4,5,6,7].map(n => ({ id: 'opp' + n, name: 'Avversario ' + n }));
+  nextOppId = 8;
+  renderAll({ skipAutoExport: true });
+});
+
+// --- avviso "sessione vuota": se al caricamento la pagina è ancora nello stato di default
+// (nessuna assegnazione oltre a quelle di partenza, avversari non rinominati, nessun flag), è probabile
+// che l'utente stia riaprendo dopo aver perso lo stato (reload, tab chiusa, standby con tab scaricata) —
+// gli ricordiamo di ricaricare l'ultimo backup invece di ripartire da zero senza accorgersene ---
+function isStateLikelyDefault(){
+  const assignKeys = Object.keys(ASSIGN);
+  const initKeys = Object.keys(ASSIGN_INIT);
+  const assignIsDefault = assignKeys.length === initKeys.length && assignKeys.every(k =>
+    ASSIGN_INIT[k] && ASSIGN[k].owner === ASSIGN_INIT[k].owner && ASSIGN[k].rep === ASSIGN_INIT[k].rep && ASSIGN[k].cost === ASSIGN_INIT[k].cost
+  );
+  const oppsAreDefault = OPPONENTS.length === 7 && OPPONENTS.every((o,i) => o.name === ('Avversario ' + (i+1)));
+  const noFlags = Object.keys(MY_FLAGS).length === 0;
+  return assignIsDefault && oppsAreDefault && noFlags;
+}
+function showResumeBannerIfNeeded(){
+  if (!isStateLikelyDefault()) return;
+  document.getElementById('resumeBanner').style.display = '';
+}
+function hideResumeBanner(){
+  const el = document.getElementById('resumeBanner');
+  if (el) el.style.display = 'none';
+}
+document.getElementById('btnResumeLoad').addEventListener('click', () => {
+  document.getElementById('importFileInput').click();
+});
+document.getElementById('btnResumeDismiss').addEventListener('click', hideResumeBanner);
+
+// --- esporta / importa stato: salva tutto (rose, prezzi, avversari, obiettivi flaggati) su file,
+// così se la scheda si chiude o il browser si pianta durante l'asta non perdi il lavoro fatto.
+// Non c'è un vero "salva su Google Drive" (richiederebbe le tue credenziali OAuth su Google Cloud
+// e non funziona aprendo il file in locale) — ma se imposti come cartella di download del browser
+// una cartella sincronizzata con Google Drive (o Dropbox), ogni file scaricato qui ci finisce dentro
+// automaticamente, con lo stesso risultato pratico. ---
+const STATE_EXPORT_VERSION = 1;
+function buildStatePayload(){
+  return {
+    _app: 'asta-fantacalcio-dashboard',
+    _version: STATE_EXPORT_VERSION,
+    _savedAt: new Date().toISOString(),
+    assign: ASSIGN,
+    myFlags: MY_FLAGS,
+    opponents: OPPONENTS,
+    nextOppId: nextOppId,
+  };
+}
+function downloadStateFile(payload, filenamePrefix){
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = payload._savedAt.replace(/[:.]/g, '-');
+  a.href = url;
+  a.download = `${filenamePrefix}_${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+document.getElementById('btnExport').addEventListener('click', () => {
+  downloadStateFile(buildStatePayload(), 'asta-fantacalcio-stato');
+  const btn = document.getElementById('btnExport');
+  const old = btn.textContent;
+  btn.textContent = 'Salvato ✓';
+  setTimeout(() => btn.textContent = old, 1500);
+});
+
+// auto-salvataggio: 30 secondi dopo ogni modifica scarica da solo un backup, sempre attivo,
+// senza doverci pensare — con debounce, così una raffica di modifiche rapide (es. più assegnazioni
+// di fila) produce un solo file invece di uno per ogni click
+const AUTO_EXPORT_DEBOUNCE_MS = 30000;
+let autoExportTimer = null;
+function scheduleAutoExport(){
+  clearTimeout(autoExportTimer);
+  autoExportTimer = setTimeout(() => {
+    downloadStateFile(buildStatePayload(), 'asta-fantacalcio-autosave');
+  }, AUTO_EXPORT_DEBOUNCE_MS);
+}
+
+document.getElementById('btnImport').addEventListener('click', () => {
+  document.getElementById('importFileInput').click();
+});
+document.getElementById('importFileInput').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // permette di reimportare subito lo stesso file se serve
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try {
+      data = JSON.parse(reader.result);
+    } catch (err) {
+      alert('File non valido: non è un JSON leggibile.');
+      return;
+    }
+    if (!data || typeof data !== 'object' || !data.assign || !Array.isArray(data.opponents)) {
+      alert('File non valido: non sembra uno stato esportato da questo cruscotto.');
+      return;
+    }
+    if (!confirm(`Importare lo stato salvato il ${data._savedAt ? new Date(data._savedAt).toLocaleString('it-IT') : 'N/D'}? Sovrascrive tutto quello che hai inserito finora in questa scheda.`)) return;
+    ASSIGN = data.assign || {};
+    MY_FLAGS = data.myFlags || {};
+    OPPONENTS = data.opponents || [];
+    nextOppId = data.nextOppId || (OPPONENTS.reduce((m,o) => { const n = parseInt(String(o.id).replace('opp',''),10); return isNaN(n) ? m : Math.max(m,n+1); }, 1));
+    renderAll({ skipAutoExport: true });
+    alert('Stato importato correttamente.');
+  };
+  reader.onerror = () => alert('Errore durante la lettura del file.');
+  reader.readAsText(file);
+});
+
+// --- tutte le macro-sezioni sono a scomparsa: un unico gestore generico per titolo -> contenuto ---
+function setSectionCollapsed(head, collapsed){
+  const body = document.getElementById(head.dataset.target);
+  const icon = head.querySelector('.collapse-icon');
+  if (body) body.style.display = collapsed ? 'none' : '';
+  if (icon) icon.classList.toggle('closed', collapsed);
+}
+document.querySelectorAll('.collapsible-head').forEach(head => {
+  head.addEventListener('click', () => {
+    const body = document.getElementById(head.dataset.target);
+    const collapsed = body && body.style.display === 'none';
+    setSectionCollapsed(head, !collapsed);
+  });
+});
+
+// --- tema chiaro/scuro ---
+function applyThemeButtonLabel(){
+  const explicit = document.documentElement.dataset.theme;
+  const isDark = explicit === 'dark' || (!explicit && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.getElementById('btnTheme').textContent = isDark ? 'Tema chiaro' : 'Tema scuro';
+}
+document.getElementById('btnTheme').addEventListener('click', () => {
+  const explicit = document.documentElement.dataset.theme;
+  const isDark = explicit === 'dark' || (!explicit && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = isDark ? 'light' : 'dark';
+  applyThemeButtonLabel();
+});
+
+// init
+setSectionCollapsed(document.querySelector('.collapsible-head[data-target="avversariBody"]'), true);
+applyThemeButtonLabel();
+renderTabsFor('listone');
+renderFiltersFor('listone');
+renderTabsFor('mylist');
+renderFiltersFor('mylist');
+renderAll();
+showResumeBannerIfNeeded();
+</script>
+</body>
+</html>
