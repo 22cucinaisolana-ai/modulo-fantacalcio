@@ -1,3 +1,4 @@
+<meta charset="utf-8" />
 <title>Modulo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2126,6 +2127,12 @@
     }
   }
 
+
+  /* Il collegamento all'altra pagina deve avere l'aspetto degli altri pulsanti
+     del menu, non quello di un link. */
+  a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+  .topbar .settings-panel a.btn { background: var(--surface); border-color: var(--line); color: var(--text); }
+  .topbar .settings-panel a.btn:hover { background: var(--surface-2); border-color: var(--accent); }
 </style>
 
 <script>
@@ -2227,6 +2234,10 @@
           </label>
         </div>
         <div class="settings-group">
+          <span class="settings-group-title">Altre pagine</span>
+          <a class="btn btn-small" href="./asta-cassina.html">Cruscotto d'asta Cassina →</a>
+        </div>
+        <div class="settings-group">
           <span class="settings-group-title">Aspetto e account</span>
           <button class="btn btn-small" id="themeToggleBtn" type="button" title="Cambia tema: Automatico (segue il sistema) → Chiaro → Scuro"><span id="themeToggleLabel">Tema: Auto</span></button>
           <button class="btn btn-small" id="authBtn" type="button">Accedi</button>
@@ -2300,7 +2311,7 @@
         <li><b>Forma</b>: 3 stelle = sta rendendo come da previsione, quindi nessuno scostamento; ogni stella sopra o sotto vale ±0,3. Dalla giornata 2 in poi le stelle si ritarano da sole confrontando la media degli ultimi voti reali con lo standard atteso di quel giocatore.</li>
         <li><b>Avversario</b>: quanto un avversario più facile o più difficile del solito sposta il rendimento rispetto alla sua media stagionale, che è già una media su avversari di ogni livello (±0,15, prima del moltiplicatore di Strategia). La difficoltà è calcolata dal calendario in base alla forza delle squadre coinvolte.</li>
         <li><b>Casa/trasferta</b>: ±0,10</li>
-        <li><b>Clean sheet</b>: per portieri e difensori la fantamedia contiene già le porte inviolate storiche, quindi aggiungo solo la differenza rispetto a un avversario medio: +0,15 se l'avversario è "facile", 0 se "media", −0,15 se "difficile".</li>
+        <li><b>Clean sheet</b>: per portieri e difensori la fantamedia contiene già le porte inviolate storiche, quindi aggiungo solo la differenza rispetto a un avversario medio: +0,15 se l'avversario è "facile", 0 se "media", −0,15 se "difficile". Vale la pena sapere quanto pesa il fatto in sé: il portiere che non subisce gol prende <b>+1 di imbattibilità</b> sul fantavoto — verificato sui tabellini (Svilar 6→7 e Caprile 6→7 a porta inviolata, Maignan 6→5 con un gol subito). È il motivo per cui un portiere di una squadra solida vale più di quanto suggerisca la sola media voto.</li>
         <li><b>Probabilità di giocare</b>: dipende dalla Strategia scelta (vedi sotto) — con "Equilibrato": Titolare 95% · Ballottaggio favorito 75% · pari 55% · sfavorito 35% · Panchina 15% · Assente 0% (escluso). I tre gradi di ballottaggio servono a distinguere chi è avanti nelle gerarchie da chi insegue: è lì che la scelta è più difficile, e un valore unico per tutti la appiattiva.</li>
         <li><b>Chi subentra</b>: se un titolare non gioca, la sua maglia non resta vuota — entra la miglior riserva di quel ruolo. Quindi il valore atteso è <i>probabilità × quanto vale lui + (1 − probabilità) × quanto vale chi subentra</i>. Serve a non panchinare un big incerto a favore di un mediocre sicuro: se hai una buona riserva alle spalle, rischiare costa poco.</li>
       </ul>
@@ -2314,7 +2325,9 @@
       <p><b>Pupillo/preferito d'asta</b>: accanto al nome di ogni giocatore c'è una piccola stella cliccabile — usala per segnare i giocatori su cui hai puntato particolarmente in asta (scommesse, pupilli). Non è un override: aggiunge solo un piccolo bonus fisso (+0,15) al valore atteso di quel giocatore, prima della probabilità di scendere in campo — abbastanza per farlo prevalere nei casi dubbi o di parità (due panchinari simili, un ballottaggio equilibrato), ma non abbastanza per far preferire un pupillo chiaramente più debole a un titolare chiaramente più forte. I pupilli scelti nell'11 sono segnati con una ★ anche sul campetto e tra le riserve consigliate.</p>
       <p><b>Rigorista e Piazzati</b>: accanto alla stella pupillo ci sono altri due pulsanti — un pallone per <b>Rigorista</b> (chi tira i rigori della sua squadra) e un tiro a giro per <b>Piazzati</b> (chi è tra gli specialisti di punizioni/corner) — che segnalano chi ha più occasioni concrete di bonus a parità di fantamedia. Anche questi sono piccoli bonus fissi al valore atteso, non override: +0,15 per Rigorista, +0,08 per Piazzati (cumulabili tra loro e con il pupillo). Sono volutamente contenuti perché la fantamedia di un rigorista contiene <i>già</i> i rigori che tira — il 7,18 di Dybala non è un caso — quindi il flag aggiunge solo il residuo, cioè il fatto che il ruolo è confermato o appena acquisito rispetto a quanto la media storica lascia intendere. Ho già impostato questi flag per i giocatori della tua rosa in base alle gerarchie rigori/punizioni/corner 2026/27 che ho trovato in rete (restano comunque modificabili a mano riga per riga, e vanno tenuti d'occhio perché le gerarchie possono cambiare in corso di stagione). Anche questi compaiono con una lettera (R/P) accanto al nome sul campetto e tra le riserve.</p>
       <p><b>Formazione modificabile</b>: sotto capitano/vice trovi un riquadro "Formazione (modificabile)" con un menu a tendina per ogni maglia dell'11 proposto, con tutti i giocatori disponibili di quel ruolo ordinati per valore atteso. Cambiando una scelta sostituisci quel giocatore con un altro: il totale (con e senza bonus/malus), il Modificatore, il campetto, il capitano/vice e le riserve si ricalcolano subito con la nuova formazione. Le sostituzioni restano legate al modulo in uso — se cambi modulo (o l'algoritmo ne sceglie uno diverso) tornano quelle automatiche finché non le rifai per il nuovo modulo — e il pulsante "Ripristina auto" le cancella tutte in un colpo, tornando alla scelta pura dell'algoritmo. La tabella di confronto tra i 7 moduli, invece, mostra sempre i totali puramente algoritmici, senza le tue modifiche manuali.</p>
-      <p><b>Risultati di giornata</b>: nel riquadro omonimo inserisci i fantapunti di tutte e otto le squadre della giornata — il tuo si compila da solo da quello che hai già messo in "Dopo la giornata", quindi sono sette numeri. I campi sono disposti come i quattro scontri diretti del turno, così il confronto con il tuo avversario si legge senza cercarlo. Da lì escono i punti di classifica — <b>3 a chi vince lo scontro diretto, 1 a testa in caso di pareggio, 0 a chi perde</b>, dove vince semplicemente chi ha totalizzato più fantapunti — e la <b>classifica generale</b> con vittorie, pareggi e sconfitte, ordinata per punti e, a parità, per fantapunti totali. Ogni sfida si chiude appena entrambe le squadre di quella coppia hanno il punteggio: non serve aspettare che la giornata sia completa.</p>
+      <p><b>Risultati di giornata</b>: nel riquadro omonimo inserisci i fantapunti di tutte e otto le squadre della giornata — il tuo si compila da solo da quello che hai già messo in "Dopo la giornata", quindi sono sette numeri. I campi sono disposti come i quattro scontri diretti del turno, così il confronto con il tuo avversario si legge senza cercarlo. Da lì escono i punti di classifica — <b>3 a chi vince, 1 a testa in caso di pareggio, 0 a chi perde</b> — e la <b>classifica generale</b>, ordinata per punti, differenza reti, gol fatti e infine fantapunti. Ogni sfida si chiude appena entrambe le squadre di quella coppia hanno il punteggio: non serve aspettare che la giornata sia completa.</p>
+      <p><b>Soglie gol</b>: attenzione, non vince chi fa più fantapunti — vince chi fa più <b>gol</b>. I fantapunti si convertono: <b>66 punti valgono 1 gol</b>, poi un gol ogni <b>5</b> punti (71→2, 76→3, 81→4, 86→5), e sotto 66 si resta a zero. Due punteggi dentro la stessa fascia sono un pareggio: 73 e 73,5 fanno 2-2, e quel mezzo punto non serve a niente. La tabella è verificata sui sedici punteggi reali delle prime due giornate 26/27, tutti e sedici senza uno scarto. Le soglie stanno nelle regole di lega, quindi ogni campionato può averne di diverse o non averle affatto.</p>
+      <p>Due conseguenze che cambiano come si sceglie la formazione. La prima: <b>i pareggi passano da quasi zero a circa un terzo delle partite</b>, quindi la classifica si comprime e vincere è più difficile. La seconda: <b>essere più forti rende meno</b> — contro un avversario di tre punti inferiore, i punti di classifica attesi scendono da 2,10 a 1,89 passando alle soglie. Di riflesso conviene <b>alzare la varianza quando sei sfavorito</b> (modulo con due punte) e <b>abbassarla quando sei favorito</b> (4-5-1). Prima delle soglie questa distinzione non esisteva.</p>
       <p><b>Avversario di giornata</b>: il riquadro omonimo sa chi affronti in ogni giornata della tua lega (il calendario degli scontri diretti è dentro il tool, tutte e 38 le giornate) e mostra la sua rosa d'asta completa con i prezzi pagati. Il confronto in cima è il <b>costo d'asta del miglior undici in 4-4-2</b> — il tuo contro il suo: è un metro uguale per tutti, ma resta il valore che la lega dava a quei giocatori all'asta, non come stanno adesso, quindi va letto come indicazione di partenza e non come pronostico. Da quel divario ricavo un consiglio di strategia: contro una rosa nettamente più quotata conviene <b>Aggressivo</b>, perché alzare la varianza è l'unico modo di ribaltare un pronostico sfavorevole (perdere di poco o di tanto conta uguale); contro una più debole conviene <b>Prudente</b>, perché meno rischi prendi e meno modi hai di regalare una partita già tua. Il pulsante accanto la imposta, ma resti libero di ignorarlo.</p>
       <p><b>Tema chiaro/scuro</b>: il pulsante "Tema" in alto cicla tra Automatico (segue il tema del tuo dispositivo/browser), Chiaro e Scuro — la scelta resta salvata su questo dispositivo.</p>
       <p><b>Dopo la giornata</b>: nel riquadro omonimo sotto puoi incollare i voti reali di più giocatori insieme (es. "Carnesecchi 6, Valeri 6.5, Rrahmani 7") invece di aprirli uno per uno — il primo numero è il voto in pagella, e se aggiungi anche il fantavoto ("Dybala 7 (10)" o "Dybala 7 +3") tengo aggiornata da sola anche la fantamedia attuale. Aggiorno il Voto reale di ciascuno e la Forma si ritara da sola confrontando la media degli ultimi 3 voti con lo standard atteso di quel giocatore (resta comunque modificabile a mano cliccando le stelle). Lo stesso riquadro tiene anche uno storico: ogni volta che premi "Calcola formazione" salvo il valore atteso di quella giornata, e tu ci confronti a fianco il punteggio reale quando lo conosci — utile per capire nel tempo se la formula è tarata bene.</p>
@@ -3485,7 +3498,13 @@ async function refreshLivePlayerNews() {
   var REGOLE_DEFAULT = {
     scadenzaMinutiPrima: 45,
     modificatoreDifesa: { attivo: true, portiere: "opzionale", fasce: [[7, 6], [6.75, 4.5], [6.5, 3], [6.25, 2], [6, 1]] },
-    modificatoreCentrocampo: { attivo: false, votoMancante: 5, fasce: [[7.5, 4], [5.5, 3], [3.5, 2], [2, 1]] }
+    modificatoreCentrocampo: { attivo: false, votoMancante: 5, fasce: [[7.5, 4], [5.5, 3], [3.5, 2], [2, 1]] },
+    // Soglie gol: i fantapunti diventano gol e la partita si decide sui gol,
+    // non sul totale. Tabella verificata sui risultati veri di giornata 2 della
+    // Carmy (85,5→4 · 80→3 · 73,5→2 · 69,5→1, tutti e otto i punteggi tornano).
+    // Conseguenza che cambia tutto: 73 e 73,5 fanno 2-2, cioe' pareggio anche se
+    // uno ha mezzo punto in piu'. Sotto la prima soglia si sta a zero gol.
+    soglieGol: { attive: true, prima: 66, passo: 5 }
   };
   function regoleLega() {
     var L = RIF_LEGHE[legaAttivaId()];
@@ -3503,8 +3522,36 @@ async function refreshLivePlayerNews() {
       primaGiornata: r.primaGiornata != null ? Number(r.primaGiornata) : 1,
       scadenzaMinutiPrima: r.scadenzaMinutiPrima != null ? Number(r.scadenzaMinutiPrima) : REGOLE_DEFAULT.scadenzaMinutiPrima,
       difesa: r.modificatoreDifesa || REGOLE_DEFAULT.modificatoreDifesa,
-      centrocampo: r.modificatoreCentrocampo || REGOLE_DEFAULT.modificatoreCentrocampo
+      centrocampo: r.modificatoreCentrocampo || REGOLE_DEFAULT.modificatoreCentrocampo,
+      soglieGol: r.soglieGol || REGOLE_DEFAULT.soglieGol
     };
+  }
+  // ---------------- soglie gol ----------------
+  // I fantapunti si convertono in gol: la prima soglia vale 1 gol, poi ogni
+  // "passo" punti un gol in piu'. La partita si decide sui gol, quindi due
+  // punteggi diversi dentro la stessa fascia sono un pareggio.
+  function soglieGolAttive() {
+    var s = regoleLega().soglieGol;
+    return !!(s && s.attive !== false);
+  }
+  function golDaPunti(pt) {
+    if (pt == null || !isFinite(pt)) return null;
+    var s = regoleLega().soglieGol || REGOLE_DEFAULT.soglieGol;
+    var prima = Number(s.prima), passo = Number(s.passo);
+    if (!(passo > 0)) return null;
+    if (pt < prima) return 0;
+    return 1 + Math.floor((pt - prima) / passo);
+  }
+  // Quanti punti mancano al gol successivo: serve a far vedere quando mezzo
+  // punto vale un gol intero e quando non vale niente.
+  function prossimaSogliaGol(pt) {
+    if (pt == null || !isFinite(pt)) return null;
+    var s = regoleLega().soglieGol || REGOLE_DEFAULT.soglieGol;
+    var prima = Number(s.prima), passo = Number(s.passo);
+    if (!(passo > 0)) return null;
+    var g = golDaPunti(pt);
+    var soglia = g === 0 ? prima : prima + g * passo;
+    return { gol: g + 1, soglia: soglia, mancano: Math.round((soglia - pt) * 10) / 10 };
   }
   // Le fasce arrivano come [[soglia, bonus], …] in ordine decrescente di soglia.
   function fasceInTabella(fasce) {
@@ -5379,19 +5426,24 @@ async function refreshLivePlayerNews() {
       var a = c[0], b = c[1];
       var pa = punteggioLega(a, g), pb = punteggioLega(b, g);
       if (pa == null || pb == null) return;
-      var pt = pa === pb
+      // Con le soglie attive l'esito lo decidono i GOL, non i fantapunti: 73 e
+      // 73,5 sono entrambi 2 gol, quindi 2-2 e un punto a testa. Senza soglie
+      // si torna al confronto diretto sui fantapunti.
+      var soglie = soglieGolAttive();
+      var ga = soglie ? golDaPunti(pa) : pa, gb = soglie ? golDaPunti(pb) : pb;
+      var pt = ga === gb
         ? [PUNTI_PAREGGIO, PUNTI_PAREGGIO]
-        : (pa > pb ? [PUNTI_VITTORIA, PUNTI_SCONFITTA] : [PUNTI_SCONFITTA, PUNTI_VITTORIA]);
-      var es = pa === pb ? ["N", "N"] : (pa > pb ? ["V", "P"] : ["P", "V"]);
-      out[a] = { punti: pt[0], esito: es[0], fanta: pa, avversario: b, fantaAvv: pb };
-      out[b] = { punti: pt[1], esito: es[1], fanta: pb, avversario: a, fantaAvv: pa };
+        : (ga > gb ? [PUNTI_VITTORIA, PUNTI_SCONFITTA] : [PUNTI_SCONFITTA, PUNTI_VITTORIA]);
+      var es = ga === gb ? ["N", "N"] : (ga > gb ? ["V", "P"] : ["P", "V"]);
+      out[a] = { punti: pt[0], esito: es[0], fanta: pa, avversario: b, fantaAvv: pb, gol: soglie ? ga : null, golAvv: soglie ? gb : null };
+      out[b] = { punti: pt[1], esito: es[1], fanta: pb, avversario: a, fantaAvv: pa, gol: soglie ? gb : null, golAvv: soglie ? ga : null };
     });
     return out;
   }
   function classificaLega() {
     var squadre = Object.keys(LEGA_SQUADRE);
     var acc = {};
-    squadre.forEach(function (t) { acc[t] = { t: t, punti: 0, v: 0, n: 0, p: 0, fanta: 0, g: 0 }; });
+    squadre.forEach(function (t) { acc[t] = { t: t, punti: 0, v: 0, n: 0, p: 0, fanta: 0, g: 0, gf: 0, gs: 0 }; });
     Object.keys(punteggiLega()).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (g) {
       var eg = esitiGiornata(g);
       Object.keys(eg).forEach(function (t) {
@@ -5399,14 +5451,20 @@ async function refreshLivePlayerNews() {
         acc[t].punti += r.punti;
         acc[t].fanta += r.fanta;
         acc[t].g += 1;
+        if (r.gol != null) { acc[t].gf += r.gol; acc[t].gs += r.golAvv; }
         if (r.esito === "V") acc[t].v += 1;
         else if (r.esito === "N") acc[t].n += 1;
         else acc[t].p += 1;
       });
     });
+    // Ordine: punti, poi differenza reti, poi gol fatti, poi fantapunti totali.
+    // Senza soglie gol fatti e subiti restano a zero e l'ordine ricade sui
+    // fantapunti, come prima.
     return squadre.map(function (t) { return acc[t]; })
       .filter(function (r) { return r.g > 0; })
-      .sort(function (a, b) { return (b.punti - a.punti) || (b.fanta - a.fanta); });
+      .sort(function (a, b) {
+        return (b.punti - a.punti) || ((b.gf - b.gs) - (a.gf - a.gs)) || (b.gf - a.gf) || (b.fanta - a.fanta);
+      });
   }
 
   function renderRisultatiCard() {
@@ -5428,14 +5486,23 @@ async function refreshLivePlayerNews() {
       var pa = punteggioLega(a, g), pb = punteggioLega(b, g);
       var esito = "";
       if (pa != null && pb != null) {
-        esito = pa === pb
-          ? '<span class="sf-esito" data-tone="muted">pareggio, 1 punto a testa</span>'
-          : '<span class="sf-esito" data-tone="good">' + escapeHtml(pa > pb ? a : b) + ' vince di ' + Math.abs(pa - pb).toFixed(1) + ' e prende 3 punti</span>';
+        if (soglieGolAttive()) {
+          var ga = golDaPunti(pa), gb = golDaPunti(pb);
+          var ris = ga + '-' + gb;
+          esito = ga === gb
+            ? '<span class="sf-esito" data-tone="muted">' + ris + ', 1 punto a testa</span>'
+            : '<span class="sf-esito" data-tone="good">' + ris + ' — ' + escapeHtml(ga > gb ? a : b) + ' prende 3 punti</span>';
+        } else {
+          esito = pa === pb
+            ? '<span class="sf-esito" data-tone="muted">pareggio, 1 punto a testa</span>'
+            : '<span class="sf-esito" data-tone="good">' + escapeHtml(pa > pb ? a : b) + ' vince di ' + Math.abs(pa - pb).toFixed(1) + ' e prende 3 punti</span>';
+        }
       }
       var lato = function (t, v) {
         var mine = t === LEGA_MIA;
         var r = eg[t];
-        var tag = r ? '<span class="sf-f1" data-esito="' + r.esito + '">' + r.esito + ' · ' + r.punti + '</span>' : '';
+        var tag = r ? '<span class="sf-f1" data-esito="' + r.esito + '">' + r.esito + ' · ' + r.punti +
+          (r.gol != null ? ' · ' + r.gol + (r.gol === 1 ? ' gol' : ' gol') : '') + '</span>' : '';
         return '<label class="sf-lato' + (mine ? ' pl-mine' : '') + '"><span class="sf-n">' + escapeHtml(t) + '</span>' +
           campoDecimale("pl-in", 'data-team="' + escapeAttr(t) + '" placeholder="—"', v) + tag + '</label>';
       };
@@ -5446,16 +5513,24 @@ async function refreshLivePlayerNews() {
     var cl = classificaLega();
     var clHtml = "";
     if (cl.length) {
+      var conGol = soglieGolAttive();
+      var sg = regoleLega().soglieGol || REGOLE_DEFAULT.soglieGol;
       clHtml = '<div class="pl-class"><h4>Classifica generale</h4><div class="f1-wrap"><table class="f1-table"><thead><tr>' +
-        '<th>#</th><th>Squadra</th><th class="num">Punti</th><th class="num">G</th><th class="num">V</th><th class="num">N</th><th class="num">P</th><th class="num">Fantapunti</th><th class="num">Media</th>' +
+        '<th>#</th><th>Squadra</th><th class="num">Punti</th><th class="num">G</th><th class="num">V</th><th class="num">N</th><th class="num">P</th>' +
+        (conGol ? '<th class="num">GF</th><th class="num">GS</th><th class="num">DR</th>' : '') +
+        '<th class="num">Fantapunti</th><th class="num">Media</th>' +
         '</tr></thead><tbody>' +
         cl.map(function (r, i) {
+          var dr = r.gf - r.gs;
           return '<tr' + (r.t === LEGA_MIA ? ' class="pl-mine"' : '') + '><td>' + (i + 1) + '</td><td>' + escapeHtml(r.t) + '</td>' +
             '<td class="num">' + r.punti + '</td><td class="num">' + r.g + '</td>' +
             '<td class="num">' + r.v + '</td><td class="num">' + r.n + '</td><td class="num">' + r.p + '</td>' +
+            (conGol ? '<td class="num">' + r.gf + '</td><td class="num">' + r.gs + '</td><td class="num">' + (dr > 0 ? "+" + dr : dr) + '</td>' : '') +
             '<td class="num">' + r.fanta.toFixed(1) + '</td><td class="num">' + (r.fanta / r.g).toFixed(1) + '</td></tr>';
         }).join("") + '</tbody></table></div>' +
-        '<p class="lega-note">3 punti a chi vince lo scontro diretto, 1 a testa in caso di pareggio, 0 a chi perde. Vince chi fa più fantapunti; a parità di punti in classifica conta il totale dei fantapunti.</p></div>';
+        '<p class="lega-note">' + (conGol
+          ? 'I fantapunti diventano gol: <b>' + sg.prima + ' punti = 1 gol</b>, poi un gol ogni <b>' + sg.passo + '</b> punti. La partita si decide sui gol, quindi due punteggi dentro la stessa fascia sono un pareggio — 73 e 73,5 fanno 2-2. 3 punti a chi vince, 1 a testa in caso di pareggio, 0 a chi perde; a parità di punti conta la differenza reti, poi i gol fatti, poi i fantapunti.'
+          : '3 punti a chi vince lo scontro diretto, 1 a testa in caso di pareggio, 0 a chi perde. Vince chi fa più fantapunti; a parità di punti in classifica conta il totale dei fantapunti.') + '</p></div>';
     } else {
       clHtml = '<p class="lega-note">La classifica compare appena una sfida ha entrambi i punteggi: non serve aspettare che la giornata sia completa.</p>';
     }
