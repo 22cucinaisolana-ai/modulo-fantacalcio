@@ -1886,6 +1886,19 @@
   }
   .pl-flag[data-flag="r"], .pl-flag[data-flag="p"] { color: var(--ruolo-d); }
   .pl-flag[data-flag="pup"] { color: var(--gold); }
+  /* Fuori lista: rosso pieno, non una sfumatura. È l'unico badge che dice
+     "questo giocatore non ti darà punti", e deve leggersi a colpo d'occhio. */
+  .pl-flag[data-flag="fl"] {
+    color: #fff; background: var(--danger); border-color: transparent;
+    padding: 0 4px; letter-spacing: .02em;
+  }
+  /* Nella rosa il fuori lista sta sotto al nome, per esteso: lì il giocatore è
+     ancora visibile e modificabile, ed è l'unico posto dove l'avviso serve
+     davvero — nel campo non compare più, perché è escluso. */
+  .name-fl {
+    margin-top: 3px; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    color: var(--danger); text-transform: uppercase;
+  }
   .pl-info {
     margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: var(--text-muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -2853,7 +2866,13 @@
       LISTONE.push([
         p.nome, p.ruolo, p.squadra, fmv, mv,
         p.titolarita != null ? Number(p.titolarita) : 3,
-        (p.rigorista ? 1 : 0) + (p.piazzati ? 2 : 0)
+        (p.rigorista ? 1 : 0) + (p.piazzati ? 2 : 0),
+        // 7: quotazione ufficiale — è il prezzo base d'asta, non una valutazione.
+        // 8: fuori lista — chi non è più tesserato in Serie A resta in rosa ma
+        //    non prende voto. Va escluso dai calcoli come un assente, altrimenti
+        //    il tool continua a proporlo in formazione (è successo con Nkunku).
+        p.quotazione != null ? Number(p.quotazione) : null,
+        p.fuori_lista ? 1 : 0
       ]);
     });
     LISTONE_INDEX = null;
@@ -2899,7 +2918,7 @@
       var q = await Promise.all([
         sb.from("serie_a_squadre").select("codice,nome,tier").order("codice"),
         sb.from("serie_a_calendario").select("giornata,casa,trasferta").order("giornata").order("casa").limit(1000),
-        sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati").order("nome").limit(2000),
+        sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati,quotazione,fuori_lista").order("nome").limit(2000),
         sb.from("lega_squadre").select("lega_id,nome,manager,budget,e_mia").order("nome"),
         sb.from("lega_rose").select("lega_id,squadra,giocatore,ruolo,costo").limit(4000),
         sb.from("lega_calendario").select("lega_id,turno,squadra_a,squadra_b").order("turno").order("squadra_a"),
@@ -3619,7 +3638,22 @@ async function refreshLivePlayerNews() {
   // gol subito −1) e li ho tenuti prudenti. Da ricontrollare quando lo storico
   // avrà cinque o sei giornate — la tabella "Dove sbaglia" darà l'errore medio
   // per reparto, che è esattamente questa quantità misurata sul campo.
-  var SD_FANTAVOTO_RUOLO = { P: 1.30, D: 0.85, C: 1.15, A: 1.75 };
+  // RICALIBRATO 02/09/2026 — ora sono misurati, non piu' giudicati. La quantita'
+  // giusta e' la deviazione standard INTRA-giocatore (quanto oscilla lo stesso
+  // giocatore da una giornata all'altra), non quella fra giocatori diversi che
+  // e' molto piu' grande e non c'entra. Calcolata sui 255 giocatori con due
+  // presenze nelle giornate 1-2 come sqrt(media((f1-f2)^2)/2):
+  //
+  //   ruolo   prima   misurato   n
+  //   P        1,30     1,386    19    -> lasciato 1,30 (19 portieri non bastano)
+  //   D        0,85     0,920    88    -> 0,92
+  //   C        1,15     1,280   105    -> 1,28
+  //   A        1,75     1,712    43    -> lasciato 1,75 (gia' centrato)
+  //
+  // P e A erano gia' giusti. D e C erano bassi del ~10%: il tool credeva
+  // difensori e centrocampisti piu' regolari di quanto siano, e sottostimava
+  // la varianza dei moduli che ne schierano di piu'.
+  var SD_FANTAVOTO_RUOLO = { P: 1.30, D: 0.92, C: 1.28, A: 1.75 };
 
   function varianzaFormazione(chosen) {
     var tot = 0;
@@ -3629,7 +3663,7 @@ async function refreshLivePlayerNews() {
       var dentro = {};
       picked.forEach(function (e) { if (e && e.p) dentro[e.p.id] = true; });
       var fuori = state.players
-        .filter(function (p) { return p.role === r.key && p.status !== "assente" && !dentro[p.id]; })
+        .filter(function (p) { return p.role === r.key && schierabile(p) && !dentro[p.id]; })
         .map(function (p) { return scorePlayer(p); })
         .sort(function (a, b) { return b.adj - a.adj; });
       // Un solo sostituto per reparto: è il primo che entrerebbe. Se ne mancano
@@ -3652,6 +3686,57 @@ async function refreshLivePlayerNews() {
     var v = (varMia || 0) + (varSua || 0);
     if (!(v > 0)) return mio > suo ? 1 : (mio < suo ? 0 : 0.5);
     return normCdf((mio - suo) / Math.sqrt(v));
+  }
+
+  // ---------------- esito atteso con le soglie gol (02/09/2026) ----------------
+  // Il 01/09 abbiamo cambiato COME si vince: decidono i gol, non i fantapunti
+  // (commit a7e0481). Sono stati aggiornati esiti e classifica, ma NON la
+  // funzione con cui la strategia "Batti l'avversario" ordina i moduli, che
+  // ha continuato a massimizzare P(faccio piu' fantapunti di lui) — la
+  // funzione obiettivo del vecchio regolamento. Due conseguenze concrete:
+  //   - il pareggio ora esiste e vale 1 punto (circa un terzo delle partite);
+  //   - 67 contro 70 fantapunti e' identico, 65,5 contro 66 e' un gol intero.
+  // Massimizzare i fantapunti attesi, o la probabilita' di superarlo, ignora
+  // entrambe le cose. Il metro giusto sono i punti di classifica attesi.
+  var MAX_GOL_SIM = 14;
+  // Probabilita' di segnare esattamente g gol, dato che i fantapunti sono
+  // ~N(media, varianza) e le soglie li convertono a gradini.
+  function distribuzioneGol(media, varianza, maxGol) {
+    var s = regoleLega().soglieGol || REGOLE_DEFAULT.soglieGol;
+    var prima = Number(s.prima), passo = Number(s.passo);
+    var sd = Math.sqrt(Math.max(varianza || 0, 1e-9));
+    var cum = [], out = [], g;
+    // cum[g] = P(almeno g gol). Il gol numero g richiede prima+(g-1)*passo.
+    for (g = 0; g <= maxGol; g++) {
+      cum[g] = g === 0 ? 1 : 1 - normCdf((prima + (g - 1) * passo - media) / sd);
+    }
+    for (g = 0; g <= maxGol; g++) {
+      out[g] = Math.max(0, cum[g] - (g < maxGol ? cum[g + 1] : 0));
+    }
+    return out;
+  }
+  // Punti di classifica attesi: 3 la vittoria, 1 il pareggio.
+  function esitoAtteso(mio, varMia, suo, varSua) {
+    if (!soglieGolAttive()) {
+      // Senza soglie vince chi fa piu' punti e il pareggio e' impossibile.
+      var pv = probVittoria(mio, varMia, suo, varSua);
+      return { punti: 3 * pv, pVittoria: pv, pPari: 0, pSconfitta: 1 - pv };
+    }
+    var a = distribuzioneGol(mio, varMia, MAX_GOL_SIM);
+    var b = distribuzioneGol(suo, varSua, MAX_GOL_SIM);
+    var vinco = 0, pari = 0;
+    for (var i = 0; i <= MAX_GOL_SIM; i++) {
+      if (!(a[i] > 1e-9)) continue;
+      for (var j = 0; j <= MAX_GOL_SIM; j++) {
+        if (!(b[j] > 1e-9)) continue;
+        if (i > j) vinco += a[i] * b[j];
+        else if (i === j) pari += a[i] * b[j];
+      }
+    }
+    return {
+      punti: 3 * vinco + pari, pVittoria: vinco, pPari: pari,
+      pSconfitta: Math.max(0, 1 - vinco - pari)
+    };
   }
 
   // Somma di bonus_fascia × probabilità di finire in quella fascia.
@@ -3729,17 +3814,40 @@ async function refreshLivePlayerNews() {
     var corr = MEDIA_VOTO_CORR[p.role];
     return effectiveFantamedia(p) + (corr != null ? corr : 0);
   }
+  // VOTO_SHRINK — corretto 02/09/2026. Prima qui c'era la media secca degli
+  // ultimi 3 voti reali: al primo voto inserito il tool buttava via la media
+  // voto vera della stagione scorsa (misurata su 30-35 partite, nel listone) e
+  // credeva a una partita sola. Misurato sui 606 voti veri delle giornate 1-2
+  // della Carmy, prevedendo il voto della g2 dal listone piu quello della g1:
+  //
+  //   K        0(prima)   1      2      3      6     12     inf
+  //   RMSE      0,7181  0,6030 0,5902 0,5894 0,5938 0,5996 0,6090
+  //
+  // Il minimo e' a K=3 e vale il 18% di errore in meno. Conta perche' questo
+  // numero finisce dentro il Modificatore, dove le fasce sono larghe 0,25 e
+  // valgono fino a 6 punti: 0,13 di errore in piu' e' una fascia sbagliata.
+  // Stessa forma dello smorzamento gia' usato per la fantamedia, che il
+  // medesimo test conferma essere gia' tarato bene (minimo a K=3-5, il tool
+  // usa 5).
+  var VOTO_SHRINK = 3;
   function expectedMediaVoto(p) {
+    var base = baselineMediaVoto(p);
     var hist = Array.isArray(p.votiStorico) ? p.votiStorico.slice() : [];
     hist.sort(function (a, b) { return Number(b.g) - Number(a.g); });
     hist = hist.slice(0, 3);
     if (hist.length) {
       var sum = 0;
       for (var i = 0; i < hist.length; i++) sum += Number(hist[i].v);
-      return sum / hist.length;
+      var media = sum / hist.length;
+      return (hist.length * media + VOTO_SHRINK * base) / (hist.length + VOTO_SHRINK);
     }
-    if (p.votoReale != null && p.votoReale !== "") return Number(p.votoReale);
-    return baselineMediaVoto(p);
+    if (p.votoReale != null && p.votoReale !== "") {
+      // Anche il campo "Voto reale" e' una partita sola: vale un quarto, non
+      // tutto. Lo compila da solo il pannello "Dopo la giornata" insieme allo
+      // storico, quindi non e' una forzatura esplicita dell'utente.
+      return (Number(p.votoReale) + VOTO_SHRINK * base) / (1 + VOTO_SHRINK);
+    }
+    return base;
   }
   function effectiveVotoModificatore(p) { return expectedMediaVoto(p); }
   function hasVotoReale(p) {
@@ -4067,7 +4175,7 @@ async function refreshLivePlayerNews() {
     var pools = {};
     ROLES.forEach(function (r) {
       var need = shape[r.key] || 0;
-      pools[r.key] = players.filter(function (p) { return p.role === r.key && p.status !== "assente"; })
+      pools[r.key] = players.filter(function (p) { return p.role === r.key && schierabile(p); })
         .map(function (p) { return { p: p, s: scorePlayer(p) }; });
       if (pools[r.key].length < need) shortage = true;
     });
@@ -4164,7 +4272,7 @@ async function refreshLivePlayerNews() {
     });
     var captain = xi[0], vice = xi[1];
     var xiIds = {}; xi.forEach(function (x) { xiIds[x.p.id] = true; });
-    var bench = state.players.filter(function (p) { return p.status !== "assente" && !xiIds[p.id]; })
+    var bench = state.players.filter(function (p) { return schierabile(p) && !xiIds[p.id]; })
       .map(function (p) { return { p: p, s: scorePlayer(p) }; })
       .sort(function (a, b) { return b.s.adj - a.s.adj; })
       .slice(0, 7);
@@ -4204,13 +4312,18 @@ async function refreshLivePlayerNews() {
     Object.keys(results).forEach(function (name) {
       var r = results[name];
       r.varianza = varianzaFormazione(r.chosen);
-      r.pVittoria = avv ? probVittoria(r.total, r.varianza, avv.punti, avv.varianza) : null;
+      // Corretto 02/09/2026: si ordina sui punti di classifica attesi, non su
+      // P(piu' fantapunti). Con le soglie gol il pareggio vale 1 punto e capita
+      // spesso — ignorarlo sceglieva il modulo con il regolamento vecchio.
+      r.esito = avv ? esitoAtteso(r.total, r.varianza, avv.punti, avv.varianza) : null;
+      r.pVittoria = r.esito ? r.esito.pVittoria : null;
+      r.puntiLega = r.esito ? r.esito.punti : null;
     });
 
     var order = autoCandidates().sort(function (a, b) {
       var ra = results[a], rb = results[b];
       if (ra.shortage !== rb.shortage) return ra.shortage ? 1 : -1;
-      if (ordinaSuProb && ra.pVittoria != null && rb.pVittoria != null) return rb.pVittoria - ra.pVittoria;
+      if (ordinaSuProb && ra.puntiLega != null && rb.puntiLega != null) return rb.puntiLega - ra.puntiLega;
       return rb.total - ra.total;
     });
     var manualOk = state.meta.modulo && state.meta.modulo !== "auto" && SHAPES[state.meta.modulo] &&
@@ -4227,7 +4340,7 @@ async function refreshLivePlayerNews() {
   }
 
   function eligiblePlayersForRole(roleKey) {
-    return state.players.filter(function (p) { return p.role === roleKey && p.status !== "assente"; })
+    return state.players.filter(function (p) { return p.role === roleKey && schierabile(p); })
       .map(function (p) { return { p: p, s: scorePlayer(p) }; })
       .sort(function (a, b) { return b.s.adj - a.s.adj; });
   }
@@ -4257,7 +4370,7 @@ async function refreshLivePlayerNews() {
         var pid = picks && picks[r.key] ? picks[r.key][i] : null;
         var pl = pid ? playerById(pid) : null;
         var entry = null;
-        if (pl && pl.role === r.key && pl.status !== "assente" && !used[pl.id]) {
+        if (pl && pl.role === r.key && schierabile(pl) && !used[pl.id]) {
           entry = { p: pl, s: scorePlayer(pl) };
         } else {
           for (var j = 0; j < autoPicked.length; j++) {
@@ -4365,6 +4478,12 @@ async function refreshLivePlayerNews() {
   }
   function badgeSpecialisti(p) {
     var out = "";
+    // Il fuori lista viene per primo perché cambia tutto: quel giocatore non
+    // prenderà voto, qualunque cosa dicano gli altri campi. Senza il badge
+    // l'esclusione sarebbe silenziosa e sembrerebbe un errore del programma.
+    if (p && p.name && fuoriLista(p.name)) {
+      out += '<span class="pl-flag" data-flag="fl" title="Fuori lista Serie A: non prende voto, escluso dai calcoli. Sostituibile solo all\'asta di riparazione.">FL</span>';
+    }
     if (p.rigorista) out += '<span class="pl-flag" data-flag="r" title="Rigorista">R</span>';
     if (p.piazzati) out += '<span class="pl-flag" data-flag="p" title="Specialista su punizioni e corner">P</span>';
     if (p.pupillo) out += '<span class="pl-flag" data-flag="pup" title="Pupillo d\'asta">PUP</span>';
@@ -4532,6 +4651,9 @@ async function refreshLivePlayerNews() {
           '<button type="button" class="rigorista-btn' + (p.rigorista ? " active" : "") + '" data-field="rigorista" title="Rigorista: tira i calci di rigore della sua squadra, più probabilità di bonus gol">' + ballSvg(!!p.rigorista) + '</button>' +
           '<button type="button" class="piazzati-btn' + (p.piazzati ? " active" : "") + '" data-field="piazzati" title="Specialista piazzati: punizioni/corner, più probabilità di bonus gol o assist">' + curveSvg() + '</button>' +
         '</div>' +
+        (fuoriLista(p.name)
+          ? '<div class="name-fl" title="Il listone ufficiale lo dà fuori lista Serie A: non prenderà voto e il calcolo lo esclude. Puoi sostituirlo solo all\'asta di riparazione.">FUORI LISTA · non prende voto</div>'
+          : '') +
         '<div class="name-hint" data-field="nameHint" hidden></div></div>' +
       '<div class="f-status"><select class="status-select" data-field="status" data-tone="' + statusByKey(p.status).tone + '" title="Stato">' + statusOpts + '</select></div>' +
       '<div class="f-forma"><div class="stars" data-field="forma" title="Forma recente"></div></div>' +
@@ -5160,6 +5282,24 @@ async function refreshLivePlayerNews() {
     return LISTONE_INDEX;
   }
   function listoneGet(nome) { return listoneIndex()[normalizeNameKey(nome)] || null; }
+  // Fuori lista: non è più tesserato in Serie A. Resta in rosa — non puoi
+  // toglierlo prima dell'asta di riparazione — ma non prenderà mai voto, quindi
+  // per il calcolo vale esattamente come un assente. Il dato arriva dal listone
+  // ufficiale, non da una nota scritta a mano che qualcuno deve ricordarsi di
+  // aggiornare.
+  function fuoriLista(nome) {
+    var r = listoneGet(nome);
+    return !!(r && r[8]);
+  }
+  function quotazioneUfficiale(nome) {
+    var r = listoneGet(nome);
+    return r && r[7] != null ? r[7] : null;
+  }
+  // Un giocatore non entra nei calcoli se è dato assente a mano o se il listone
+  // dice che è fuori lista.
+  function schierabile(p) {
+    return p && p.status !== "assente" && !fuoriLista(p.name);
+  }
   // La titolarità serve solo a ORDINARE la rosa avversaria, non a scontarne il
   // valore (corretto 25/08/2026). Scontare ogni giocatore per la titolarità era
   // un tentativo di essere onesti su un dato che non ho — chi schiereranno — ma
@@ -6092,14 +6232,17 @@ async function refreshLivePlayerNews() {
     // vera, comprese le sostituzioni fatte a mano. Si aggiorna a ogni cambio,
     // quindi il campetto diventa uno strumento per cercare varianza: sposti un
     // giocatore e vedi subito se la probabilità sale o scende.
-    var probTxt = "", pvHead = 0, scartoHead = 0, varMiaHead = 0;
+    var probTxt = "", pvHead = 0, scartoHead = 0, varMiaHead = 0, pariHead = 0, puntiHead = 0;
     if (data.avversario) {
       var varMia = varianzaFormazione(bestResult.chosen);
-      var pv = probVittoria(bestResult.total, varMia, data.avversario.punti, data.avversario.varianza);
+      var es = esitoAtteso(bestResult.total, varMia, data.avversario.punti, data.avversario.varianza);
+      var pv = es.pVittoria;
       var scarto = bestResult.total - data.avversario.punti;
       pvHead = pv; scartoHead = scarto; varMiaHead = varMia;
-      probTxt = 'contro ' + escapeHtml(data.avversario.squadra) + ': <b>' + Math.round(pv * 100) + '%</b> di vittoria' +
-        ' · ' + (scarto >= 0 ? '+' : '') + scarto.toFixed(1) + ' punti attesi, oscillazione ±' + Math.sqrt(varMia).toFixed(1) +
+      pariHead = es.pPari; puntiHead = es.punti;
+      probTxt = 'contro ' + escapeHtml(data.avversario.squadra) + ': <b>' + Math.round(pv * 100) + '%</b> vittoria · ' +
+        Math.round(es.pPari * 100) + '% pareggio · <b>' + es.punti.toFixed(2) + '</b> punti di classifica attesi' +
+        ' · ' + (scarto >= 0 ? '+' : '') + scarto.toFixed(1) + ' fantapunti, oscillazione ±' + Math.sqrt(varMia).toFixed(1) +
         ' contro ±' + Math.sqrt(data.avversario.varianza || 0).toFixed(1) +
         (scarto < 0 ? ' — parti sotto, quindi qui la varianza gioca a tuo favore' : ' — parti sopra, quindi conviene ridurre la varianza');
     }
@@ -6112,15 +6255,16 @@ async function refreshLivePlayerNews() {
       if (!allowed) return;
       var rr = data.results[name];
       var active = name === data.best ? ' active' : '';
-      // Con "Batti l'avversario" il numero grande sul chip è la probabilità di
-      // vincere, non i punti: è quello su cui i moduli sono ordinati, e mettere
-      // in evidenza un criterio diverso da quello usato per decidere sarebbe
-      // solo un modo per confondere.
-      var mostraProb = strategyProfile().obiettivo === "probabilita" && rr && rr.pVittoria != null;
+      // Con "Batti l'avversario" il numero grande sul chip è il criterio su cui
+      // i moduli sono ordinati — dal 02/09/2026 i punti di classifica attesi,
+      // non più la probabilità di vittoria. Mettere in evidenza un criterio
+      // diverso da quello usato per decidere sarebbe solo un modo per confondere.
+      var mostraProb = strategyProfile().obiettivo === "probabilita" && rr && rr.puntiLega != null;
       html += '<button type="button" class="shortcut'+active+'" data-formation-shortcut="'+name+'"' +
-        (mostraProb ? ' title="' + rr.total.toFixed(1) + ' punti attesi, oscillazione ±' + Math.sqrt(rr.varianza).toFixed(1) + '"' : '') + '>' +
+        (mostraProb ? ' title="' + rr.total.toFixed(1) + ' fantapunti attesi, oscillazione ±' + Math.sqrt(rr.varianza).toFixed(1) +
+          ' · ' + Math.round(rr.pVittoria * 100) + '% vittoria, ' + Math.round(rr.esito.pPari * 100) + '% pareggio"' : '') + '>' +
         '<span class="sc-modulo">'+name+'</span>' +
-        (rr ? '<span class="sc-punti">' + (mostraProb ? Math.round(rr.pVittoria * 100) + '%' : rr.total.toFixed(1)) + '</span>' : '') +
+        (rr ? '<span class="sc-punti">' + (mostraProb ? rr.puntiLega.toFixed(2) : rr.total.toFixed(1)) + '</span>' : '') +
         '</button>';
     });
     html += '</div>';
@@ -6157,7 +6301,12 @@ async function refreshLivePlayerNews() {
     if (data.avversario) {
       html += '<div class="sb-card sb-win"><span class="sb-l">Vittoria contro ' + escapeHtml(data.avversario.squadra) +
         '</span><span class="sb-v" data-tone="' + (pvHead >= 0.5 ? 'good' : 'danger') + '">' + Math.round(pvHead * 100) +
-        '%</span><span class="sb-s">' + (scartoHead >= 0 ? '+' : '') + scartoHead.toFixed(1) + ' punti · oscillazione ±' +
+        '%</span><span class="sb-s">' +
+        // Con le soglie gol il pareggio non e' piu' un caso limite: contro un
+        // pari vale un terzo delle partite. Mostrarlo evita di leggere "38%"
+        // come "62% di sconfitta", che e' quello che il numero da solo suggerisce.
+        (soglieGolAttive() ? Math.round(pariHead * 100) + '% pareggio · ' + puntiHead.toFixed(2) + ' punti attesi · ' : '') +
+        (scartoHead >= 0 ? '+' : '') + scartoHead.toFixed(1) + ' fantapunti · ±' +
         Math.sqrt(varMiaHead).toFixed(1) + ' contro ±' + Math.sqrt(data.avversario.varianza || 0).toFixed(1) + '</span></div>';
     }
     html += '</div>';
