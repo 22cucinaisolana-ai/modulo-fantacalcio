@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="512" height="512" role="img" aria-label="Fanta Analyst">
+  <title>Fanta Analyst</title>
+  <!-- Il campo visto dall'alto con la formazione schierata e il capitano in oro
+       davanti a tutti: e' quello che il tool produce ogni giornata. I reparti
+       sono ridotti a 3-2-1 e i pallini sono ingrossati apposta — con undici
+       pallini veri, a 16px di favicon non si legge piu' niente. -->
+  <rect width="32" height="32" rx="7" fill="#1f4d31"/>
+  <g stroke="#7fbf95" stroke-width="1.1" fill="none" opacity=".55">
+    <path d="M2 16h28"/><circle cx="16" cy="16" r="4.6"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="7" cy="24.5" r="2.7"/><circle cx="16" cy="25.5" r="2.7"/><circle cx="25" cy="24.5" r="2.7"/>
+    <circle cx="10.5" cy="10" r="2.7"/><circle cx="21.5" cy="10" r="2.7"/>
+  </g>
+  <circle cx="16" cy="4.6" r="3.2" fill="#e8b23e"/>
+</svg>
