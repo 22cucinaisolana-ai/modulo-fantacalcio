@@ -3449,6 +3449,9 @@ async function refreshLivePlayerNews() {
   sb.auth.onAuthStateChange(function (_event, session) {
     currentUser = session ? session.user : null;
     updateAuthButton();
+    // Il riquadro account in Home dipende da questo stato: senza, resta a dire
+    // "non sei collegato" anche dopo il login.
+    renderHome();
   });
 
   // ---------------- scoring ----------------
@@ -6747,6 +6750,19 @@ async function refreshLivePlayerNews() {
     var g = state.meta.giornata || "";
     var h = "";
 
+    // --- account ---
+    // Sta in cima e non in fondo quando NON sei collegato, perche' e' la
+    // condizione che rende inutile tutto il resto: senza login la rosa non si
+    // salva e al prossimo dispositivo non c'e'. Da collegato basta una riga.
+    if (!currentUser) {
+      h += '<div class="home-dead" data-tone="danger">' +
+        '<div class="hd-g">Account</div>' +
+        '<div class="hd-t">Non sei collegato</div>' +
+        '<div class="hd-n">Le modifiche restano su questo browser e non le ritrovi su un altro dispositivo. ' +
+        'Collegati per salvare la rosa.</div>' +
+        '<div class="hm-actions"><button type="button" class="home-go" data-auth="1">Accedi</button></div></div>';
+    }
+
     // --- scadenza ---
     var sc = homeScadenza();
     h += '<div class="home-dead" data-tone="' + sc.tono + '">' +
@@ -6840,9 +6856,18 @@ async function refreshLivePlayerNews() {
         '</ul></div>';
     }
 
+    if (currentUser) {
+      h += '<div class="home-account"><span>Collegato come <b>' +
+        escapeHtml(currentUser.email || "utente") + '</b> · la rosa si salva sul cloud</span>' +
+        '<button type="button" class="home-go ghost" data-auth="1">Account</button></div>';
+    }
+
     host.innerHTML = h;
     host.querySelectorAll("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () { apriTab(b.dataset.go); });
+    });
+    host.querySelectorAll("[data-auth]").forEach(function (b) {
+      b.addEventListener("click", function () { openAuth(); });
     });
   }
 
@@ -7402,6 +7427,14 @@ async function refreshLivePlayerNews() {
   padding-left: 12px; border-left: 3px solid var(--muted-tone); }
 .home-avvisi li[data-tone="warn"] { border-left-color: var(--warn); }
 .home-avvisi li[data-tone="danger"] { border-left-color: var(--danger); }
+
+.home-account {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  flex-wrap: wrap; padding: 12px 16px; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--surface-2); font-size: 12.5px;
+  color: var(--text-muted);
+}
+.home-account b { color: var(--text); font-weight: 600; }
 
 @media (max-width: 700px) {
   .home-grid { grid-template-columns: 1fr; }
