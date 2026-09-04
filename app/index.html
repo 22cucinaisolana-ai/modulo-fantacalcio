@@ -1920,6 +1920,40 @@
   }
   .pl-flag[data-flag="r"], .pl-flag[data-flag="p"] { color: var(--ruolo-d); }
   .pl-flag[data-flag="pup"] { color: var(--gold); }
+  /* Profilo bonus/voto: BON alza il soffitto (gol e assist), VOT alza il
+     pavimento (media voto alta, che e' anche cio' su cui gira il modificatore),
+     B+V fa tutte e due — sono i giocatori piu' preziosi e vanno visti subito. */
+  .pl-flag[data-flag="bon"] { color: var(--ruolo-a); }
+  .pl-flag[data-flag="vot"] { color: var(--ruolo-d); }
+  .pl-flag[data-flag="bv"] { color: #fff; background: var(--accent); border-color: transparent; }
+  .pl-flag[data-flag="nd"] { color: var(--text-muted); opacity: .75; }
+
+  /* Riquadro "Bonus e voto" nella scheda Rosa */
+  .section > summary .section-hint { font-size: 11px; font-weight: 400; color: var(--text-muted); text-transform: none; letter-spacing: 0; margin-left: 6px; }
+  .name-row .pl-flag { flex: none; align-self: center; }
+  .prof-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .prof-blocco h4 { margin: 0 0 2px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .prof-n { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+  .prof-sotto { margin: 0 0 8px; font-size: 11.5px; color: var(--text-muted); line-height: 1.45; }
+  .prof-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  .prof-lista li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .prof-nome { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prof-num { flex: none; font-family: var(--font-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--text-muted); min-width: 34px; text-align: right; }
+  .prof-ruolo { flex: none; font-family: var(--font-mono); font-size: 10px; font-weight: 700; width: 15px; text-align: center; border-radius: 3px; }
+  .prof-ruolo[data-ruolo="P"] { color: var(--ruolo-p); }
+  .prof-ruolo[data-ruolo="D"] { color: var(--ruolo-d); }
+  .prof-ruolo[data-ruolo="C"] { color: var(--ruolo-c); }
+  .prof-ruolo[data-ruolo="A"] { color: var(--ruolo-a); }
+  .cons-tit { margin: 4px 0 6px; font-size: 12px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: .04em; }
+  .cons-tit[data-tone="good"] { color: var(--good); }
+  .cons-tit[data-tone="danger"] { color: var(--danger); }
+  .cons-team { flex: none; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); }
+  .cons-motivi { flex: 2 1 260px; min-width: 0; font-size: 11.5px; color: var(--text-muted); text-align: right; }
+  @media (max-width: 620px) {
+    .prof-lista li { flex-wrap: wrap; }
+    .cons-motivi { flex-basis: 100%; text-align: left; }
+  }
+  .prof-nota { margin: 12px 0 0; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
   /* Fuori lista: rosso pieno, non una sfumatura. È l'unico badge che dice
      "questo giocatore non ti darà punti", e deve leggersi a colpo d'occhio. */
   .pl-flag[data-flag="fl"] {
@@ -2332,6 +2366,7 @@
   </section>
 
   <section class="tab-panel" id="tab-schiera" role="tabpanel" aria-labelledby="tabbtn-schiera" hidden>
+    <div id="consigliatiHost"></div>
     <div class="result" id="resultSection">
       <div class="result-empty" id="resultEmpty">Vai su <b>Rosa</b>, aggiungi i tuoi giocatori, poi premi <b>Calcola formazione</b> qui in alto per vedere l'undici consigliato.</div>
       <div id="resultContent" style="display:none"></div>
@@ -2344,6 +2379,7 @@
       <h2>La tua rosa</h2>
       <p>Stato, fantamedia, forma e note di ogni giocatore. È da qui che l'algoritmo prende i dati.</p>
     </div>
+    <div id="profiloCardHost"></div>
     <div id="sections"></div>
   </section>
 
@@ -2762,6 +2798,11 @@
   // tutte le leghe. Quelle che si usano davvero dipendono dalla fonte voti
   // della lega attiva e le sceglie applicaFonte().
   var RIF_LISTONE = [];
+  // Classifica di Serie A per giornata. Serve a misurare l'andamento VERO di un
+  // club: lo scarto dei suoi giocatori dalle attese dice se rende piu' o meno
+  // del previsto, i punti dicono se sta vincendo. Sono due cose diverse e
+  // servono tutte e due.
+  var CLASSIFICA_SA = [];
   var RIF_LISTONE_VALORI = {};
   var RIF_VOTI = [];
   var FONTE_PREDEFINITA = "Fantacalcio";
@@ -2859,6 +2900,9 @@
     // Formazioni realmente schierate dagli avversari:
     //   LEGA_FORMAZIONI[legaId][giornata][squadra] = { nomi: [...], ufficiale: bool }
     Object.keys(LEGA_FORMAZIONI).forEach(function (k) { delete LEGA_FORMAZIONI[k]; });
+    CLASSIFICA_SA.length = 0;
+    (rif.classifica || []).forEach(function (r) { CLASSIFICA_SA.push(r); });
+
     (rif.legaFormazioni || []).forEach(function (f) {
       var lid = f.lega_id || LEGA_PREDEFINITA, g = String(f.giornata);
       if (!LEGA_FORMAZIONI[lid]) LEGA_FORMAZIONI[lid] = {};
@@ -2895,7 +2939,7 @@
     if (L.miaSquadra && LEGA_SQUADRE[L.miaSquadra]) LEGA_MIA = L.miaSquadra;
     L.turni.forEach(function (t) { LEGA_TURNI.push(t); });
     Object.keys(L.risultati).forEach(function (g) { RISULTATI[g] = L.risultati[g]; });
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
     applicaFonte();
   }
 
@@ -2927,7 +2971,13 @@
         //    non prende voto. Va escluso dai calcoli come un assente, altrimenti
         //    il tool continua a proporlo in formazione (è successo con Nkunku).
         p.quotazione != null ? Number(p.quotazione) : null,
-        p.fuori_lista ? 1 : 0
+        p.fuori_lista ? 1 : 0,
+        // 9-10: gol e assist per presenza della stagione storica. NULL vuol dire
+        //  "dato non disponibile" (poche presenze, Serie B o estero), NON zero:
+        //  confonderli e' lo stesso errore che faceva risultare Vicario il
+        //  miglior portiere della lega perche' i suoi gol subiti erano vuoti.
+        p.gol_pres != null ? Number(p.gol_pres) : null,
+        p.assist_pres != null ? Number(p.assist_pres) : null
       ]);
     });
     LISTONE_INDEX = null;
@@ -2973,10 +3023,11 @@
       var q = await Promise.all([
         sb.from("serie_a_squadre").select("codice,nome,tier").order("codice"),
         sb.from("serie_a_calendario").select("giornata,casa,trasferta").order("giornata").order("casa").limit(1000),
-        sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati,quotazione,fuori_lista").order("nome").limit(2000),
+        sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati,quotazione,fuori_lista,gol_pres,assist_pres").order("nome").limit(2000),
         sb.from("lega_squadre").select("lega_id,nome,manager,budget,e_mia").order("nome"),
         sb.from("lega_rose").select("lega_id,squadra,giocatore,ruolo,costo").limit(4000),
         sb.from("lega_calendario").select("lega_id,turno,squadra_a,squadra_b").order("turno").order("squadra_a"),
+        sb.from("serie_a_classifica").select("giornata,squadra,punti,giocate,gf,gs").order("giornata"),
         sb.from("voti_giornata").select("giornata,giocatore,voto,fantavoto,fonte").order("giornata").limit(4000),
         sb.from("risultati_lega").select("lega_id,giornata,squadra,punti").order("giornata").limit(2000),
         sb.from("leghe").select("id,nome,n_squadre,mia_squadra,regole").order("creata_il"),
@@ -2987,9 +3038,13 @@
       var rif = {
         squadre: q[0].data, calendario: q[1].data, listone: q[2].data,
         legaSquadre: q[3].data, legaRose: q[4].data, legaCalendario: q[5].data,
-        voti: q[6].data, risultati: q[7].data, leghe: q[8].data,
-        legaFormazioni: q[9].data || [],
-        listoneValori: q[10].data || []
+        // q[6] e' serie_a_classifica, inserita qui: gli indici sotto sono
+        // slittati di uno rispetto a prima. Se se ne aggiunge un'altra, va
+        // spostata in fondo alla lista invece che in mezzo.
+        classifica: q[6].data || [],
+        voti: q[7].data, risultati: q[8].data, leghe: q[9].data,
+        legaFormazioni: q[10].data || [],
+        listoneValori: q[11].data || []
       };
       if (!rifValidi(rif)) throw new Error("tabelle di riferimento vuote");
       applicaRiferimenti(rif);
@@ -3062,7 +3117,7 @@
     state.players = target.players;
     normalizzaStato();
     applicaLega(legaAttivaId());
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
     scheduleSave();
     return true;
   }
@@ -3084,7 +3139,7 @@
     state.players = [];
     normalizzaStato();
     applicaLega(legaAttivaId());
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
     scheduleSave();
     return id;
   }
@@ -4534,6 +4589,83 @@ async function refreshLivePlayerNews() {
     var f = Math.max(1, Math.min(5, Math.round(Number(n) || 3)));
     return "★★★★★".slice(0, f) + "☆☆☆☆☆".slice(0, 5 - f);
   }
+  // ---------------- profilo bonus / voto ----------------
+  // Due assi diversi, che servono a due cose diverse:
+  //   BONUS = gol e assist. Alza il SOFFITTO, e alza anche la varianza.
+  //   VOTO  = media voto in pagella. Alza il PAVIMENTO, ed e' l'unica cosa su
+  //           cui gira il modificatore difesa.
+  // Le soglie sono il 75esimo percentile DEL RUOLO, misurato sui 295 giocatori
+  // del listone con almeno 10 presenze e una media voto vera. Una soglia unica
+  // per tutti non funziona: la mediana di bonus di un attaccante e' 0,67 e
+  // quella di un difensore 0,12, quindi qualunque taglio globale marcherebbe
+  // "da bonus" quasi ogni punta e quasi nessun difensore — cioe' non
+  // distinguerebbe niente.
+  var SOGLIA_BONUS = { P: null, D: 0.27, C: 0.53, A: 0.96 };
+  var SOGLIA_VOTO  = { P: 6.26, D: 6.06, C: 6.14, A: 6.21 };
+
+  // Il bonus si pesa con la tabella della lega attiva, non con numeri fissi:
+  // dove il gol di un difensore vale 4 invece di 3 lo stesso giocatore vale di
+  // piu', e il profilo deve dirlo.
+  function pesiBonusLega() {
+    var b = (RIF_LEGHE[legaAttivaId()] || {}).regole;
+    b = (b && b.bonus) || {};
+    return {
+      gol: b.golSegnato != null ? Number(b.golSegnato) : 3,
+      assist: b.assist != null ? Number(b.assist) : 1
+    };
+  }
+
+  // listoneIndex() e' dichiarata piu' avanti nel file: la dichiarazione di
+  // funzione e' sollevata, e qui si chiama solo al momento del render.
+  function listoneRow(nome) {
+    if (!nome) return null;
+    return listoneIndex()[normalizeNameKey(nome)] || null;
+  }
+
+  // Ritorna null quando il dato non c'e': "non lo so" non e' "zero bonus".
+  function bonusAtteso(nome) {
+    var row = listoneRow(nome);
+    if (!row) return null;
+    var g = row[9], a = row[10];
+    if (g == null && a == null) return null;
+    var w = pesiBonusLega();
+    return w.gol * (g || 0) + w.assist * (a || 0);
+  }
+
+  // 'bv' | 'bon' | 'vot' | 'base' | null (dato mancante)
+  function profiloGiocatore(p) {
+    if (!p || !p.name) return null;
+    var r = p.role;
+    var b = bonusAtteso(p.name);
+    var row = listoneRow(p.name);
+    var mv = row && row[4] != null ? Number(row[4]) : null;
+    if (b == null && mv == null) return null;
+    var sb = SOGLIA_BONUS[r], sv = SOGLIA_VOTO[r];
+    var altoB = (sb != null && b != null && b >= sb);
+    var altoV = (sv != null && mv != null && mv >= sv);
+    if (altoB && altoV) return "bv";
+    if (altoB) return "bon";
+    if (altoV) return "vot";
+    return "base";
+  }
+
+  var PROFILO_ETICHETTA = {
+    bv:  ["B+V", "Da bonus E da voto: alza il soffitto e il pavimento. Sono i piu' preziosi, e i piu' rari."],
+    bon: ["BON", "Da bonus: gol e assist sopra la media del suo ruolo. Alza il soffitto, ma anche la varianza."],
+    vot: ["VOT", "Da voto: media voto in pagella sopra la media del suo ruolo. Alza il pavimento e alimenta il modificatore difesa."],
+    nd:  ["n.d.", "Nessuno storico utile in Serie A (poche presenze, Serie B o estero): il profilo non e' calcolabile, non e' uno zero."]
+  };
+
+  // Solo il badge di profilo, per la riga della Rosa (dove R/P/pupillo sono
+  // gia' pulsanti cliccabili e ripeterli come etichette sarebbe rumore).
+  function badgeProfilo(p) {
+    var prof = profiloGiocatore(p);
+    var k = (prof === "bv" || prof === "bon" || prof === "vot") ? prof : (prof === null && p.name ? "nd" : null);
+    if (!k) return "";
+    var e = PROFILO_ETICHETTA[k];
+    return '<span class="pl-flag" data-flag="' + k + '" title="' + escapeAttr(e[1]) + '">' + e[0] + '</span>';
+  }
+
   function badgeSpecialisti(p) {
     var out = "";
     // Il fuori lista viene per primo perché cambia tutto: quel giocatore non
@@ -4545,6 +4677,13 @@ async function refreshLivePlayerNews() {
     if (p.rigorista) out += '<span class="pl-flag" data-flag="r" title="Rigorista">R</span>';
     if (p.piazzati) out += '<span class="pl-flag" data-flag="p" title="Specialista su punizioni e corner">P</span>';
     if (p.pupillo) out += '<span class="pl-flag" data-flag="pup" title="Pupillo d\'asta">PUP</span>';
+    var prof = profiloGiocatore(p);
+    if (prof === "bv" || prof === "bon" || prof === "vot") {
+      var e = PROFILO_ETICHETTA[prof];
+      out += '<span class="pl-flag" data-flag="' + prof + '" title="' + escapeAttr(e[1]) + '">' + e[0] + '</span>';
+    } else if (prof === null && p.name) {
+      out += '<span class="pl-flag" data-flag="nd" title="' + escapeAttr(PROFILO_ETICHETTA.nd[1]) + '">n.d.</span>';
+    }
     return out;
   }
   // freccia: mostra il chevron a destra del voto (righe cliccabili per cambiare
@@ -4652,8 +4791,205 @@ async function refreshLivePlayerNews() {
     return { trovato: true, riepilogo: "Dal listone: " + fatte.join(" · ") + "." + avviso + " " + azzerato };
   }
 
+  // ---------------- riquadro "Bonus e voto" ----------------
+  // Divide la rosa sui due assi e mostra i numeri che decidono la divisione,
+  // cosi' la classificazione e' controllabile invece che creduta sulla parola.
+  // ---------------- forma e andamento ----------------
+  // Due segnali distinti, tenuti separati di proposito:
+  //   FORMA    = quanto un giocatore rende sopra o sotto la SUA attesa.
+  //   ANDAMENTO = come sta rendendo tutta la squadra di Serie A a cui appartiene.
+  // Con poche giornate il primo e' quasi sempre rumore e il secondo no: su una
+  // squadra si aggregano ~30 voti invece di 2, e l'errore si divide per 5,5.
+  // E' il motivo per cui un giocatore neutro dentro un club in caduta e' un
+  // segnale negativo anche quando i suoi numeri personali non dicono niente.
+
+  // Soglia di rumore: oltre questa lo scarto medio su n partite non e' caso.
+  // 2 x errore standard = 2 x SD/sqrt(n), con le SD per ruolo misurate sui 606
+  // voti veri delle giornate 1-2.
+  function sogliaRumore(ruolo, n) {
+    var sd = SD_FANTAVOTO_RUOLO[ruolo] || 1.3;
+    if (!n) return Infinity;
+    return 2 * sd / Math.sqrt(n);
+  }
+
+  // Scarto medio di un giocatore fra fantavoto reale e fantamedia attesa.
+  function formaGiocatore(nome) {
+    var row = listoneRow(nome);
+    if (!row || row[3] == null) return null;
+    var attesa = Number(row[3]), somma = 0, n = 0;
+    Object.keys(VOTI).forEach(function (g) {
+      var v = VOTI[g][nome];
+      if (!v || v[1] == null) return;
+      somma += Number(v[1]) - attesa; n++;
+    });
+    if (!n) return null;
+    var media = somma / n;
+    var soglia = sogliaRumore(row[1], n);
+    return { scarto: media, n: n, soglia: soglia, oltre: Math.abs(media) > soglia };
+  }
+
+  // Andamento di un club: scarto medio di TUTTI i suoi giocatori che hanno
+  // preso voto, piu' i punti veri di classifica. Il primo dice se rende sopra
+  // le attese, il secondo se sta vincendo — e non e' la stessa cosa.
+  var ANDAMENTO_CACHE = null;
+  function andamentoClub(codice) {
+    if (!ANDAMENTO_CACHE) {
+      ANDAMENTO_CACHE = {};
+      var acc = {};
+      for (var i = 0; i < LISTONE.length; i++) {
+        var r = LISTONE[i], sq = r[2];
+        if (!sq || r[3] == null) continue;
+        Object.keys(VOTI).forEach(function (g) {
+          var v = VOTI[g][r[0]];
+          if (!v || v[1] == null) return;
+          if (!acc[sq]) acc[sq] = { somma: 0, n: 0 };
+          acc[sq].somma += Number(v[1]) - Number(r[3]);
+          acc[sq].n++;
+        });
+      }
+      // Ultima riga di classifica disponibile per ogni squadra.
+      var cls = {};
+      CLASSIFICA_SA.forEach(function (c) {
+        if (!cls[c.squadra] || Number(c.giornata) > Number(cls[c.squadra].giornata)) cls[c.squadra] = c;
+      });
+      Object.keys(acc).forEach(function (sq) {
+        var a = acc[sq];
+        var media = a.somma / a.n;
+        // 1,2 e' la SD media per voto su tutti i ruoli: qui si aggregano
+        // giocatori di ruoli diversi, quindi una SD unica e' l'approssimazione
+        // onesta invece di una precisione finta.
+        var z = media / (1.2 / Math.sqrt(a.n));
+        ANDAMENTO_CACHE[sq] = { scarto: media, n: a.n, z: z, cls: cls[sq] || null };
+      });
+      Object.keys(cls).forEach(function (sq) {
+        if (!ANDAMENTO_CACHE[sq]) ANDAMENTO_CACHE[sq] = { scarto: null, n: 0, z: null, cls: cls[sq] };
+      });
+    }
+    return ANDAMENTO_CACHE[codice] || null;
+  }
+  function invalidaAndamento() { ANDAMENTO_CACHE = null; }
+
+  function toneDaZ(z) {
+    if (z == null) return "muted";
+    if (z >= 2) return "good";
+    if (z <= -2) return "danger";
+    if (z <= -1) return "warn";
+    return "muted";
+  }
+
+  function renderProfiloRosa() {
+    var host = document.getElementById("profiloCardHost");
+    if (!host) return;
+    var gruppi = { bv: [], bon: [], vot: [], base: [], nd: [] };
+    state.players.forEach(function (p) {
+      if (!p.name) return;
+      var k = profiloGiocatore(p);
+      gruppi[k === null ? "nd" : k].push(p);
+    });
+    var w = pesiBonusLega();
+    function riga(p) {
+      var b = bonusAtteso(p.name);
+      var row = listoneRow(p.name);
+      var mv = row && row[4] != null ? Number(row[4]) : null;
+      var extra = (p.rigorista ? '<span class="pl-flag" data-flag="r" title="Rigorista">R</span>' : "") +
+                  (p.piazzati ? '<span class="pl-flag" data-flag="p" title="Punizioni e corner">P</span>' : "");
+      return '<li><span class="prof-ruolo" data-ruolo="' + p.role + '">' + p.role + '</span>' +
+        '<span class="prof-nome">' + escapeHtml(p.name) + '</span>' + extra +
+        '<span class="prof-num" title="Bonus atteso a partita: ' + w.gol + '×gol + ' + w.assist + '×assist, per presenza">' +
+          (b == null ? "—" : b.toFixed(2)) + '</span>' +
+        '<span class="prof-num" title="Media voto in pagella">' + (mv == null ? "—" : mv.toFixed(2)) + '</span></li>';
+    }
+    function blocco(k, titolo, sotto) {
+      var l = gruppi[k];
+      if (!l.length) return "";
+      l.sort(function (a, b) { return (bonusAtteso(b.name) || 0) - (bonusAtteso(a.name) || 0); });
+      return '<div class="prof-blocco"><h4><span class="pl-flag" data-flag="' + (k === "base" ? "nd" : k) + '">' +
+        (PROFILO_ETICHETTA[k] ? PROFILO_ETICHETTA[k][0] : "—") + '</span>' + titolo +
+        ' <span class="prof-n">' + l.length + '</span></h4>' +
+        '<p class="prof-sotto">' + sotto + '</p><ul class="prof-lista">' + l.map(riga).join("") + '</ul></div>';
+    }
+    host.innerHTML = '<details class="section" open><summary><span>Bonus e voto <span class="section-hint">chi alza il soffitto e chi alza il pavimento</span></span></summary>' +
+      '<div class="section-body"><div class="prof-grid">' +
+        blocco("bv", "Da bonus e da voto", "Sopra la media del proprio ruolo su tutti e due gli assi. Sono i giocatori che non hai motivo di lasciare fuori.") +
+        blocco("bon", "Da bonus", "Gol e assist sopra la media del ruolo. Alzano il soffitto — e la varianza.") +
+        blocco("vot", "Da voto", "Media voto alta. Alzano il pavimento, e sono quelli che fanno girare il modificatore difesa.") +
+        blocco("base", "Nella media", "Niente di sopra la media del ruolo su nessuno dei due assi.") +
+        blocco("nd", "Senza storico", "Poche presenze in Serie A, oppure arrivati da un altro campionato: il profilo non è calcolabile. Non vuol dire che valgano zero — vuol dire che non lo sappiamo.") +
+      '</div>' +
+      '<p class="prof-nota">Le soglie sono il 75° percentile <b>del ruolo</b>, misurato sui 295 giocatori del listone con almeno 10 presenze: ' +
+      'bonus D ' + SOGLIA_BONUS.D.toFixed(2) + ' · C ' + SOGLIA_BONUS.C.toFixed(2) + ' · A ' + SOGLIA_BONUS.A.toFixed(2) + ' — ' +
+      'media voto P ' + SOGLIA_VOTO.P.toFixed(2) + ' · D ' + SOGLIA_VOTO.D.toFixed(2) + ' · C ' + SOGLIA_VOTO.C.toFixed(2) + ' · A ' + SOGLIA_VOTO.A.toFixed(2) + '. ' +
+      'Una soglia unica per tutti non distinguerebbe niente: la mediana di bonus di un attaccante è 0,67, quella di un difensore 0,12. ' +
+      'Il bonus è pesato con la tabella di questa lega (gol ×' + w.gol + ', assist ×' + w.assist + ').</p></div></details>';
+  }
+
+  // ---------------- Consigliati di giornata ----------------
+  // Non tocca il calcolo della formazione: e' un consiglio da leggere. Mette
+  // insieme i tre segnali che stanno in posti diversi del tool — forma
+  // personale, andamento del club, avversario di giornata — e li dice in una
+  // riga sola, cosi' non vanno incrociati a mente ogni domenica.
+  function renderConsigliati() {
+    var host = document.getElementById("consigliatiHost");
+    if (!host) return;
+    var righe = [];
+    state.players.forEach(function (p) {
+      if (!p.name || p.status === "assente" || fuoriLista(p.name)) return;
+      var f = formaGiocatore(p.name);
+      var a = p.team ? andamentoClub(p.team) : null;
+      var punti = 0, motivi = [];
+      if (f && f.oltre) {
+        if (f.scarto > 0) { punti += 2; motivi.push("in forma (+" + f.scarto.toFixed(1) + " sopra le attese in " + f.n + (f.n === 1 ? " gara" : " gare") + ")"); }
+        else { punti -= 2; motivi.push("sotto le attese (" + f.scarto.toFixed(1) + " in " + f.n + (f.n === 1 ? " gara" : " gare") + ")"); }
+      }
+      if (a && a.z != null) {
+        if (a.z >= 2) { punti += 1; motivi.push("il suo club rende sopra le attese"); }
+        else if (a.z <= -2) { punti -= 1; motivi.push("il suo club rende sotto le attese"); }
+      }
+      if (a && a.cls && a.cls.giocate) {
+        var pm = Number(a.cls.punti) / Number(a.cls.giocate);
+        if (pm >= 2.5) motivi.push("squadra a punteggio pieno");
+        else if (pm === 0) { punti -= 1; motivi.push("squadra ancora a zero punti"); }
+      }
+      var d = diffByKey(p.difficolta);
+      if (p.avversario) {
+        if (p.difficolta === "facile") { punti += 1; motivi.push("avversario " + d.label.toLowerCase()); }
+        else if (p.difficolta === "difficile") { punti -= 1; motivi.push("avversario " + d.label.toLowerCase()); }
+      }
+      if (p.status === "ballottaggio" || p.status === "ballottaggio_sfav") { punti -= 1; motivi.push("ballottaggio"); }
+      righe.push({ p: p, punti: punti, motivi: motivi, f: f, a: a });
+    });
+    if (!righe.length) { host.innerHTML = ""; return; }
+    righe.sort(function (x, y) { return y.punti - x.punti; });
+    var su = righe.filter(function (r) { return r.punti >= 2; });
+    var giu = righe.filter(function (r) { return r.punti <= -2; });
+    if (!su.length && !giu.length) {
+      host.innerHTML = '<details class="section"><summary><span>Consigliati di giornata ' +
+        '<span class="section-hint">forma, andamento del club e avversario, in una riga sola</span></span></summary>' +
+        '<div class="section-body"><p class="prof-nota">Nessun segnale abbastanza forte da segnalare: con poche giornate ' +
+        'e' + "'" + ' quello che ci si aspetta. Le soglie scendono man mano che arrivano i voti.</p></div></details>';
+      return;
+    }
+    function riga(r) {
+      var f = r.f, a = r.a;
+      return '<li><span class="prof-ruolo" data-ruolo="' + r.p.role + '">' + r.p.role + '</span>' +
+        '<span class="prof-nome">' + escapeHtml(r.p.name) + '</span>' +
+        '<span class="cons-team">' + escapeHtml(r.p.team || "") + '</span>' +
+        '<span class="cons-motivi">' + escapeHtml(r.motivi.join(" · ")) + '</span></li>';
+    }
+    host.innerHTML = '<details class="section" open><summary><span>Consigliati di giornata ' +
+      '<span class="section-hint">forma, andamento del club e avversario, in una riga sola</span></span></summary>' +
+      '<div class="section-body">' +
+      (su.length ? '<h4 class="cons-tit" data-tone="good">Segnali a favore <span class="prof-n">' + su.length + '</span></h4><ul class="prof-lista">' + su.map(riga).join("") + '</ul>' : "") +
+      (giu.length ? '<h4 class="cons-tit" data-tone="danger">Segnali contro <span class="prof-n">' + giu.length + '</span></h4><ul class="prof-lista">' + giu.map(riga).join("") + '</ul>' : "") +
+      '<p class="prof-nota">La <b>forma</b> conta solo quando lo scarto supera il rumore del ruolo (2 errori standard: con 2 gare servono ' +
+      '1,8 per un portiere, 1,3 per un difensore, 1,8 per un centrocampista, 2,5 per un attaccante). ' +
+      'L' + "'" + '<b>andamento del club</b> aggrega tutti i suoi giocatori: su ~30 voti l' + "'" + 'errore si divide per 5,5, ed e' + "'" + ' per questo che dice qualcosa gia' + "'" + ' adesso mentre il dato personale no. ' +
+      'Questo riquadro <b>non cambia il calcolo della formazione</b>: e' + "'" + ' un parere, l' + "'" + 'undici lo decidi tu.</p></div></details>';
+  }
+
   function renderSections() {
     var host = document.getElementById("sections");
+    renderProfiloRosa();
     host.innerHTML = "";
     aggiornaContatoreRosa();
     ROLES.forEach(function (role) {
@@ -4708,6 +5044,7 @@ async function refreshLivePlayerNews() {
           '<button type="button" class="pupillo-btn' + (p.pupillo ? " active" : "") + '" data-field="pupillo" title="Pupillo/preferito dall\'asta: piccola priorità realistica nel calcolo, non un override">' + starSvg(!!p.pupillo) + '</button>' +
           '<button type="button" class="rigorista-btn' + (p.rigorista ? " active" : "") + '" data-field="rigorista" title="Rigorista: tira i calci di rigore della sua squadra, più probabilità di bonus gol">' + ballSvg(!!p.rigorista) + '</button>' +
           '<button type="button" class="piazzati-btn' + (p.piazzati ? " active" : "") + '" data-field="piazzati" title="Specialista piazzati: punizioni/corner, più probabilità di bonus gol o assist">' + curveSvg() + '</button>' +
+          badgeProfilo(p) +
         '</div>' +
         (fuoriLista(p.name)
           ? '<div class="name-fl" title="Il listone ufficiale lo dà fuori lista Serie A: non prenderà voto e il calcolo lo esclude. Puoi sostituirlo solo all\'asta di riparazione.">FUORI LISTA · non prende voto</div>'
@@ -5121,7 +5458,7 @@ async function refreshLivePlayerNews() {
     result.matched.forEach(function (m) {
       if (m.nome) VOTI[gk][m.nome] = [m.voto, m.fanta != null ? m.fanta : null];
     });
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
 
     if (feedback) {
       var msg = result.matched.length + (result.matched.length === 1 ? " voto letto" : " voti letti") +
@@ -6100,7 +6437,7 @@ async function refreshLivePlayerNews() {
     if (!LEGA_FORMAZIONI[lid][g]) LEGA_FORMAZIONI[lid][g] = {};
     if (nomi && nomi.length) LEGA_FORMAZIONI[lid][g][squadra] = { nomi: nomi.slice(), ufficiale: !!ufficiale };
     else delete LEGA_FORMAZIONI[lid][g][squadra];
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
   }
 
   async function salvaFormAvv(squadra, gn) {
@@ -6885,7 +7222,7 @@ async function refreshLivePlayerNews() {
     // Il riquadro del risultato calcola le posizioni sul campetto da larghezze
     // reali: se e stato disegnato mentre era nascosto, quelle larghezze erano
     // zero. Ridisegno quando torna visibile.
-    if (nome === "schiera") ricalcolaSeVisibile();
+    if (nome === "schiera") { renderConsigliati(); ricalcolaSeVisibile(); }
     if (nome === "home") renderHome();
   }
 
@@ -6935,7 +7272,7 @@ async function refreshLivePlayerNews() {
     if (legaSel) legaSel.addEventListener("change", function (e) {
       state.meta.legaId = e.target.value;
       applicaLega(legaAttivaId());
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
       scheduleSave();
       renderSquadraSelect();
       renderLegaSelect();
@@ -6976,7 +7313,7 @@ async function refreshLivePlayerNews() {
 
     document.getElementById("giornataInput").addEventListener("input", function (e) {
       state.meta.giornata = e.target.value;
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
       renderLegaCard(); renderFormAvvCard();
       renderRisultatiCard();
       renderHome();
@@ -7024,13 +7361,13 @@ async function refreshLivePlayerNews() {
     });
     document.getElementById("modificatoreCentrocampoToggle").addEventListener("change", function (e) {
       state.meta.modificatoreCentrocampo = e.target.checked;
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
       scheduleSave();
       renderResult();
     });
     document.getElementById("strategiaSelect").addEventListener("change", function (e) {
       state.meta.strategia = e.target.value;
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
       updateAutoOptionLabel();
       scheduleSave();
       ricalcolaSeVisibile();
