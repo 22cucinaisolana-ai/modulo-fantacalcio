@@ -2535,6 +2535,7 @@
         <li><b>Avversario</b>: quanto un avversario più facile o più difficile del solito sposta il rendimento rispetto alla sua media stagionale, che è già una media su avversari di ogni livello (±0,15, prima del moltiplicatore di Strategia). La difficoltà è calcolata dal calendario in base alla forza delle squadre coinvolte.</li>
         <li><b>Casa/trasferta</b>: ±0,10</li>
         <li><b>Clean sheet</b>: il portiere che non subisce gol prende <b>+1 di imbattibilità</b> sul fantavoto — verificato sui tabellini (Svilar 6→7 e Caprile 6→7 a porta inviolata, Maignan 6→5 con un gol subito). <b>Correzione del 05/09/2026</b>: qui prima c'era scritto che la fantamedia del listone contiene già le porte inviolate storiche. Non è vero per i portieri, e il tool li sottostimava di 0,3-0,45 ogni giornata. La fantamedia del listone è <i>media voto meno gol subiti</i>, e basta: lo si vede sui numeri (Svilar 6,26 di media, 5,34 di fantamedia, 0,82 gol subiti a partita — lo scarto è esattamente i gol subiti). Ora il bonus viene aggiunto stimandolo dai gol subiti per partita, e <b>Carnesecchi vale 5,58 invece di 5,19</b>. Per i difensori il ragionamento originale resta valido: la loro fantamedia le porte inviolate ce le ha, quindi si aggiunge solo la differenza rispetto a un avversario medio (+0,15 se "facile", 0 se "media", −0,15 se "difficile").</li>
+        <li><b>Giocatori da bonus e da voto</b> (06/09/2026): fino a oggi l'oscillazione attesa dipendeva solo dal ruolo, quindi Davis K. e Dybala erano <i>lo stesso giocatore</i> agli occhi del modello. Misurato sui voti veri, non lo sono affatto: un <b>attaccante da bonus oscilla il doppio</b> di uno da voto (SD 3,13 contro 1,56) e fa una giornata da +2 o più nel <b>28% dei casi contro il 13%</b> — con una media quasi identica. È varianza pura, non valore in più. A centrocampo la stessa cosa (1,76 contro 1,04). <b>In difesa la differenza non esiste</b> (1,14 contro 1,13): lì il flag "da bonus" non è una leva, e cercarla è tempo perso.<br><br>Conseguenza: <b>non esiste un mix giusto in assoluto</b>. Contro un avversario più forte conviene caricare di giocatori da bonus, contro uno più debole conviene toglierli. Ora che i due profili non sembrano più identici, la scelta la fa il tool da solo con la strategia "Batti l'avversario".</li>
         <li><b>Forza dell'avversario</b> (06/09/2026): il voto atteso si sposta in base a chi si affronta, e ora la misura è tarata <b>reparto per reparto</b> sui voti veri invece che a occhio. Prima il tool attutiva l'effetto su portiere e difensori e lo applicava pieno agli attaccanti: i dati dicono il contrario, perché i gol subiti cadono addosso a portiere e difesa mentre il fantavoto di un attaccante dipende soprattutto dal fatto che segni. Fra fascia difficile e facile: <b>portiere 0,60</b> (era 0,15), <b>difensore 0,36</b> (era 0,15), <b>centrocampista 0,24</b> (era 0,30), <b>attaccante 0,12</b> (era 0,30 — e sugli attaccanti l'effetto non è statisticamente misurabile: quel numero è prudenza, non misura).<br><br>Il <i>tier</i> del listone è un pronostico di luglio e resta fermo. Quello che si muove è la <b>forza corrente</b>: un tier continuo fra 1 e 5 che parte dal pronostico e scivola verso la classifica vera man mano che si gioca (a 2 giornate luglio pesa tre quarti, a 12 comanda il campo). Non serve riscrivere il tier a mano ogni settimana — anzi non va fatto, perché il campo verrebbe contato due volte. Il campo <b>Difficoltà</b> resta un comando manuale e vince sempre.</li>
         <li><b>Risultati di giornata</b> (06/09/2026): nella scheda Serie A c'è un riquadro dove incollare i risultati, una partita per riga, in qualunque forma (<i>Genoa-Como 1-2</i>, <i>Genoa 1-2 Como</i>, <i>Genoa 1 Como 2</i>, anche con le sigle). Da lì punti, gol fatti e subiti si ricalcolano da soli, e con loro la forza degli avversari. Dieci righe a settimana al posto di venti righe di classifica ricopiate: e la classifica ricalcolata non può essere incoerente con i risultati, perché è fatta di quelli. Le righe non riconosciute vengono elencate invece di essere indovinate — una squadra sbagliata falserebbe la classifica e da lì il voto atteso di tutti.</li>
         <li><b>Panchina e cambi</b> (05/09/2026): sotto la formazione c'è <b>Panchina consigliata</b>, che non è la lista dei migliori rimasti fuori ma <b>l'ordine in cui metterli in distinta</b>. Sono due cose diverse: il secondo portiere può essere il giocatore più forte fuori dagli undici e non entrare quasi mai, mentre il terzo attaccante entra spesso perché davanti i ballottaggi sono tanti. Ogni riga vale <i>quanto è probabile che serva</i> per <i>quanto rende chi entra</i>, e la probabilità che servano due cambi nello stesso reparto si calcola sul serio (distribuzione di Poisson-binomiale sui titolari di quel reparto): con quattro difensori al 95% c'è il 18,5% che ne salti uno e l'1,4% che ne saltino due, ed è per questo che il secondo cambio di un reparto vale poco.<br><br>Da qui viene anche una <b>correzione al totale del modulo</b>. Prima il calcolo assumeva che ogni titolare senza voto fosse rimpiazzato dal migliore della panchina, sempre lo stesso, quante volte serviva — cosa che nel fantacalcio non succede: un sostituto entra una volta sola. Quanto pesa dipende dalla situazione, ed è giusto dirlo: con undici titolari sicuri la correzione è di qualche centesimo, cioè niente; con due ballottaggi nello stesso reparto e <i>una sola</i> riserva dietro arriva a <b>−1,4 fantapunti</b>. Serve esattamente dove serve: a smettere di sopravvalutare i reparti scoperti.</li>
@@ -4086,6 +4087,48 @@ async function refreshLivePlayerNews() {
   // difensori e centrocampisti piu' regolari di quanto siano, e sottostimava
   // la varianza dei moduli che ne schierano di piu'.
   var SD_FANTAVOTO_RUOLO = { P: 1.30, D: 0.92, C: 1.28, A: 1.75 };
+  // Un giocatore da bonus e uno da voto NON oscillano uguale (06/09/2026).
+  // Finche' la SD dipendeva solo dal ruolo, il modello non poteva vedere la
+  // differenza fra Davis K. e Dybala: e' il motivo per cui la domanda "quanti
+  // giocatori da bonus devo schierare" non aveva risposta dentro il tool.
+  // Misurato sui voti veri, dividendo per profilo del ruolo (soglia = 75°
+  // percentile del bonus atteso di quel ruolo):
+  //
+  //   ruolo profilo    n     scarto   SD     giornate da +2 o piu'
+  //   A     da bonus   25    +0,27    3,13     28%
+  //   A     da voto    64    -0,34    1,56     13%
+  //   C     da bonus   59    -0,16    1,76     15%
+  //   C     da voto   141    -0,08    1,04      6%
+  //   D     da bonus   59    +0,07    1,14      5%
+  //   D     da voto    93    +0,04    1,13      5%
+  //
+  // Un attaccante da bonus oscilla il DOPPIO di uno da voto e fa il colpo piu'
+  // del doppio delle volte, mentre la media e' quasi la stessa: e' varianza
+  // pura, non valore in piu'. Stessa cosa a centrocampo. In DIFESA la
+  // differenza non esiste (1,14 contro 1,13): il flag "da bonus" su un
+  // difensore non e' una leva, e chi la cerca li' perde tempo.
+  // Conseguenza pratica: non esiste un mix giusto in assoluto. Se parti sotto
+  // conviene la varianza, se parti sopra conviene toglierla — e il tool questa
+  // scelta la sa gia' fare da solo con la strategia "Batti l'avversario", ora
+  // che i due profili non gli sembrano piu' identici.
+  var SD_FANTAVOTO_PROFILO = {
+    A: { bonus: 3.13, voto: 1.56 },
+    C: { bonus: 1.76, voto: 1.04 },
+    D: { bonus: 1.14, voto: 1.13 }
+  };
+  // SD del singolo giocatore: per profilo dove il profilo si conosce e conta,
+  // per ruolo altrimenti. Chi non ha dati di bonus (estero, Serie B) tiene la
+  // SD del ruolo: non e' "da voto", e' "non lo so".
+  function sdGiocatore(p) {
+    var base = SD_FANTAVOTO_RUOLO[p && p.role] || 1.0;
+    if (!p || !p.name) return base;
+    var tab = SD_FANTAVOTO_PROFILO[p.role];
+    var soglia = SOGLIA_BONUS[p.role];
+    if (!tab || soglia == null) return base;
+    var b = bonusAtteso(p.name);
+    if (b == null) return base;
+    return b >= soglia ? tab.bonus : tab.voto;
+  }
 
   function varianzaFormazione(chosen) {
     var tot = 0;
@@ -4101,9 +4144,12 @@ async function refreshLivePlayerNews() {
       // Un solo sostituto per reparto: è il primo che entrerebbe. Se ne mancano
       // due nella stessa giornata la stima resta ottimista, ma è il caso raro.
       var sub = fuori.length ? fuori[0].raw * fuori[0].prob : 0;
-      var sd = SD_FANTAVOTO_RUOLO[r.key] || 1.0;
       picked.forEach(function (e) {
         if (!e || !e.s) return;
+        // La SD e' del giocatore, non del ruolo: un attaccante da bonus
+        // oscilla il doppio di uno da voto, e schierarne tre o zero cambia
+        // completamente la forma della giornata.
+        var sd = sdGiocatore(e.p);
         var p = e.s.prob, d = e.s.raw - sub;
         tot += sd * sd + p * (1 - p) * d * d;
       });
