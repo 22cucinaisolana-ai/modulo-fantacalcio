@@ -1939,15 +1939,69 @@
   .prof-lista li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
   .prof-nome { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .prof-num { flex: none; font-family: var(--font-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--text-muted); min-width: 34px; text-align: right; }
+  .prof-num[data-tone="good"] { color: var(--good); font-weight: 700; }
+  .prof-num[data-tone="danger"] { color: var(--danger); font-weight: 700; }
   .prof-ruolo { flex: none; font-family: var(--font-mono); font-size: 10px; font-weight: 700; width: 15px; text-align: center; border-radius: 3px; }
   .prof-ruolo[data-ruolo="P"] { color: var(--ruolo-p); }
   .prof-ruolo[data-ruolo="D"] { color: var(--ruolo-d); }
   .prof-ruolo[data-ruolo="C"] { color: var(--ruolo-c); }
   .prof-ruolo[data-ruolo="A"] { color: var(--ruolo-a); }
+  /* Scheda Listone */
+  .lst-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .lst-barra .search-input { flex: 1 1 220px; min-width: 0; }
+  .lst-filtri { display: flex; gap: 4px; flex-wrap: wrap; }
+  .lst-somma { font-size: 11.5px; color: var(--text-muted); padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .lst-head, .lst-lista li { display: grid; grid-template-columns: 20px 16px 1fr 46px 126px 26px 34px 44px 44px; gap: 8px; align-items: center; padding: 6px 2px; }
+  .lst-head { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); border-bottom: 1px solid var(--line); padding: 0 2px 4px; }
+  /* Le intestazioni sono pulsanti: devono sembrare intestazioni finche' non ci
+     passi sopra, e dire chiaramente quale colonna sta ordinando. */
+  .lst-th { appearance: none; background: none; border: 0; padding: 4px 0; margin: 0; cursor: pointer;
+    font: inherit; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: inherit;
+    display: flex; align-items: center; gap: 3px; min-width: 0; }
+  .lst-th.lst-num, .lst-th.lst-forma { justify-content: flex-end; }
+  .lst-th:hover { color: var(--text); }
+  .lst-th:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  .lst-th.att { color: var(--accent); font-weight: 700; }
+  .lst-arr { font-size: 8px; line-height: 1; }
+  .lst-lista { list-style: none; margin: 0; padding: 0; }
+  .lst-lista li { border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .lst-lista li:last-child { border-bottom: 0; }
+  .lst-lista li.lst-fl { opacity: .55; }
+  .lst-ico { font-size: 12px; text-align: center; line-height: 1; }
+  .lst-ico[data-cls="libero"] { filter: grayscale(1); opacity: .8; }
+  .lst-nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+  .lst-team, .lst-owner { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lst-owner[data-cls="libero"] { color: var(--good); }
+  .lst-owner[data-cls="mio"] { color: var(--accent); font-weight: 700; }
+  .lst-num { font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-muted); text-align: right; }
+  .lst-forma { font-family: var(--font-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; text-align: right; }
+  .lst-forma[data-tone="good"] { color: var(--good); font-weight: 700; }
+  .lst-forma[data-tone="danger"] { color: var(--danger); font-weight: 700; }
+  .lst-forma[data-tone="muted"] { color: var(--text-muted); }
+  @media (max-width: 720px) {
+    .lst-head, .lst-lista li { grid-template-columns: 18px 14px 1fr 40px 26px 42px 42px; gap: 5px; font-size: 12px; }
+    /* Su telefono spariscono squadra fanta e quotazione: restano nome, ruolo,
+       squadra di Serie A, titolarita', fantamedia e resa. L'icona a sinistra
+       continua a dire se e' libero o preso, che e' l'informazione principale. */
+    .lst-head .lst-owner, .lst-lista li .lst-owner { display: none; }
+    .lst-head [data-col="quo"], .lst-lista li .lst-num:nth-of-type(2) { display: none; }
+  }
+
   /* Scheda Serie A */
-  .sa-head, .sa-riga > summary { display: grid; grid-template-columns: 1fr 34px 52px 52px 74px; gap: 8px; align-items: center; padding: 7px 4px; }
-  .sa-head { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); border-bottom: 1px solid var(--line); }
+  .sa-cls { list-style: none; margin: 0; padding: 0; counter-reset: none; }
+  .sa-cls li { display: grid; grid-template-columns: 24px 1fr 54px 34px; gap: 8px; align-items: center;
+    padding: 6px 4px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .sa-cls li:last-child { border-bottom: 0; }
+  .sa-pos { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-align: right; }
+  .sa-barra { position: relative; height: 6px; border-radius: 3px; background: var(--line); display: flex; }
+  .sa-barra i { display: block; height: 100%; border-radius: 3px; background: currentColor; }
+  .sa-barra i[data-tone="good"] { color: var(--good); }
+  .sa-barra i[data-tone="danger"] { color: var(--danger); }
+  .sa-barra i[data-tone="warn"] { color: var(--warn); }
+  .sa-barra i[data-tone="muted"] { color: var(--text-muted); opacity: .5; }
+  .sa-riga > summary { display: grid; grid-template-columns: 1fr 110px 46px; gap: 10px; align-items: center; padding: 7px 4px; }
   .sa-riga { border-bottom: 1px solid var(--line); }
+  .sa-riga:last-of-type { border-bottom: 0; }
   .sa-riga > summary { cursor: pointer; font-size: 13px; list-style: none; }
   .sa-riga > summary::-webkit-details-marker { display: none; }
   .sa-riga[open] > summary { font-weight: 600; }
@@ -1966,7 +2020,8 @@
   .sa-vuoto { color: var(--text-muted); font-size: 11.5px; }
   .sa-nota-riga { grid-column: 1 / -1; font-size: 11px; color: var(--text-muted); }
   @media (max-width: 560px) {
-    .sa-head, .sa-riga > summary { grid-template-columns: 1fr 28px 44px 46px 66px; gap: 5px; font-size: 12px; }
+    .sa-riga > summary { grid-template-columns: 1fr 68px 42px; gap: 6px; font-size: 12px; }
+    .sa-cls li { grid-template-columns: 20px 1fr 46px 28px; gap: 6px; font-size: 12px; }
     .sa-dett { grid-template-columns: 1fr; }
   }
   .cons-tit { margin: 4px 0 6px; font-size: 12px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: .04em; }
@@ -2375,6 +2430,7 @@
     <button class="tab-btn" type="button" role="tab" id="tabbtn-lega" data-tab="lega" aria-selected="false" aria-controls="tab-lega"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5.5H4.5V7a3 3 0 0 0 3 3M17 5.5h2.5V7a3 3 0 0 1-3 3"/><path d="M12 14v3.5M8.5 20h7"/></svg><span class="tab-lab">Lega</span></button>
     <button class="tab-btn" type="button" role="tab" id="tabbtn-dati" data-tab="dati" aria-selected="false" aria-controls="tab-dati"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><rect x="7.5" y="12" width="3.2" height="5"/><rect x="13.3" y="7.5" width="3.2" height="9.5"/></svg><span class="tab-lab">Dati</span></button>
     <button class="tab-btn" type="button" role="tab" id="tabbtn-seriea" data-tab="seriea" aria-selected="false" aria-controls="tab-seriea"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v5M12 15.5v5M3.5 12h5M15.5 12h5"/></svg><span class="tab-lab">Serie A</span></button>
+    <button class="tab-btn" type="button" role="tab" id="tabbtn-listone" data-tab="listone" aria-selected="false" aria-controls="tab-listone"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14v15H5z"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4"/></svg><span class="tab-lab">Listone</span></button>
     <button class="tab-btn" type="button" role="tab" id="tabbtn-guida" data-tab="guida" aria-selected="false" aria-controls="tab-guida"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.8 9.4a2.3 2.3 0 1 1 3 2.2v1.3"/><path d="M12 16.4h.01"/></svg><span class="tab-lab">Guida</span></button>
   </div>
 </nav>
@@ -2437,6 +2493,21 @@
       <p>Classifica vera e rendimento dei club rispetto alle attese. Serve a capire chi sta crescendo e chi sta crollando, prima che si veda nei singoli.</p>
     </div>
     <div id="serieaHost"></div>
+  </section>
+
+  <!-- SCHEDA: LISTONE — tutti i giocatori, con proprietario e rendimento -->
+  <section class="tab-panel" id="tab-listone" role="tabpanel" aria-labelledby="tabbtn-listone" hidden>
+    <div class="tab-intro">
+      <h2>Listone</h2>
+      <p>Tutti i giocatori del campionato: chi è già in una rosa della lega, chi è libero, e come sta rendendo rispetto alle attese.</p>
+    </div>
+    <div class="lst-barra">
+      <input type="text" id="lstCerca" class="search-input" placeholder="Cerca per nome o squadra…" autocomplete="off">
+      <div class="lst-filtri" id="lstRuoli"></div>
+      <label class="hide-assigned-toggle"><input type="checkbox" id="lstSoloLiberi"> solo svincolati</label>
+      <label class="hide-assigned-toggle"><input type="checkbox" id="lstSoloMiei"> solo i miei</label>
+    </div>
+    <div id="listoneHost"></div>
   </section>
 
   <section class="tab-panel" id="tab-guida" role="tabpanel" aria-labelledby="tabbtn-guida" hidden>
@@ -2974,7 +3045,7 @@
     if (L.miaSquadra && LEGA_SQUADRE[L.miaSquadra]) LEGA_MIA = L.miaSquadra;
     L.turni.forEach(function (t) { LEGA_TURNI.push(t); });
     Object.keys(L.risultati).forEach(function (g) { RISULTATI[g] = L.risultati[g]; });
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
     applicaFonte();
   }
 
@@ -3152,7 +3223,7 @@
     state.players = target.players;
     normalizzaStato();
     applicaLega(legaAttivaId());
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
     scheduleSave();
     return true;
   }
@@ -3174,7 +3245,7 @@
     state.players = [];
     normalizzaStato();
     applicaLega(legaAttivaId());
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
     scheduleSave();
     return id;
   }
@@ -5081,6 +5152,10 @@ async function refreshLivePlayerNews() {
     return { righe: out, ultima: ultima, penultima: penultima };
   }
 
+  // Quattro riquadri invece di una tabella sola: i tre segnali hanno
+  // affidabilita' diversa e mescolarli in cinque colonne affiancate li faceva
+  // sembrare equivalenti. Separati, si legge prima il dato certo (classifica),
+  // poi quello solido (resa), poi quello fragile (trend), dichiarato come tale.
   function renderSerieA() {
     var host = document.getElementById("serieaHost");
     if (!host) return;
@@ -5089,46 +5164,268 @@ async function refreshLivePlayerNews() {
       host.innerHTML = '<div class="card"><p class="prof-nota">Non ci sono ancora voti o classifica da cui ricavare qualcosa.</p></div>';
       return;
     }
-    // Ordine: la classifica vera se c'e', altrimenti il rendimento.
-    d.righe.sort(function (a, b) {
-      var pa = a.cls ? Number(a.cls.punti) : -1, pb = b.cls ? Number(b.cls.punti) : -1;
-      if (pa !== pb) return pb - pa;
-      return (b.z || 0) - (a.z || 0);
+    var righe = d.righe;
+    var conCls = righe.filter(function (r) { return r.cls && r.cls.punti != null; });
+    var conZ = righe.filter(function (r) { return r.z != null; });
+    var conTrend = righe.filter(function (r) { return r.trend != null; });
+
+    // --- 1. classifica: il dato certo ---
+    var cls = conCls.slice().sort(function (a, b) {
+      var p = Number(b.cls.punti) - Number(a.cls.punti);
+      if (p) return p;
+      var da = (a.cls.gf != null && a.cls.gs != null) ? a.cls.gf - a.cls.gs : -99;
+      var db = (b.cls.gf != null && b.cls.gs != null) ? b.cls.gf - b.cls.gs : -99;
+      return db - da;
     });
-    function frecciaTrend(t) {
-      if (t == null) return '<span class="sa-trend" data-tone="muted">—</span>';
-      var tone = t >= 0.9 ? "good" : t <= -0.9 ? "danger" : "muted";
-      var seg = t > 0 ? "▲" : t < 0 ? "▼" : "=";
-      return '<span class="sa-trend" data-tone="' + tone + '">' + seg + " " + (t > 0 ? "+" : "") + t.toFixed(2) + '</span>';
-    }
+    var boxCls = !cls.length ? "" :
+      '<details class="section" open><summary><span>Classifica <span class="section-hint">il dato certo: punti, gol fatti e subiti</span></span></summary>' +
+      '<div class="section-body"><ol class="sa-cls">' + cls.map(function (r, i) {
+        var c = r.cls;
+        return '<li><span class="sa-pos">' + (i + 1) + '</span><span class="sa-nome">' + escapeHtml(r.nome) + '</span>' +
+          '<span class="sa-gol">' + (c.gf != null ? c.gf + ":" + (c.gs != null ? c.gs : "?") : "") + '</span>' +
+          '<span class="sa-pt">' + c.punti + '</span></li>';
+      }).join("") + '</ol></div></details>';
+
+    // --- 2. resa: il segnale solido ---
+    var perZ = conZ.slice().sort(function (a, b) { return b.z - a.z; });
+    var maxZ = Math.max.apply(null, perZ.map(function (r) { return Math.abs(r.z); }).concat([1]));
     function mini(l) {
       return l.map(function (x) {
         return '<span class="sa-mini" data-tone="' + (x.d > 0 ? "good" : x.d < 0 ? "danger" : "muted") + '">' +
-          escapeHtml(x.nome) + ' ' + (x.d > 0 ? "+" : "") + x.d.toFixed(1) + '</span>';
+          escapeHtml(x.nome) + " " + (x.d > 0 ? "+" : "") + x.d.toFixed(1) + '</span>';
       }).join("");
     }
-    var righe = d.righe.map(function (r) {
-      var c = r.cls;
-      return '<details class="sa-riga"><summary>' +
-        '<span class="sa-nome">' + escapeHtml(r.nome) + '</span>' +
-        '<span class="sa-pt" title="Punti in classifica">' + (c && c.punti != null ? c.punti : "—") + '</span>' +
-        '<span class="sa-gol" title="Gol fatti e subiti">' + (c && c.gf != null ? c.gf + ":" + (c.gs != null ? c.gs : "?") : "") + '</span>' +
-        '<span class="sa-z" data-tone="' + toneDaZ(r.z) + '" title="Scarto medio dei suoi giocatori dalle attese, in errori standard">' +
-          (r.z == null ? "—" : (r.z > 0 ? "+" : "") + r.z.toFixed(1)) + '</span>' +
-        frecciaTrend(r.trend) + '</summary>' +
-        '<div class="sa-dett">' +
-          '<div class="sa-col"><h5>Meglio delle attese</h5>' + (r.top.length ? mini(r.top) : '<span class="sa-vuoto">—</span>') + '</div>' +
-          '<div class="sa-col"><h5>Peggio delle attese</h5>' + (r.flop.length ? mini(r.flop) : '<span class="sa-vuoto">—</span>') + '</div>' +
-          '<div class="sa-nota-riga">Scarto medio ' + (r.media == null ? "—" : (r.media > 0 ? "+" : "") + r.media.toFixed(2)) +
-          ' su ' + r.n + ' voti.</div>' +
-        '</div></details>';
+    var boxResa = !perZ.length ? "" :
+      '<details class="section" open><summary><span>Resa dei club <span class="section-hint">quanto rendono rispetto alle attese &mdash; apri una riga per i singoli</span></span></summary>' +
+      '<div class="section-body">' + perZ.map(function (r) {
+        var w = Math.round(Math.abs(r.z) / maxZ * 50);
+        return '<details class="sa-riga"><summary>' +
+          '<span class="sa-nome">' + escapeHtml(r.nome) + '</span>' +
+          '<span class="sa-barra"><i data-tone="' + toneDaZ(r.z) + '" style="width:' + w + '%;' + (r.z < 0 ? "margin-left:auto" : "") + '"></i></span>' +
+          '<span class="sa-z" data-tone="' + toneDaZ(r.z) + '">' + (r.z > 0 ? "+" : "") + r.z.toFixed(1) + '</span>' +
+          '</summary><div class="sa-dett">' +
+            '<div class="sa-col"><h5>Meglio delle attese</h5>' + (r.top.length ? mini(r.top) : '<span class="sa-vuoto">&mdash;</span>') + '</div>' +
+            '<div class="sa-col"><h5>Peggio delle attese</h5>' + (r.flop.length ? mini(r.flop) : '<span class="sa-vuoto">&mdash;</span>') + '</div>' +
+            '<div class="sa-nota-riga">Scarto medio ' + (r.media > 0 ? "+" : "") + r.media.toFixed(2) + ' su ' + r.n + ' voti.</div>' +
+          '</div></details>';
+      }).join("") +
+      '<p class="prof-nota"><b>Resa</b> e\' lo scarto medio dei giocatori di quel club dalle attese del listone, in errori standard: sopra <b>+2</b> il club rende davvero piu\' del previsto, sotto <b>&minus;2</b> davvero meno. Aggrega ~30 voti, quindi dice gia\' qualcosa dopo poche giornate &mdash; al contrario del dato di un singolo giocatore.<br><br>' +
+      '<b>Non e\' corretta per la difficolta\' degli avversari</b>: chi ha avuto un calendario facile sembra in forma. Con poche giornate la correzione sarebbe piu\' rumorosa del dato che corregge, quindi per ora va incrociata a mente con chi hanno affrontato.</p></div></details>';
+
+    // --- 3. trend: il segnale fragile, dichiarato ---
+    var su = conTrend.filter(function (r) { return r.trend > 0; }).sort(function (a, b) { return b.trend - a.trend; }).slice(0, 6);
+    var giu = conTrend.filter(function (r) { return r.trend < 0; }).sort(function (a, b) { return a.trend - b.trend; }).slice(0, 6);
+    function lista(l, seg) {
+      return '<ul class="prof-lista">' + l.map(function (r) {
+        return '<li><span class="prof-nome">' + escapeHtml(r.nome) + '</span>' +
+          '<span class="sa-trend" data-tone="' + (Math.abs(r.trend) >= 0.9 ? (r.trend > 0 ? "good" : "danger") : "muted") + '">' +
+          seg + " " + (r.trend > 0 ? "+" : "") + r.trend.toFixed(2) + '</span></li>';
+      }).join("") + '</ul>';
+    }
+    var boxTrend = !conTrend.length ? "" :
+      '<details class="section"><summary><span>Chi sale e chi scende <span class="section-hint">giornata ' + d.ultima + ' contro la ' + d.penultima + ' &mdash; da leggere con prudenza</span></span></summary>' +
+      '<div class="section-body"><div class="prof-grid">' +
+        '<div class="prof-blocco"><h4 class="cons-tit" data-tone="good">In crescita</h4>' + (su.length ? lista(su, "&#9650;") : '<span class="sa-vuoto">&mdash;</span>') + '</div>' +
+        '<div class="prof-blocco"><h4 class="cons-tit" data-tone="danger">In caduta</h4>' + (giu.length ? lista(giu, "&#9660;") : '<span class="sa-vuoto">&mdash;</span>') + '</div>' +
+      '</div><p class="prof-nota">Con poche giornate questo confronto e\' dominato da <b>chi hanno affrontato</b>, non dalla forma: una squadra che ha appena giocato contro l\'ultima in classifica sale, e non vuol dire niente. Diventa affidabile verso la quinta o sesta giornata. Fino ad allora <b>fidati della Resa</b>.</p></div></details>';
+
+    // --- 4. i singoli, su tutta la Serie A ---
+    var tutti = [];
+    righe.forEach(function (r) {
+      r.top.concat(r.flop).forEach(function (x) {
+        if (x.n >= 2) tutti.push({ nome: x.nome, ruolo: x.ruolo, sq: r.nome, d: x.d, n: x.n });
+      });
+    });
+    var visti = {};
+    tutti = tutti.filter(function (x) { var k = x.nome; if (visti[k]) return false; visti[k] = 1; return true; });
+    var best = tutti.slice().sort(function (a, b) { return b.d - a.d; }).slice(0, 8);
+    var worst = tutti.slice().sort(function (a, b) { return a.d - b.d; }).slice(0, 8);
+    function listaG(l) {
+      return '<ul class="prof-lista">' + l.map(function (x) {
+        return '<li><span class="prof-ruolo" data-ruolo="' + x.ruolo + '">' + x.ruolo + '</span>' +
+          '<span class="prof-nome">' + escapeHtml(x.nome) + '</span>' +
+          '<span class="cons-team">' + escapeHtml(x.sq) + '</span>' +
+          '<span class="prof-num" data-tone="' + (x.d > 0 ? "good" : "danger") + '">' + (x.d > 0 ? "+" : "") + x.d.toFixed(2) + '</span></li>';
+      }).join("") + '</ul>';
+    }
+    var boxGioc = !tutti.length ? "" :
+      '<details class="section"><summary><span>I singoli di tutta la Serie A <span class="section-hint">chi rende piu\' e meno delle proprie attese</span></span></summary>' +
+      '<div class="section-body"><div class="prof-grid">' +
+        '<div class="prof-blocco"><h4 class="cons-tit" data-tone="good">Sopra le attese</h4>' + listaG(best) + '</div>' +
+        '<div class="prof-blocco"><h4 class="cons-tit" data-tone="danger">Sotto le attese</h4>' + listaG(worst) + '</div>' +
+      '</div><p class="prof-nota">Scarto medio per partita, solo per chi ha almeno due voti. Sul singolo giocatore due giornate sono quasi sempre rumore: serve uno scarto sopra 1,3 per un difensore e sopra 2,5 per un attaccante prima di poterlo chiamare rendimento. Questa lista dice <b>dove guardare</b>, non chi comprare.</p></div></details>';
+
+    host.innerHTML = boxCls + boxResa + boxTrend + boxGioc;
+  }
+
+  // ---------------- Scheda Listone ----------------
+  // Il listone completo con due informazioni che nel foglio non ci sono:
+  // di CHI e' ogni giocatore nella lega attiva (o se e' libero), e come sta
+  // rendendo rispetto alle proprie attese. Serve per gli svincoli e per sapere
+  // chi ha in mano l'avversario.
+  // Ordinamento dalle intestazioni: campo + direzione. Ogni colonna ha il suo
+  // verso naturale al primo clic — i numeri dal piu' alto, i nomi dalla A —
+  // perche' e' quello che si vuole quasi sempre; il secondo clic inverte.
+  var LST_STATO = { cerca: "", ruolo: "", soloLiberi: false, soloMiei: false, campo: "fmv", disc: true };
+  var LST_COLONNE = [
+    { k: "nome",  et: "Giocatore",  disc: false, cls: "lst-nome" },
+    { k: "team",  et: "Squadra",    disc: false, cls: "lst-team" },
+    { k: "owner", et: "Di chi &egrave;", disc: false, cls: "lst-owner" },
+    { k: "tit",   et: "Tit",        disc: true,  cls: "lst-num" },
+    { k: "quo",   et: "Quo",        disc: true,  cls: "lst-num" },
+    { k: "fmv",   et: "FMV",        disc: true,  cls: "lst-num" },
+    { k: "resa",  et: "Resa",       disc: true,  cls: "lst-forma" }
+  ];
+  var PROPRIETARIO_CACHE = null;
+
+  // Mappa nome -> squadra di fantacalcio che lo possiede, nella lega attiva.
+  // Chi non c'e' e' svincolato. Si ricostruisce quando cambia lega.
+  function proprietari() {
+    if (PROPRIETARIO_CACHE) return PROPRIETARIO_CACHE;
+    PROPRIETARIO_CACHE = {};
+    Object.keys(LEGA_SQUADRE).forEach(function (sq) {
+      (LEGA_SQUADRE[sq].rosa || []).forEach(function (g) {
+        PROPRIETARIO_CACHE[normalizeNameKey(g.n)] = sq;
+      });
+    });
+    return PROPRIETARIO_CACHE;
+  }
+  function invalidaProprietari() { PROPRIETARIO_CACHE = null; }
+
+  function renderListone() {
+    var host = document.getElementById("listoneHost");
+    if (!host) return;
+    var prop = proprietari();
+    var mia = LEGA_MIA || "";
+    var q = LST_STATO.cerca.trim().toLowerCase();
+    var righe = [];
+    for (var i = 0; i < LISTONE.length; i++) {
+      var r = LISTONE[i];
+      var nome = r[0], ruolo = r[1], sq = r[2];
+      if (LST_STATO.ruolo && ruolo !== LST_STATO.ruolo) continue;
+      var owner = prop[normalizeNameKey(nome)] || null;
+      if (LST_STATO.soloLiberi && owner) continue;
+      if (LST_STATO.soloMiei && owner !== mia) continue;
+      if (q && nome.toLowerCase().indexOf(q) === -1 && String(sq || "").toLowerCase().indexOf(q) === -1) continue;
+      var f = formaGiocatore(nome);
+      righe.push({ nome: nome, ruolo: ruolo, sq: sq, fmv: r[3], mv: r[4], tit: r[5],
+                   flag: r[6], quo: r[7], fl: r[8], owner: owner, f: f,
+                   prof: profiloGiocatore({ name: nome, role: ruolo }) });
+    }
+    var campo = LST_STATO.campo, disc = LST_STATO.disc;
+    function chiave(x) {
+      switch (campo) {
+        case "nome":  return x.nome || "";
+        case "team":  return x.sq || "";
+        // Gli svincolati vanno tutti insieme a un capo della lista, non sparsi
+        // in mezzo: e' l'ordinamento che serve davvero quando si cerca chi
+        // prendere. Stringa vuota li tiene uniti e prima in ordine crescente.
+        case "owner": return x.owner || "";
+        case "tit":   return x.tit != null ? Number(x.tit) : -1;
+        case "quo":   return x.quo != null ? Number(x.quo) : -1;
+        case "resa":  return x.f ? x.f.scarto : null;
+        default:      return x.fmv != null ? Number(x.fmv) : -99;
+      }
+    }
+    righe.sort(function (a, b) {
+      var ka = chiave(a), kb = chiave(b);
+      // Chi non ha il dato sta sempre in fondo, in tutte e due le direzioni:
+      // altrimenti invertire l'ordine riempirebbe la prima schermata di trattini.
+      if (ka == null && kb == null) return a.nome.localeCompare(b.nome);
+      if (ka == null) return 1;
+      if (kb == null) return -1;
+      var d = (typeof ka === "string") ? ka.localeCompare(kb) : (ka - kb);
+      if (!d) return a.nome.localeCompare(b.nome);
+      return disc ? -d : d;
+    });
+    var totale = righe.length;
+    var MAX = 80;
+    var mostrate = righe.slice(0, MAX);
+    var liberi = 0;
+    for (var k = 0; k < LISTONE.length; k++) if (!prop[normalizeNameKey(LISTONE[k][0])]) liberi++;
+
+    var corpo = mostrate.map(function (x) {
+      var e = x.prof && PROFILO_ETICHETTA[x.prof] ? PROFILO_ETICHETTA[x.prof] : null;
+      var badge = (x.prof === "bv" || x.prof === "bon" || x.prof === "vot")
+        ? '<span class="pl-flag" data-flag="' + x.prof + '" title="' + escapeAttr(e[1]) + '">' + e[0] + '</span>' : "";
+      var spec = ((x.flag & 1) ? '<span class="pl-flag" data-flag="r" title="Rigorista">R</span>' : "") +
+                 ((x.flag & 2) ? '<span class="pl-flag" data-flag="p" title="Punizioni e corner">P</span>' : "");
+      // L'icona del proprietario e' la prima cosa che si guarda: un lucchetto
+      // aperto per chi e' libero, chiuso per chi e' gia' di qualcuno, con il
+      // nome della squadra accanto. La mia squadra si distingue dagli altri.
+      var ico, cls, tit;
+      if (x.owner === mia && mia) { ico = "&#9679;"; cls = "mio"; tit = "In rosa tua"; }
+      else if (x.owner) { ico = "&#128274;"; cls = "preso"; tit = "Gia' in rosa: " + x.owner; }
+      else { ico = "&#128275;"; cls = "libero"; tit = "Svincolato: nessuno in questa lega ce l'ha"; }
+      var forma = "";
+      if (x.f) {
+        var tone = x.f.oltre ? (x.f.scarto > 0 ? "good" : "danger") : "muted";
+        forma = '<span class="lst-forma" data-tone="' + tone + '" title="Scarto medio dalle attese su ' + x.f.n +
+          (x.f.n === 1 ? " gara" : " gare") + (x.f.oltre ? " &mdash; oltre la soglia di rumore del ruolo" : " &mdash; dentro il rumore, non significativo") + '">' +
+          (x.f.scarto > 0 ? "+" : "") + x.f.scarto.toFixed(1) + '</span>';
+      } else {
+        forma = '<span class="lst-forma" data-tone="muted" title="Nessun voto ancora">&mdash;</span>';
+      }
+      return '<li' + (x.fl ? ' class="lst-fl"' : "") + '>' +
+        '<span class="lst-ico" data-cls="' + cls + '" title="' + escapeAttr(tit) + '">' + ico + '</span>' +
+        '<span class="prof-ruolo" data-ruolo="' + x.ruolo + '">' + x.ruolo + '</span>' +
+        '<span class="lst-nome">' + escapeHtml(x.nome) + (x.fl ? ' <span class="pl-flag" data-flag="fl" title="Fuori lista Serie A">FL</span>' : "") + badge + spec + '</span>' +
+        '<span class="lst-team">' + escapeHtml(x.sq || "") + '</span>' +
+        '<span class="lst-owner" data-cls="' + cls + '">' + escapeHtml(x.owner || "svincolato") + '</span>' +
+        '<span class="lst-num" title="Titolarita\' 1-5">' + (x.tit || "") + '</span>' +
+        '<span class="lst-num" title="Quotazione ufficiale">' + (x.quo != null ? x.quo : "&mdash;") + '</span>' +
+        '<span class="lst-num" title="Fantamedia attesa">' + (x.fmv != null ? x.fmv.toFixed(2) : "&mdash;") + '</span>' +
+        forma + '</li>';
     }).join("");
+
     host.innerHTML = '<div class="card">' +
-      '<div class="sa-head"><span class="sa-nome">Squadra</span><span class="sa-pt">Pt</span><span class="sa-gol">G:S</span>' +
-      '<span class="sa-z">Resa</span><span class="sa-trend">Trend</span></div>' + righe +
-      '<p class="prof-nota"><b>Resa</b> è quanto i giocatori di quel club rendono rispetto alle attese del listone, in errori standard: sopra +2 il club sta rendendo davvero più del previsto, sotto −2 davvero meno. Aggrega ~30 voti, quindi dice già qualcosa dopo poche giornate — al contrario del dato del singolo giocatore.<br><br>' +
-      '<b>Trend</b> confronta l\'ultima giornata con la precedente. Con poche giornate è dominato da <b>chi hanno affrontato</b>, non dalla forma: una squadra che ha appena giocato contro l\'ultima in classifica sale, e non vuol dire niente. Leggilo come indizio, e fidati della colonna Resa.<br><br>' +
-      'Attenzione anche alla Resa: chi ha avuto un calendario facile sembra in forma. Va incrociata con gli avversari affrontati, che trovi nella scheda Rosa giocatore per giocatore.</p></div>';
+      '<div class="lst-somma">' + totale + ' giocatori' + (totale > MAX ? ' &mdash; ne vedi i primi ' + MAX + ', affina la ricerca' : "") +
+      ' &middot; <b>' + liberi + '</b> svincolati in questa lega su ' + LISTONE.length + '</div>' +
+      '<div class="lst-head"><span class="lst-ico"></span><span class="prof-ruolo"></span>' +
+      LST_COLONNE.map(function (c) {
+        var att = campo === c.k;
+        return '<button type="button" class="' + c.cls + ' lst-th' + (att ? " att" : "") + '" data-col="' + c.k + '"' +
+          ' title="Ordina per ' + c.et.replace(/&egrave;/g, "e") + (att ? (disc ? " — ora dal pi&ugrave; alto" : " — ora dal pi&ugrave; basso") : "") + '">' +
+          c.et + '<span class="lst-arr">' + (att ? (disc ? "\u25BC" : "\u25B2") : "") + '</span></button>';
+      }).join("") + '</div>' +
+      '<ul class="lst-lista">' + (corpo || '<li class="sa-vuoto">Nessun giocatore con questi filtri.</li>') + '</ul>' +
+      '<p class="prof-nota"><b>&#128275; svincolato</b> &middot; <b>&#128274; gi&agrave; in rosa</b> di un avversario &middot; <b>&#9679; in rosa tua</b>. ' +
+      'Il calcolo guarda solo la lega attiva: lo stesso giocatore pu&ograve; essere libero in una lega e preso nell\'altra.<br><br>' +
+      '<b>Resa</b> &egrave; lo scarto medio fra fantavoto reale e fantamedia attesa. In grassetto colorato solo quando supera il rumore del ruolo ' +
+      '(con due giornate: 1,3 per un difensore, 1,8 per un centrocampista, 2,5 per un attaccante); in grigio quando &egrave; dentro il rumore, cio&egrave; quando non significa niente. ' +
+      'Con poche giornate quasi tutto &egrave; grigio, ed &egrave; giusto cos&igrave;.</p></div>';
+  }
+
+  function wireListone() {
+    var cerca = document.getElementById("lstCerca");
+    if (cerca) cerca.addEventListener("input", function (e) { LST_STATO.cerca = e.target.value; renderListone(); });
+    var host2 = document.getElementById("listoneHost");
+    if (host2) host2.addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-col]");
+      if (!b) return;
+      var k = b.dataset.col;
+      var col = LST_COLONNE.filter(function (c) { return c.k === k; })[0];
+      if (LST_STATO.campo === k) LST_STATO.disc = !LST_STATO.disc;
+      else { LST_STATO.campo = k; LST_STATO.disc = col ? col.disc : true; }
+      renderListone();
+    });
+    var lib = document.getElementById("lstSoloLiberi");
+    if (lib) lib.addEventListener("change", function (e) { LST_STATO.soloLiberi = e.target.checked; renderListone(); });
+    var miei = document.getElementById("lstSoloMiei");
+    if (miei) miei.addEventListener("change", function (e) { LST_STATO.soloMiei = e.target.checked; renderListone(); });
+    var host = document.getElementById("lstRuoli");
+    if (!host) return;
+    host.innerHTML = [["", "Tutti"], ["P", "Portieri"], ["D", "Difensori"], ["C", "Centrocampisti"], ["A", "Attaccanti"]]
+      .map(function (r) {
+        return '<button type="button" class="btn btn-small lst-rf' + (r[0] === LST_STATO.ruolo ? " primary" : "") + '" data-ruolo="' + r[0] + '">' + r[1] + '</button>';
+      }).join("");
+    host.addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-ruolo]");
+      if (!b) return;
+      LST_STATO.ruolo = b.dataset.ruolo;
+      host.querySelectorAll("button").forEach(function (x) { x.classList.toggle("primary", x === b); });
+      renderListone();
+    });
   }
 
   function renderSections() {
@@ -5602,7 +5899,7 @@ async function refreshLivePlayerNews() {
     result.matched.forEach(function (m) {
       if (m.nome) VOTI[gk][m.nome] = [m.voto, m.fanta != null ? m.fanta : null];
     });
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
 
     if (feedback) {
       var msg = result.matched.length + (result.matched.length === 1 ? " voto letto" : " voti letti") +
@@ -6581,7 +6878,7 @@ async function refreshLivePlayerNews() {
     if (!LEGA_FORMAZIONI[lid][g]) LEGA_FORMAZIONI[lid][g] = {};
     if (nomi && nomi.length) LEGA_FORMAZIONI[lid][g][squadra] = { nomi: nomi.slice(), ufficiale: !!ufficiale };
     else delete LEGA_FORMAZIONI[lid][g][squadra];
-    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
   }
 
   async function salvaFormAvv(squadra, gn) {
@@ -6627,6 +6924,18 @@ async function refreshLivePlayerNews() {
     Object.keys(RIF_LEGHE).forEach(function (id) {
       opts += '<option value="' + escapeAttr(id) + '"' + (id === attiva ? " selected" : "") + '>' + escapeHtml(RIF_LEGHE[id].nome || id) + '</option>';
     });
+    // Se la squadra punta a una lega che non e' fra le opzioni — riferimenti non
+    // ancora scaricati, oppure lega rinominata o rimossa — il vecchio codice
+    // faceva `sel.value = attiva`, che su un valore inesistente NON fa niente:
+    // il menu restava sulla prima voce ("nessuna lega") mentre lo stato diceva
+    // un'altra cosa. Bastava poi toccare il menu una volta perche' quel valore
+    // sbagliato finisse davvero nello stato. E' cosi' che la squadra della
+    // Desaparesidos si e' ritrovata agganciata alla lega della 22-LEAGUE.
+    // Ora la lega mancante compare comunque, dichiarata: il menu non mostra mai
+    // qualcosa di diverso da quello che lo stato contiene.
+    if (attiva && !RIF_LEGHE[attiva]) {
+      opts += '<option value="' + escapeAttr(attiva) + '" selected>' + escapeHtml(attiva) + ' — non trovata fra le leghe caricate</option>';
+    }
     sel.innerHTML = opts;
     sel.value = attiva;
     var nota = document.getElementById("legaRegoleNota");
@@ -6654,7 +6963,12 @@ async function refreshLivePlayerNews() {
     var attivaId = state.meta.squadraId || "carmy";
     sel.innerHTML = elencoSquadre().map(function (s) {
       var lega = RIF_LEGHE[s.legaId];
-      var etichetta = s.nome + (lega ? " · " + lega.nome : (s.legaId ? "" : " · lega da collegare"));
+      // Nel menu si mostra la LEGA, non la squadra: le due squadre di Salvo si
+      // chiamano tutte e due BASTARDI SENZA GLORIA, quindi il nome non
+      // distingue niente e ruba spazio. Quando la lega non si risolve si mostra
+      // il suo id: due voci identiche sono peggio di una voce brutta, perche'
+      // non si capisce quale si sta aprendo.
+      var etichetta = lega ? lega.nome : (s.legaId ? s.legaId + " (lega non trovata)" : s.nome + " · lega da collegare");
       return '<option value="' + escapeAttr(s.id) + '"' + (s.attiva ? " selected" : "") + '>' + escapeHtml(etichetta) + '</option>';
     }).join("") + '<option value="__nuova__">+ Aggiungi squadra…</option>';
     sel.value = attivaId;
@@ -7352,7 +7666,7 @@ async function refreshLivePlayerNews() {
     });
   }
 
-  var TABS = ["home", "schiera", "rosa", "lega", "dati", "seriea", "guida"];
+  var TABS = ["home", "schiera", "rosa", "lega", "dati", "seriea", "listone", "guida"];
 
   function apriTab(nome) {
     if (TABS.indexOf(nome) === -1) nome = "home";
@@ -7368,6 +7682,7 @@ async function refreshLivePlayerNews() {
     // zero. Ridisegno quando torna visibile.
     if (nome === "schiera") { renderConsigliati(); ricalcolaSeVisibile(); }
     if (nome === "seriea") renderSerieA();
+    if (nome === "listone") renderListone();
     if (nome === "home") renderHome();
   }
 
@@ -7417,7 +7732,7 @@ async function refreshLivePlayerNews() {
     if (legaSel) legaSel.addEventListener("change", function (e) {
       state.meta.legaId = e.target.value;
       applicaLega(legaAttivaId());
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
       scheduleSave();
       renderSquadraSelect();
       renderLegaSelect();
@@ -7458,7 +7773,7 @@ async function refreshLivePlayerNews() {
 
     document.getElementById("giornataInput").addEventListener("input", function (e) {
       state.meta.giornata = e.target.value;
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
       renderLegaCard(); renderFormAvvCard();
       renderRisultatiCard();
       renderHome();
@@ -7506,13 +7821,13 @@ async function refreshLivePlayerNews() {
     });
     document.getElementById("modificatoreCentrocampoToggle").addEventListener("change", function (e) {
       state.meta.modificatoreCentrocampo = e.target.checked;
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
       scheduleSave();
       renderResult();
     });
     document.getElementById("strategiaSelect").addEventListener("change", function (e) {
       state.meta.strategia = e.target.value;
-      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento();
+      invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
       updateAutoOptionLabel();
       scheduleSave();
       ricalcolaSeVisibile();
@@ -7525,6 +7840,7 @@ async function refreshLivePlayerNews() {
       e.stopPropagation();
     });
     wireTabs();
+    wireListone();
     document.getElementById("computeBtn").addEventListener("click", function () {
       renderResult();
       // "Calcola formazione" sta nella barra fissa e si preme da qualunque
