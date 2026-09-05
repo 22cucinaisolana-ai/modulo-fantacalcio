@@ -2521,7 +2521,8 @@
         <li><b>Forma</b>: 3 stelle = sta rendendo come da previsione, quindi nessuno scostamento; ogni stella sopra o sotto vale ±0,3. Dalla giornata 2 in poi le stelle si ritarano da sole confrontando la media degli ultimi voti reali con lo standard atteso di quel giocatore.</li>
         <li><b>Avversario</b>: quanto un avversario più facile o più difficile del solito sposta il rendimento rispetto alla sua media stagionale, che è già una media su avversari di ogni livello (±0,15, prima del moltiplicatore di Strategia). La difficoltà è calcolata dal calendario in base alla forza delle squadre coinvolte.</li>
         <li><b>Casa/trasferta</b>: ±0,10</li>
-        <li><b>Clean sheet</b>: per portieri e difensori la fantamedia contiene già le porte inviolate storiche, quindi aggiungo solo la differenza rispetto a un avversario medio: +0,15 se l'avversario è "facile", 0 se "media", −0,15 se "difficile". Vale la pena sapere quanto pesa il fatto in sé: il portiere che non subisce gol prende <b>+1 di imbattibilità</b> sul fantavoto — verificato sui tabellini (Svilar 6→7 e Caprile 6→7 a porta inviolata, Maignan 6→5 con un gol subito). È il motivo per cui un portiere di una squadra solida vale più di quanto suggerisca la sola media voto.</li>
+        <li><b>Clean sheet</b>: il portiere che non subisce gol prende <b>+1 di imbattibilità</b> sul fantavoto — verificato sui tabellini (Svilar 6→7 e Caprile 6→7 a porta inviolata, Maignan 6→5 con un gol subito). <b>Correzione del 05/09/2026</b>: qui prima c'era scritto che la fantamedia del listone contiene già le porte inviolate storiche. Non è vero per i portieri, e il tool li sottostimava di 0,3-0,45 ogni giornata. La fantamedia del listone è <i>media voto meno gol subiti</i>, e basta: lo si vede sui numeri (Svilar 6,26 di media, 5,34 di fantamedia, 0,82 gol subiti a partita — lo scarto è esattamente i gol subiti). Ora il bonus viene aggiunto stimandolo dai gol subiti per partita, e <b>Carnesecchi vale 5,58 invece di 5,19</b>. Per i difensori il ragionamento originale resta valido: la loro fantamedia le porte inviolate ce le ha, quindi si aggiunge solo la differenza rispetto a un avversario medio (+0,15 se "facile", 0 se "media", −0,15 se "difficile").</li>
+        <li><b>Media voto e presenze</b>: la media voto del listone è smorzata sulle presenze verso la media del ruolo, con peso 10. Senza, un giocatore con una presenza a 7,50 risultava il migliore della lega — è successo davvero, con il terzo portiere della Fiorentina. Chi nel listone non ha presenze (arriva dall'estero o dalla B) non viene smorzato: quel numero è già una proiezione.</li>
         <li><b>Probabilità di giocare</b>: dipende dalla Strategia scelta (vedi sotto) — con "Equilibrato": Titolare 95% · Ballottaggio favorito 75% · pari 55% · sfavorito 35% · Panchina 15% · Assente 0% (escluso). I tre gradi di ballottaggio servono a distinguere chi è avanti nelle gerarchie da chi insegue: è lì che la scelta è più difficile, e un valore unico per tutti la appiattiva.</li>
         <li><b>Chi subentra</b>: se un titolare non gioca, la sua maglia non resta vuota — entra la miglior riserva di quel ruolo. Quindi il valore atteso è <i>probabilità × quanto vale lui + (1 − probabilità) × quanto vale chi subentra</i>. Serve a non panchinare un big incerto a favore di un mediocre sicuro: se hai una buona riserva alle spalle, rischiare costa poco.</li>
       </ul>
@@ -3059,6 +3060,52 @@
   // e media voto, e solo dove esistono. Un giocatore senza valori per quella
   // fonte tiene quelli di base: e' un'approssimazione, ma dichiarata, e meglio
   // di una riga vuota.
+  // ---------------- correzioni al listone (05/09/2026) ----------------
+  // Il listone e' una fotografia della stagione scorsa, e due cose il foglio
+  // non le dice. Finche' non venivano corrette, il tool sbagliava i portieri
+  // ogni singola giornata.
+  //
+  // 1) LA FANTAMEDIA DEI PORTIERI E' "VOTO MENO GOL SUBITI", E BASTA. Il +1 di
+  //    imbattibilita' che la lega assegna non e' dentro. Verificato sui dati
+  //    veri: Svilar mv 6,26 · fmv 5,34 · 0,82 gol subiti a partita — lo scarto
+  //    e' esattamente i gol subiti, delle porte inviolate non c'e' traccia.
+  //    Qui si aggiunge la probabilita' di porta inviolata stimata da Poisson,
+  //    exp(-lambda) con lambda = gol subiti / presenze. Carnesecchi passa da
+  //    5,19 a 5,58: quasi mezzo punto a giornata che il tool stava buttando.
+  //    TRAPPOLA GIA' PAGATA UNA VOLTA: gol subiti a zero o nullo vuol dire DATO
+  //    MANCANTE (Serie B o estero), non porta inviolata sempre. Senza questo
+  //    controllo Vicario e Perri, che il dato non ce l'hanno, risultavano i due
+  //    migliori portieri della lega. Per loro vale la lambda mediana dei
+  //    portieri titolari, 1,101, cioe' un bonus di 0,33.
+  //
+  // 2) LA MEDIA VOTO NON E' SMORZATA SULLE PRESENZE. Il terzo portiere della
+  //    Fiorentina — una presenza, 7,50 — risultava il miglior portiere in
+  //    assoluto. Si smorza verso la media del ruolo con k = 10: a 10 presenze
+  //    il giocatore pesa meta', a 30 tre quarti. Le medie di ruolo sono
+  //    misurate sui giocatori del listone con almeno 15 presenze, non stimate.
+  //    Chi nel listone non ha presenze (arriva dall'estero o dalla B) NON si
+  //    smorza: il suo numero e' gia' una proiezione, non una media misurata,
+  //    e smorzare una proiezione la sposta due volte.
+  function arrotonda3(x) { return x == null ? null : Math.round(x * 1000) / 1000; }
+  var LAM_PORTIERE_MEDIA = 1.101;
+  var MV_BASE_RUOLO = { P: 6.20, D: 5.97, C: 6.03, A: 6.06 };
+  var MV_SHRINK_PRES = 10;
+  function bonusImbattibilita(ruolo, pres, golSubiti) {
+    if (ruolo !== "P") return 0;
+    var lam = (pres >= 8 && golSubiti > 0) ? (golSubiti / pres) : LAM_PORTIERE_MEDIA;
+    return Math.exp(-lam);
+  }
+  function mvSmorzataPresenze(ruolo, mv, pres) {
+    // mv <= 0 non e' una media voto bassa, e' un dato mancante: nel foglio di
+    // partenza Vicario e Perri hanno 0,00 perche' il valore non c'e'. Chi
+    // carica il listone lo trasforma in NULL, ma il controllo resta qui: se
+    // un giorno tornasse uno zero, smorzarlo darebbe a Vicario media 1,51.
+    if (mv == null || !(mv > 0) || !(pres > 0)) return mv;
+    var base = MV_BASE_RUOLO[ruolo];
+    if (base == null) return mv;
+    return (pres * mv + MV_SHRINK_PRES * base) / (pres + MV_SHRINK_PRES);
+  }
+
   function applicaFonte() {
     var fonte = regoleLega().fonte;
     var val = RIF_LISTONE_VALORI[fonte] || {};
@@ -3068,6 +3115,14 @@
       var sost = val[p.nome];
       var fmv = sost && sost[0] != null ? sost[0] : (p.fmv_exp != null ? Number(p.fmv_exp) : null);
       var mv = sost && sost[1] != null ? sost[1] : (p.media_voto != null ? Number(p.media_voto) : null);
+      var pres = p.presenze != null ? Number(p.presenze) : null;
+      var gsub = p.gol_subiti != null ? Number(p.gol_subiti) : null;
+      // La fantamedia grezza si conserva (indice 13): serve a riconoscere quali
+      // valori salvati in rosa vengono dal listone e vanno corretti, e quali
+      // sono stati scritti a mano e vanno lasciati stare.
+      var fmvGrezza = fmv;
+      if (fmv != null) fmv = arrotonda3(fmv + bonusImbattibilita(p.ruolo, pres, gsub));
+      mv = arrotonda3(mvSmorzataPresenze(p.ruolo, mv, pres));
       LISTONE.push([
         p.nome, p.ruolo, p.squadra, fmv, mv,
         p.titolarita != null ? Number(p.titolarita) : 3,
@@ -3083,7 +3138,11 @@
         //  confonderli e' lo stesso errore che faceva risultare Vicario il
         //  miglior portiere della lega perche' i suoi gol subiti erano vuoti.
         p.gol_pres != null ? Number(p.gol_pres) : null,
-        p.assist_pres != null ? Number(p.assist_pres) : null
+        p.assist_pres != null ? Number(p.assist_pres) : null,
+        // 11-12: presenze e gol subiti della stagione scorsa. Anche qui NULL e'
+        //  "non lo so", e i gol subiti hanno senso solo per i portieri.
+        // 13: fantamedia com'era nel foglio, prima del bonus imbattibilita'.
+        pres, gsub, fmvGrezza
       ]);
     });
     LISTONE_INDEX = null;
@@ -3129,7 +3188,7 @@
       var q = await Promise.all([
         sb.from("serie_a_squadre").select("codice,nome,tier").order("codice"),
         sb.from("serie_a_calendario").select("giornata,casa,trasferta").order("giornata").order("casa").limit(1000),
-        sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati,quotazione,fuori_lista,gol_pres,assist_pres").order("nome").limit(2000),
+        sb.from("listone").select("nome,ruolo,squadra,fmv_exp,media_voto,titolarita,rigorista,piazzati,quotazione,fuori_lista,gol_pres,assist_pres,presenze,gol_subiti").order("nome").limit(2000),
         sb.from("lega_squadre").select("lega_id,nome,manager,budget,e_mia").order("nome"),
         sb.from("lega_rose").select("lega_id,squadra,giocatore,ruolo,costo").limit(4000),
         sb.from("lega_calendario").select("lega_id,turno,squadra_a,squadra_b").order("turno").order("squadra_a"),
@@ -3695,8 +3754,24 @@ async function refreshLivePlayerNews() {
   // (a 5 giornate pesano metà, a 15 tre quarti). Una fantamedia attuale scritta
   // a mano, invece, viene rispettata così com'è: è una scelta esplicita.
   var FANTAMEDIA_SHRINK = 5;
+  // La fantamedia attesa dei giocatori gia' in rosa e' stata scritta dal
+  // riempimento automatico quando il bonus imbattibilita' ancora mancava.
+  // Invece di riscrivere lo stato salvato — e rischiare di cancellare un numero
+  // messo a mano — qui si riconosce il valore che viene dal listone (coincide
+  // con la fantamedia grezza, indice 13) e lo si sostituisce con quello
+  // corretto. Un valore modificato a mano non coincide e resta intoccato:
+  // e' una scelta esplicita dell'utente e vince sempre.
+  function attesaEffettiva(p) {
+    if (p.fantamediaAttesa == null || p.fantamediaAttesa === "") return null;
+    var a = Number(p.fantamediaAttesa);
+    if (!isFinite(a)) return null;
+    var l = listoneGet(p.name);
+    if (l && l[13] != null && l[3] != null && Math.abs(a - Number(l[13])) < 0.005) return Number(l[3]);
+    return a;
+  }
   function effectiveFantamedia(p) {
-    var attesa = (p.fantamediaAttesa != null && p.fantamediaAttesa !== "") ? Number(p.fantamediaAttesa) : 6.0;
+    var att = attesaEffettiva(p);
+    var attesa = att != null ? att : 6.0;
     if (p.fantamediaAttuale != null && p.fantamediaAttuale !== "") {
       var attuale = Number(p.fantamediaAttuale);
       var n = countFantavoti(p);
@@ -3933,6 +4008,16 @@ async function refreshLivePlayerNews() {
       out[g] = Math.max(0, cum[g] - (g < maxGol ? cum[g + 1] : 0));
     }
     return out;
+  }
+  // Gol attesi. Serve quando le soglie sono attive ma l'avversario di giornata
+  // non si conosce: e' la scala su cui si decide davvero la partita, quindi
+  // ordina i moduli meglio dei fantapunti grezzi. Fra 73,0 e 73,4 non sceglie
+  // il secondo per mezzo punto che non vale niente; fra 70,8 e 71,2 lo sceglie,
+  // e per il motivo giusto.
+  function golAttesi(media, varianza) {
+    var d = distribuzioneGol(media, varianza, MAX_GOL_SIM), t = 0;
+    for (var g = 1; g <= MAX_GOL_SIM; g++) t += g * d[g];
+    return t;
   }
   // Punti di classifica attesi: 3 la vittoria, 1 il pareggio.
   function esitoAtteso(mio, varMia, suo, varSua) {
@@ -4527,10 +4612,12 @@ async function refreshLivePlayerNews() {
     // cambia con "Batti l'avversario" è solo che i moduli vengono ORDINATI su
     // quella invece che sui punti.
     var avv = avversarioAtteso();
+    var conSoglie = soglieGolAttive();
     var ordinaSuProb = strategyProfile().obiettivo === "probabilita" && !!avv;
     Object.keys(results).forEach(function (name) {
       var r = results[name];
       r.varianza = varianzaFormazione(r.chosen);
+      r.golAttesi = conSoglie ? golAttesi(r.total, r.varianza) : null;
       // Corretto 02/09/2026: si ordina sui punti di classifica attesi, non su
       // P(piu' fantapunti). Con le soglie gol il pareggio vale 1 punto e capita
       // spesso — ignorarlo sceglieva il modulo con il regolamento vecchio.
@@ -4542,7 +4629,22 @@ async function refreshLivePlayerNews() {
     var order = autoCandidates().sort(function (a, b) {
       var ra = results[a], rb = results[b];
       if (ra.shortage !== rb.shortage) return ra.shortage ? 1 : -1;
-      if (ordinaSuProb && ra.puntiLega != null && rb.puntiLega != null) return rb.puntiLega - ra.puntiLega;
+      // Corretto 05/09/2026. Prima si ordinava sui fantapunti grezzi salvo che
+      // con la strategia "Batti l'avversario": ma con le soglie gol i
+      // fantapunti sono la funzione obiettivo sbagliata sempre, non solo con
+      // una strategia. 73,0 e 73,4 fanno lo stesso numero di gol, quindi sono
+      // lo stesso risultato, e ordinarli premiava un decimo che in classifica
+      // non esiste.
+      // Ora: punti di classifica attesi quando l'avversario di giornata si
+      // conosce (e' il metro finale, tiene dentro anche il pareggio); gol
+      // attesi quando non si conosce; fantapunti solo senza soglie, e come
+      // spareggio — a parita' di gol tanto vale prendere la formazione che ne
+      // fa di piu', perche' la differenza reti conta in classifica.
+      var soglia = 1e-9;
+      if ((ordinaSuProb || conSoglie) && ra.puntiLega != null && rb.puntiLega != null &&
+          Math.abs(rb.puntiLega - ra.puntiLega) > soglia) return rb.puntiLega - ra.puntiLega;
+      if (conSoglie && ra.golAttesi != null && rb.golAttesi != null &&
+          Math.abs(rb.golAttesi - ra.golAttesi) > soglia) return rb.golAttesi - ra.golAttesi;
       return rb.total - ra.total;
     });
     var manualOk = state.meta.modulo && state.meta.modulo !== "auto" && SHAPES[state.meta.modulo] &&
