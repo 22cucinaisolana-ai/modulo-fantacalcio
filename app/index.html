@@ -520,6 +520,19 @@
   .history-card textarea, .history-card .history-paste-row input,
   #formAvvCard .fa-pick select { max-width: 720px; }
   .f1-table { max-width: 640px; }
+  /* Riquadro "Risultati di giornata": stessa misura utile dell'area voti. */
+  .ris-riga { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .ris-lab { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+  .ris-lab .num-in { width: 62px; }
+  textarea.paste-area {
+    width: 100%; max-width: 720px; resize: vertical; min-height: 96px;
+    font-family: inherit; font-size: 13px; line-height: 1.5;
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+  }
+  .ris-feedback { margin-top: 8px; font-size: 13px; color: var(--text-muted); }
+  .ris-feedback[data-tone="good"] { color: var(--good); }
+  .ris-feedback[data-tone="warn"] { color: var(--warn); }
   .history-card textarea#votiPasteInput {
     width: 100%;
     resize: vertical;
@@ -2522,6 +2535,10 @@
         <li><b>Avversario</b>: quanto un avversario più facile o più difficile del solito sposta il rendimento rispetto alla sua media stagionale, che è già una media su avversari di ogni livello (±0,15, prima del moltiplicatore di Strategia). La difficoltà è calcolata dal calendario in base alla forza delle squadre coinvolte.</li>
         <li><b>Casa/trasferta</b>: ±0,10</li>
         <li><b>Clean sheet</b>: il portiere che non subisce gol prende <b>+1 di imbattibilità</b> sul fantavoto — verificato sui tabellini (Svilar 6→7 e Caprile 6→7 a porta inviolata, Maignan 6→5 con un gol subito). <b>Correzione del 05/09/2026</b>: qui prima c'era scritto che la fantamedia del listone contiene già le porte inviolate storiche. Non è vero per i portieri, e il tool li sottostimava di 0,3-0,45 ogni giornata. La fantamedia del listone è <i>media voto meno gol subiti</i>, e basta: lo si vede sui numeri (Svilar 6,26 di media, 5,34 di fantamedia, 0,82 gol subiti a partita — lo scarto è esattamente i gol subiti). Ora il bonus viene aggiunto stimandolo dai gol subiti per partita, e <b>Carnesecchi vale 5,58 invece di 5,19</b>. Per i difensori il ragionamento originale resta valido: la loro fantamedia le porte inviolate ce le ha, quindi si aggiunge solo la differenza rispetto a un avversario medio (+0,15 se "facile", 0 se "media", −0,15 se "difficile").</li>
+        <li><b>Forza dell'avversario</b> (06/09/2026): il voto atteso si sposta in base a chi si affronta, e ora la misura è tarata <b>reparto per reparto</b> sui voti veri invece che a occhio. Prima il tool attutiva l'effetto su portiere e difensori e lo applicava pieno agli attaccanti: i dati dicono il contrario, perché i gol subiti cadono addosso a portiere e difesa mentre il fantavoto di un attaccante dipende soprattutto dal fatto che segni. Fra fascia difficile e facile: <b>portiere 0,60</b> (era 0,15), <b>difensore 0,36</b> (era 0,15), <b>centrocampista 0,24</b> (era 0,30), <b>attaccante 0,12</b> (era 0,30 — e sugli attaccanti l'effetto non è statisticamente misurabile: quel numero è prudenza, non misura).<br><br>Il <i>tier</i> del listone è un pronostico di luglio e resta fermo. Quello che si muove è la <b>forza corrente</b>: un tier continuo fra 1 e 5 che parte dal pronostico e scivola verso la classifica vera man mano che si gioca (a 2 giornate luglio pesa tre quarti, a 12 comanda il campo). Non serve riscrivere il tier a mano ogni settimana — anzi non va fatto, perché il campo verrebbe contato due volte. Il campo <b>Difficoltà</b> resta un comando manuale e vince sempre.</li>
+        <li><b>Risultati di giornata</b> (06/09/2026): nella scheda Serie A c'è un riquadro dove incollare i risultati, una partita per riga, in qualunque forma (<i>Genoa-Como 1-2</i>, <i>Genoa 1-2 Como</i>, <i>Genoa 1 Como 2</i>, anche con le sigle). Da lì punti, gol fatti e subiti si ricalcolano da soli, e con loro la forza degli avversari. Dieci righe a settimana al posto di venti righe di classifica ricopiate: e la classifica ricalcolata non può essere incoerente con i risultati, perché è fatta di quelli. Le righe non riconosciute vengono elencate invece di essere indovinate — una squadra sbagliata falserebbe la classifica e da lì il voto atteso di tutti.</li>
+        <li><b>Panchina e cambi</b> (05/09/2026): sotto la formazione c'è <b>Panchina consigliata</b>, che non è la lista dei migliori rimasti fuori ma <b>l'ordine in cui metterli in distinta</b>. Sono due cose diverse: il secondo portiere può essere il giocatore più forte fuori dagli undici e non entrare quasi mai, mentre il terzo attaccante entra spesso perché davanti i ballottaggi sono tanti. Ogni riga vale <i>quanto è probabile che serva</i> per <i>quanto rende chi entra</i>, e la probabilità che servano due cambi nello stesso reparto si calcola sul serio (distribuzione di Poisson-binomiale sui titolari di quel reparto): con quattro difensori al 95% c'è il 18,5% che ne salti uno e l'1,4% che ne saltino due, ed è per questo che il secondo cambio di un reparto vale poco.<br><br>Da qui viene anche una <b>correzione al totale del modulo</b>. Prima il calcolo assumeva che ogni titolare senza voto fosse rimpiazzato dal migliore della panchina, sempre lo stesso, quante volte serviva — cosa che nel fantacalcio non succede: un sostituto entra una volta sola. Quanto pesa dipende dalla situazione, ed è giusto dirlo: con undici titolari sicuri la correzione è di qualche centesimo, cioè niente; con due ballottaggi nello stesso reparto e <i>una sola</i> riserva dietro arriva a <b>−1,4 fantapunti</b>. Serve esattamente dove serve: a smettere di sopravvalutare i reparti scoperti.</li>
+        <li><b>Undici probabile dell'avversario</b> (05/09/2026): il tool calcolava già il miglior undici della rosa che affronti — gli serviva per stimare i suoi punti — ma se lo teneva per sé. Ora lo mostra nome per nome. Se hai inserito la sua formazione vera, quella vince sulla stima; se è ufficiale i suoi giocatori valgono con probabilità 1, perché giocano e basta.</li>
         <li><b>Media voto e presenze</b>: la media voto del listone è smorzata sulle presenze verso la media del ruolo, con peso 10. Senza, un giocatore con una presenza a 7,50 risultava il migliore della lega — è successo davvero, con il terzo portiere della Fiorentina. Chi nel listone non ha presenze (arriva dall'estero o dalla B) non viene smorzato: quel numero è già una proiezione.</li>
         <li><b>Probabilità di giocare</b>: dipende dalla Strategia scelta (vedi sotto) — con "Equilibrato": Titolare 95% · Ballottaggio favorito 75% · pari 55% · sfavorito 35% · Panchina 15% · Assente 0% (escluso). I tre gradi di ballottaggio servono a distinguere chi è avanti nelle gerarchie da chi insegue: è lì che la scelta è più difficile, e un valore unico per tutti la appiattiva.</li>
         <li><b>Chi subentra</b>: se un titolare non gioca, la sua maglia non resta vuota — entra la miglior riserva di quel ruolo. Quindi il valore atteso è <i>probabilità × quanto vale lui + (1 − probabilità) × quanto vale chi subentra</i>. Serve a non panchinare un big incerto a favore di un mediocre sicuro: se hai una buona riserva alle spalle, rischiare costa poco.</li>
@@ -2910,6 +2927,9 @@
   // del previsto, i punti dicono se sta vincendo. Sono due cose diverse e
   // servono tutte e due.
   var CLASSIFICA_SA = [];
+  // Risultati veri di Serie A, da cui la classifica si ricalcola da sola.
+  // Tabella serie_a_risultati.
+  var RISULTATI_SA = [];
   var RIF_LISTONE_VALORI = {};
   var RIF_VOTI = [];
   var FONTE_PREDEFINITA = "Fantacalcio";
@@ -3009,6 +3029,8 @@
     Object.keys(LEGA_FORMAZIONI).forEach(function (k) { delete LEGA_FORMAZIONI[k]; });
     CLASSIFICA_SA.length = 0;
     (rif.classifica || []).forEach(function (r) { CLASSIFICA_SA.push(r); });
+    RISULTATI_SA.length = 0;
+    (rif.risultatiSA || []).forEach(function (r) { RISULTATI_SA.push(r); });
 
     (rif.legaFormazioni || []).forEach(function (f) {
       var lid = f.lega_id || LEGA_PREDEFINITA, g = String(f.giornata);
@@ -3197,7 +3219,11 @@
         sb.from("risultati_lega").select("lega_id,giornata,squadra,punti").order("giornata").limit(2000),
         sb.from("leghe").select("id,nome,n_squadre,mia_squadra,regole").order("creata_il"),
         sb.from("lega_formazioni").select("lega_id,giornata,squadra,giocatore,ufficiale").limit(4000),
-        sb.from("listone_valori").select("nome,fonte,fmv_exp,media_voto").limit(4000)
+        sb.from("listone_valori").select("nome,fonte,fmv_exp,media_voto").limit(4000),
+        // In fondo alla lista, non in mezzo: gli indici qui sotto sono
+        // posizionali e spostarne uno li sfasa tutti (successo il 04/09 con
+        // serie_a_classifica).
+        sb.from("serie_a_risultati").select("giornata,casa,trasferta,gol_casa,gol_trasferta").order("giornata").limit(400)
       ]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var rif = {
@@ -3209,7 +3235,8 @@
         classifica: q[6].data || [],
         voti: q[7].data, risultati: q[8].data, leghe: q[9].data,
         legaFormazioni: q[10].data || [],
-        listoneValori: q[11].data || []
+        listoneValori: q[11].data || [],
+        risultatiSA: q[12].data || []
       };
       if (!rifValidi(rif)) throw new Error("tabelle di riferimento vuote");
       applicaRiferimenti(rif);
@@ -3710,12 +3737,103 @@ async function refreshLivePlayerNews() {
   // posto di un rapporto uscito per caso. Quando lo storico avrà cinque o sei
   // giornate, la tabella "Dove sbaglia" nel pannello di fine giornata dirà se
   // difesa e centrocampo hanno scarti medi diversi, ed è da lì che si ritocca.
-  var DIFF_PESO_RUOLO = { P: 0.5, D: 0.5, C: 1, A: 1 };
-  function difficoltaMod(diff, role) {
-    var map = { facile: 0.15, media: 0, difficile: -0.15 };
-    var base = map[diff] != null ? map[diff] : 0;
-    var peso = DIFF_PESO_RUOLO[role];
-    return base * (peso == null ? 1 : peso);
+  // ---------------- forza dell'avversario (06/09/2026) ----------------
+  // Rifatto misurando, non a occhio. Prima: tre fasce (facile/media/difficile)
+  // da +-0,15, moltiplicate per un peso di ruolo {P:0,5 D:0,5 C:1 A:1}. Cioe' il
+  // tool ATTUTIVA l'effetto su portieri e difensori e lo applicava pieno agli
+  // attaccanti. Sui 612 voti reali delle giornate 1-2 e' vero il contrario.
+  //
+  // Regressione dello scarto (fantavoto - fantamedia attesa) sul tier
+  // dell'avversario, pendenza per passo di tier. Due colonne: grezza, e al
+  // netto del club di appartenenza (tolgo la media di ogni squadra, cosi' un
+  // "il Napoli va forte" non si traveste da "affrontava una squadra debole").
+  //
+  //   ruolo   n     grezza   netta   t(netta)
+  //   P       41    0,498    0,215     1,97
+  //   D      214    0,124    0,124     2,56
+  //   C      246    0,190    0,102     1,64
+  //   A      104   -0,052    0,039     0,31
+  //
+  // Meta' dell'effetto grezzo su portieri e centrocampisti era il club, non
+  // l'avversario: le pendenze buone sono quelle nette. Restano nell'ordine che
+  // ci si aspetta fisicamente — i gol subiti cadono addosso a portiere e
+  // difensori, mentre il fantavoto di un attaccante dipende soprattutto dal
+  // fatto che segni o no. Sugli attaccanti l'effetto NON e' misurabile (t 0,31):
+  // resta un coefficiente piccolo per prudenza, non perche' i dati lo dicano.
+  //
+  // Confronto con quello che il tool applicava (fascia difficile -> facile):
+  //   P  0,15 -> 0,60      D  0,15 -> 0,36
+  //   C  0,30 -> 0,24      A  0,30 -> 0,12
+  var FORZA_COEF_RUOLO = { P: 0.20, D: 0.12, C: 0.08, A: 0.04 };
+  // Quanto vale, in passi di tier, una fascia manuale. Le fasce sono tier<=2,
+  // tier 3, tier>=4: i centri stanno a circa 1,5 passi dal centro.
+  var FASCIA_PASSI = { facile: 1.5, media: 0, difficile: -1.5 };
+  // Quante giornate servono perche' il campo pesi quanto il listone. A 6 il
+  // pronostico di luglio comanda per il primo terzo di stagione e poi cede.
+  var FORZA_K = 6;
+  function teamByName(nome) {
+    if (!nome) return null;
+    var n = String(nome).trim().toLowerCase();
+    for (var i = 0; i < TEAM_LIST.length; i++) {
+      if (String(TEAM_LIST[i].name || "").trim().toLowerCase() === n) return TEAM_LIST[i];
+    }
+    return null;
+  }
+  // Forza dell'avversario come "tier continuo" fra 1 e 5, dove 1 e' la squadra
+  // piu' forte. Parte dal tier del listone (un pronostico di luglio) e si sposta
+  // verso quello che il campo ha detto finora. E' la risposta alla domanda
+  // giusta: il Como di settembre non e' il Como del pronostico, e un tier fisso
+  // non se ne accorgera' mai.
+  var FORZA_CACHE = null;
+  function invalidaForza() { FORZA_CACHE = null; }
+  function forzaAvversario(codice) {
+    if (!codice) return null;
+    if (!FORZA_CACHE) {
+      FORZA_CACHE = {};
+      // Ultima riga di classifica disponibile per ogni squadra.
+      var ult = {};
+      CLASSIFICA_SA.forEach(function (c) {
+        if (!ult[c.squadra] || Number(c.giornata) > Number(ult[c.squadra].giornata)) ult[c.squadra] = c;
+      });
+      var righe = [];
+      Object.keys(ult).forEach(function (sq) {
+        var c = ult[sq], g = Number(c.giocate || 0);
+        if (!(g > 0)) return;
+        // Punti per partita, con la differenza reti come spareggio: a inizio
+        // stagione i punti sono pochi e i pareggi in classifica tanti.
+        righe.push({ sq: sq, ppg: Number(c.punti || 0) / g, dr: (Number(c.gf || 0) - Number(c.gs || 0)) / g, g: g });
+      });
+      righe.sort(function (a, b) { return (b.ppg - a.ppg) || (b.dr - a.dr); });
+      var n = righe.length;
+      righe.forEach(function (r, i) {
+        // Posizione -> tier continuo: 1° = 1, ultimo = 5.
+        FORZA_CACHE[r.sq] = { oss: n > 1 ? 1 + 4 * i / (n - 1) : 3, g: r.g };
+      });
+    }
+    var t = teamByCode(codice);
+    if (!t) return null;
+    var prior = Number(t.tier);
+    if (!isFinite(prior)) return null;
+    var o = FORZA_CACHE[codice] || FORZA_CACHE[t.name];
+    if (!o) return prior;
+    return (o.g * o.oss + FORZA_K * prior) / (o.g + FORZA_K);
+  }
+  // Lo scarto da applicare al fantavoto atteso. Il campo "Difficoltà" resta un
+  // comando manuale e vince sempre: se coincide con quella che il calendario
+  // avrebbe messo da solo, si usa la forza continua (piu' fine, e viva); se e'
+  // stata cambiata a mano, si rispetta la fascia scelta.
+  function difficoltaMod(diff, role, avvNome) {
+    var coef = FORZA_COEF_RUOLO[role];
+    if (coef == null) coef = 0.08;
+    var passi = FASCIA_PASSI[diff] != null ? FASCIA_PASSI[diff] : 0;
+    var t = teamByName(avvNome);
+    if (t) {
+      var f = forzaAvversario(t.code);
+      // La fascia automatica del calendario e' diffFromTier(tier). Se l'utente
+      // non l'ha toccata, il numero continuo dice la stessa cosa ma meglio.
+      if (f != null && (diff == null || diff === diffFromTier(Number(t.tier)))) passi = f - 3;
+    }
+    return coef * passi;
   }
   var CASA_DELTA = 0.10;
 
@@ -3836,7 +3954,10 @@ async function refreshLivePlayerNews() {
       scadenzaMinutiPrima: r.scadenzaMinutiPrima != null ? Number(r.scadenzaMinutiPrima) : REGOLE_DEFAULT.scadenzaMinutiPrima,
       difesa: r.modificatoreDifesa || REGOLE_DEFAULT.modificatoreDifesa,
       centrocampo: r.modificatoreCentrocampo || REGOLE_DEFAULT.modificatoreCentrocampo,
-      soglieGol: r.soglieGol || REGOLE_DEFAULT.soglieGol
+      soglieGol: r.soglieGol || REGOLE_DEFAULT.soglieGol,
+      // Quante sostituzioni la lega concede. Entrambe ne danno 5; sta qui
+      // perche' e' una regola, non una costante del tool.
+      cambi: r.cambi != null ? Number(r.cambi) : MAX_CAMBI_DEFAULT
     };
   }
   // ---------------- soglie gol ----------------
@@ -3906,6 +4027,23 @@ async function refreshLivePlayerNews() {
   // prudente su un campione minuscolo: va rivista quando ci saranno più
   // giornate, ed è il primo numero da ricontrollare se qualcosa non torna.
   var MEDIA_VOTO_SD = 0.5;
+  // I voti di una difesa NON sono indipendenti (misurato il 06/09/2026).
+  // Su 40 blocchi difensivi con almeno tre voti nella stessa partita:
+  //   varianza fra partite (quanto si muove il blocco intero)   0,437
+  //   varianza dentro la partita (quanto i compagni differiscono) 0,981
+  // cioe' il 31% dello scarto di un difensore e' condiviso con i compagni di
+  // reparto. Si vede a occhio nudo: Genoa-Como, quattro difensori del Genoa fra
+  // 4,5 e 5,5 nella stessa sera. E' ovvio se ci si pensa — i gol subiti e la
+  // porta inviolata sono eventi di squadra, non del singolo.
+  // Conseguenza: la media di 4 voti NON oscilla di SD/2. Con rho = 0,31 oscilla
+  // di SD x radice((1+(k-1)rho)/k), cioe' il 39% in piu' su quattro voti. Il
+  // Modificatore era quindi calcolato come piu' prevedibile di quanto sia, e il
+  // suo valore atteso era schiacciato verso le fasce centrali.
+  var ICC_DIFESA = 0.31;
+  function sdMediaBlocco(k) {
+    k = k || 4;
+    return MEDIA_VOTO_SD * Math.sqrt((1 + (k - 1) * ICC_DIFESA) / k);
+  }
   // Approssimazione di Abramowitz-Stegun 7.1.26 per la normale cumulativa
   // (errore < 1,5e-7): serve solo a pesare le fasce, non vale la pena di più.
   function normCdf(z) {
@@ -4046,7 +4184,7 @@ async function refreshLivePlayerNews() {
   // Somma di bonus_fascia × probabilità di finire in quella fascia.
   function modificatoreAtteso(avg, n) {
     if (avg == null) return 0;
-    var sd = MEDIA_VOTO_SD / Math.sqrt(n || 4);
+    var sd = sdMediaBlocco(n || 4);
     var T = tabellaDifesa();
     var atteso = 0;
     for (var i = 0; i < T.length; i++) {
@@ -4071,7 +4209,7 @@ async function refreshLivePlayerNews() {
       if (T[i].min > avg) next = T[i];
     }
     if (!next || next.min === Infinity) return null;
-    var sd = MEDIA_VOTO_SD / Math.sqrt(n || 4);
+    var sd = sdMediaBlocco(n || 4);
     return {
       soglia: next.min, bonus: next.bonus,
       distanza: next.min - avg,
@@ -4324,7 +4462,7 @@ async function refreshLivePlayerNews() {
     // base = fantavoto medio atteso del giocatore, bonus/malus storici inclusi
     var base = effectiveFantamedia(p);
     var dForma = formaDelta(p.forma);
-    var dMatch = (difficoltaMod(p.difficolta, p.role) + (p.casa ? CASA_DELTA : -CASA_DELTA)) * profile.modScale;
+    var dMatch = (difficoltaMod(p.difficolta, p.role, p.avversario) + (p.casa ? CASA_DELTA : -CASA_DELTA)) * profile.modScale;
     var pupilloBonus = p.pupillo ? PUPILLO_BONUS : 0;
     var specialistBonus = (p.rigorista ? RIGORISTA_BONUS : 0) + (p.piazzati ? PIAZZATI_BONUS : 0);
     var rawNoBonus = base + dForma + dMatch + pupilloBonus + specialistBonus;
@@ -4552,6 +4690,94 @@ async function refreshLivePlayerNews() {
   function fourDShapes() {
     return Object.keys(SHAPES).filter(function (name) { return SHAPES[name].D === 4; });
   }
+  // ---------------- panchina e cambi (05/09/2026) ----------------
+  // Fino a oggi il tool valutava gli undici e ignorava i quattordici in
+  // panchina. Non era una svista da poco: valutaReparto() assume che OGNI
+  // titolare che non prende voto venga rimpiazzato dal migliore della panchina,
+  // sempre lo stesso, quante volte serve. Nel fantacalcio vero non e' cosi'.
+  //   - un sostituto entra UNA volta sola: se saltano due difensori, il secondo
+  //     buco lo copre il secondo della panchina, che vale meno;
+  //   - il sostituto entra solo se gioca LUI: una riserva che non scende in
+  //     campo non copre niente;
+  //   - i cambi sono un numero finito (5 in entrambe le leghe).
+  // Il risultato e' che il calcolo vecchio SOPRAVVALUTA le rose corte, cioe'
+  // proprio quelle da cui bisognerebbe stare alla larga. Qui si calcola la
+  // copertura vera e si tiene la differenza come correzione al modulo.
+  //
+  // Quanti buchi si apriranno in un reparto non e' un numero fisso: e' una
+  // distribuzione (Poisson-binomiale) sui titolari di quel reparto. Con 4
+  // difensori al 95% la probabilita' di almeno un buco e' 19%, di almeno due
+  // 1,4%. Ecco perche' il secondo cambio di un reparto vale poco e il terzo
+  // quasi niente — ed ecco perche' la panchina giusta e' larga di reparti, non
+  // profonda in uno solo.
+  var MAX_CAMBI_DEFAULT = 5;
+  function cambiMassimi() {
+    var c = regoleLega().cambi;
+    return c != null && c > 0 ? Number(c) : MAX_CAMBI_DEFAULT;
+  }
+  // d[h] = probabilita' che esattamente h titolari di quel reparto non prendano
+  // voto. Convoluzione, non approssimazione: i titolari sono al massimo cinque.
+  function distribuzioneBuchi(probs) {
+    var d = [1], i, j, nd;
+    for (i = 0; i < probs.length; i++) {
+      nd = [];
+      for (j = 0; j <= d.length; j++) nd[j] = 0;
+      for (j = 0; j < d.length; j++) {
+        nd[j] += d[j] * probs[i];
+        nd[j + 1] += d[j] * (1 - probs[i]);
+      }
+      d = nd;
+    }
+    return d;
+  }
+  function probAlmenoBuchi(d, j) {
+    var s = 0;
+    for (var h = j; h < d.length; h++) s += d[h];
+    return s;
+  }
+  // Restituisce i cambi consigliati IN ORDINE e la correzione da applicare al
+  // modulo. L'ordine e' quello in cui vanno messi in distinta: ogni slot vale
+  // P(almeno j buchi in quel reparto) x (quanto rende chi entra), e ordinare
+  // per valore decrescente e' esattamente la scelta migliore quando i cambi
+  // sono limitati — dentro un reparto i valori calano da soli, quindi prendere
+  // i primi cinque globali non salta mai un turno.
+  function panchinaConsigliata(chosen) {
+    var maxC = cambiMassimi();
+    var slots = [], ingenua = 0;
+    ROLES.forEach(function (r) {
+      var picked = (chosen && chosen[r.key]) || [];
+      if (!picked.length) return;
+      var dentro = {}, probs = [];
+      picked.forEach(function (e) {
+        if (!e || !e.p) return;
+        dentro[e.p.id] = true;
+        if (e.s) probs.push(e.s.prob);
+      });
+      var panca = state.players
+        .filter(function (p) { return p.role === r.key && schierabile(p) && !dentro[p.id]; })
+        .map(function (p) { var s = scorePlayer(p); return { p: p, s: s, v: s.raw * s.prob }; })
+        .sort(function (a, b) { return b.v - a.v; });
+      var d = distribuzioneBuchi(probs);
+      // Quello che il calcolo dei moduli assume oggi: ogni buco coperto dal
+      // migliore della panchina, tutte le volte che serve.
+      var buchiAttesi = 0;
+      for (var i = 0; i < probs.length; i++) buchiAttesi += 1 - probs[i];
+      ingenua += buchiAttesi * (panca.length ? panca[0].v : 0);
+      for (var j = 0; j < panca.length; j++) {
+        var pj = probAlmenoBuchi(d, j + 1);
+        if (pj < 1e-5) break;
+        slots.push({
+          ruolo: r.key, ordine: j + 1, p: panca[j].p, s: panca[j].s,
+          pServe: pj, rende: panca[j].v, valore: pj * panca[j].v
+        });
+      }
+    });
+    slots.sort(function (a, b) { return b.valore - a.valore; });
+    var scelti = slots.slice(0, maxC), vera = 0;
+    scelti.forEach(function (x) { vera += x.valore; });
+    return { panchina: scelti, copertura: vera - ingenua, vera: vera, ingenua: ingenua, maxCambi: maxC };
+  }
+
   function autoCandidates() {
     var cands = strategyProfile().candidates.slice();
     if (state.meta.modificatore) {
@@ -4592,7 +4818,13 @@ async function refreshLivePlayerNews() {
     if (_avvCache.chiave === chiave) return _avvCache.valore;
     var nome = legaAvversario(g);
     var stima = nome ? legaValoreAtteso(nome, g) : null;
-    var valore = stima ? { squadra: nome, punti: stima.totale, varianza: stima.varianza || 0 } : null;
+    var valore = stima ? {
+      squadra: nome, punti: stima.totale, varianza: stima.varianza || 0,
+      // L'undici che gli attribuiamo. Finora restava dentro la funzione: il
+      // tool sapeva chi pensava schierasse e non lo diceva a nessuno.
+      undici: stima.undici || null, modulo: stima.modulo || null,
+      reale: !!stima.reale, ufficiale: !!stima.ufficiale, mancanti: stima.mancanti || 0
+    } : null;
     _avvCache = { chiave: chiave, valore: valore };
     return valore;
   }
@@ -4617,11 +4849,20 @@ async function refreshLivePlayerNews() {
     Object.keys(results).forEach(function (name) {
       var r = results[name];
       r.varianza = varianzaFormazione(r.chosen);
-      r.golAttesi = conSoglie ? golAttesi(r.total, r.varianza) : null;
+      // Correzione di copertura: quanto la panchina vera copre in meno di
+      // quanto il calcolo dei moduli assumeva. E' sempre <= 0, e pesa di piu'
+      // sui moduli che lasciano scoperto un reparto — che e' esattamente
+      // l'informazione che mancava. r.total resta il numero grezzo, cosi' chi
+      // guarda vede da dove viene la differenza.
+      var pc = panchinaConsigliata(r.chosen);
+      r.panchina = pc.panchina;
+      r.copertura = pc.copertura;
+      r.totale = r.total + pc.copertura;
+      r.golAttesi = conSoglie ? golAttesi(r.totale, r.varianza) : null;
       // Corretto 02/09/2026: si ordina sui punti di classifica attesi, non su
       // P(piu' fantapunti). Con le soglie gol il pareggio vale 1 punto e capita
       // spesso — ignorarlo sceglieva il modulo con il regolamento vecchio.
-      r.esito = avv ? esitoAtteso(r.total, r.varianza, avv.punti, avv.varianza) : null;
+      r.esito = avv ? esitoAtteso(r.totale, r.varianza, avv.punti, avv.varianza) : null;
       r.pVittoria = r.esito ? r.esito.pVittoria : null;
       r.puntiLega = r.esito ? r.esito.punti : null;
     });
@@ -4645,7 +4886,10 @@ async function refreshLivePlayerNews() {
           Math.abs(rb.puntiLega - ra.puntiLega) > soglia) return rb.puntiLega - ra.puntiLega;
       if (conSoglie && ra.golAttesi != null && rb.golAttesi != null &&
           Math.abs(rb.golAttesi - ra.golAttesi) > soglia) return rb.golAttesi - ra.golAttesi;
-      return rb.total - ra.total;
+      // Il confronto finale e' sul totale con la copertura della panchina, non
+      // sui soli undici: un modulo che lascia un reparto senza ricambi vale
+      // meno di quanto sembri, e ora si vede.
+      return rb.totale - ra.totale;
     });
     var manualOk = state.meta.modulo && state.meta.modulo !== "auto" && SHAPES[state.meta.modulo] &&
       (!state.meta.modificatore || SHAPES[state.meta.modulo].D === 4);
@@ -5075,7 +5319,7 @@ async function refreshLivePlayerNews() {
     }
     return ANDAMENTO_CACHE[codice] || null;
   }
-  function invalidaAndamento() { ANDAMENTO_CACHE = null; }
+  function invalidaAndamento() { ANDAMENTO_CACHE = null; invalidaForza(); }
 
   function toneDaZ(z) {
     if (z == null) return "muted";
@@ -5258,12 +5502,196 @@ async function refreshLivePlayerNews() {
   // affidabilita' diversa e mescolarli in cinque colonne affiancate li faceva
   // sembrare equivalenti. Separati, si legge prima il dato certo (classifica),
   // poi quello solido (resa), poi quello fragile (trend), dichiarato come tale.
+  // ---------------- risultati di Serie A (06/09/2026) ----------------
+  // "Dobbiamo aggiornare il tier ogni santa giornata mi sa" — no, il tier no.
+  // Il tier e' il pronostico di luglio e deve restare fermo, altrimenti il
+  // campo verrebbe contato due volte: una nel tier riscritto e una nella
+  // classifica che lo corregge. Quello che va aggiornato ogni giornata e' il
+  // RISULTATO, e da li' la classifica e la forza si ricalcolano da sole.
+  //
+  // Dieci righe incollate a settimana, invece di venti righe di classifica
+  // ricopiate a mano. E la classifica ricalcolata non puo' essere incoerente
+  // coi risultati, perche' e' fatta di quelli.
+  var RIS_SEP = /\s*(?:-|–|—|:|\bvs\b|\bcontro\b)\s*/i;
+  // Riconosce il nome di una squadra anche scritto male: sigla, nome intero,
+  // o un pezzo che basta a distinguerla.
+  function squadraDaTesto(t) {
+    if (!t) return null;
+    var s = String(t).trim().toLowerCase().replace(/[.’']/g, "");
+    if (!s) return null;
+    var i, sq;
+    for (i = 0; i < TEAM_LIST.length; i++) {
+      sq = TEAM_LIST[i];
+      if (String(sq.code).toLowerCase() === s) return sq;
+      if (String(sq.name).toLowerCase() === s) return sq;
+    }
+    var cand = [];
+    for (i = 0; i < TEAM_LIST.length; i++) {
+      sq = TEAM_LIST[i];
+      var n = String(sq.name).toLowerCase();
+      if (n.indexOf(s) === 0 || s.indexOf(n) === 0) cand.push(sq);
+    }
+    return cand.length === 1 ? cand[0] : null;
+  }
+  // Formati accettati, tutti quelli in cui uno scrive un risultato:
+  //   Genoa-Como 1-2 · Genoa 1-2 Como · Genoa 1 Como 2 · GEN-COM 1-2
+  function leggiRisultati(testo) {
+    var out = [], scarti = [];
+    String(testo || "").split(/\n+/).forEach(function (riga) {
+      var r = riga.trim();
+      if (!r) return;
+      var m, casa = null, ospite = null, gc = null, go = null;
+      // "Squadra n - n Squadra" oppure "Squadra n Squadra n"
+      m = r.match(/^(.+?)\s+(\d{1,2})\s*[-–—:]\s*(\d{1,2})\s+(.+?)$/);
+      if (m) { casa = m[1]; gc = m[2]; go = m[3]; ospite = m[4]; }
+      if (!casa) {
+        // "Squadra - Squadra n - n"
+        m = r.match(/^(.+?)\s*[-–—]\s*(.+?)\s+(\d{1,2})\s*[-–—:]\s*(\d{1,2})\s*$/);
+        if (m) { casa = m[1]; ospite = m[2]; gc = m[3]; go = m[4]; }
+      }
+      if (!casa) {
+        // "Squadra n Squadra n"
+        m = r.match(/^(.+?)\s+(\d{1,2})\s+(.+?)\s+(\d{1,2})\s*$/);
+        if (m) { casa = m[1]; gc = m[2]; ospite = m[3]; go = m[4]; }
+      }
+      var a = squadraDaTesto(casa), b = squadraDaTesto(ospite);
+      if (!a || !b || a.code === b.code) { scarti.push(r); return; }
+      out.push({ casa: a.code, trasferta: b.code, golCasa: Number(gc), golTrasferta: Number(go),
+                 etichetta: a.name + " " + gc + "-" + go + " " + b.name });
+    });
+    return { partite: out, scarti: scarti };
+  }
+  // Classifica cumulata, giornata per giornata, ricavata dai risultati. Se una
+  // giornata e' incompleta va bene lo stesso: "giocate" conta le partite vere.
+  function classificaDaRisultati(righe) {
+    var perG = {};
+    righe.forEach(function (r) {
+      var g = Number(r.giornata);
+      if (!perG[g]) perG[g] = [];
+      perG[g].push(r);
+    });
+    var giornate = Object.keys(perG).map(Number).sort(function (a, b) { return a - b; });
+    var acc = {}, out = [];
+    giornate.forEach(function (g) {
+      perG[g].forEach(function (r) {
+        var gc = Number(r.gol_casa != null ? r.gol_casa : r.golCasa);
+        var go = Number(r.gol_trasferta != null ? r.gol_trasferta : r.golTrasferta);
+        if (!isFinite(gc) || !isFinite(go)) return;
+        [[r.casa, gc, go], [r.trasferta, go, gc]].forEach(function (x) {
+          var s = x[0];
+          if (!acc[s]) acc[s] = { punti: 0, giocate: 0, gf: 0, gs: 0 };
+          acc[s].giocate++; acc[s].gf += x[1]; acc[s].gs += x[2];
+          acc[s].punti += x[1] > x[2] ? 3 : (x[1] === x[2] ? 1 : 0);
+        });
+      });
+      Object.keys(acc).forEach(function (s) {
+        out.push({ giornata: g, squadra: s, punti: acc[s].punti, giocate: acc[s].giocate,
+                   gf: acc[s].gf, gs: acc[s].gs });
+      });
+    });
+    return out;
+  }
+
+  function giornataSAsuggerita() {
+    var max = 0;
+    RISULTATI_SA.forEach(function (r) { if (Number(r.giornata) > max) max = Number(r.giornata); });
+    return max + 1;
+  }
+  // L'esito dell'ultimo caricamento vive qui e non nel DOM: dopo aver caricato
+  // i risultati la scheda si ridisegna da capo, e un messaggio scritto dentro
+  // l'elemento vecchio sparirebbe senza che nessuno lo legga. E' successo, ed
+  // e' il tipo di errore che non da' segno: il dato entra, la conferma no.
+  var RIS_MSG = null;
+  function boxRisultati() {
+    var g = giornataSAsuggerita();
+    var quante = RISULTATI_SA.length;
+    return '<details class="section"' + (RIS_MSG ? ' open' : '') + '><summary><span>Risultati di giornata ' +
+      '<span class="section-hint">incollali e la classifica si rifà da sola</span></span></summary>' +
+      '<div class="section-body">' +
+      '<p class="prof-nota">Una partita per riga, come ti viene: <b>Genoa-Como 1-2</b>, <b>Genoa 1-2 Como</b>, ' +
+      '<b>Genoa 1 Como 2</b>, anche con le sigle. Da qui si ricalcolano punti, gol fatti e subiti — e con ' +
+      'loro la <b>forza degli avversari</b>, che è quello che sposta i voti attesi. ' +
+      'Il <i>tier</i> del listone non va toccato: è il pronostico di luglio, e serve che resti fermo mentre la ' +
+      'classifica lo corregge. Se lo riscrivessi a mano ogni settimana il campo verrebbe contato due volte.' +
+      (quante ? ' In archivio ci sono <b>' + quante + '</b> partite.' : '') + '</p>' +
+      '<div class="ris-riga"><label class="ris-lab">Giornata <input type="text" inputmode="numeric" id="risGiornata" class="num-in" value="' + g + '" /></label>' +
+      '<button type="button" class="btn" id="risBtn">Carica risultati</button></div>' +
+      '<textarea id="risTesto" class="paste-area" rows="6" placeholder="Genoa-Como 1-2&#10;Inter-Torino 3-0&#10;..."></textarea>' +
+      '<div class="ris-feedback" id="risFeedback"' + (RIS_MSG ? ' data-tone="' + RIS_MSG.tono + '"' : '') + '>' +
+      (RIS_MSG ? escapeHtml(RIS_MSG.testo) : "") + '</div>' +
+      '</div></details>';
+  }
+  function agganciaRisultati() {
+    var btn = document.getElementById("risBtn");
+    if (btn) btn.addEventListener("click", caricaRisultatiIncollati);
+  }
+  function esitoRisultati(testo, tono) {
+    RIS_MSG = { testo: testo, tono: tono || "good" };
+    var fb = document.getElementById("risFeedback");
+    if (fb) { fb.textContent = testo; fb.dataset.tone = RIS_MSG.tono; }
+  }
+  async function caricaRisultatiIncollati() {
+    var gn = parseInt((document.getElementById("risGiornata") || {}).value, 10);
+    var testo = (document.getElementById("risTesto") || {}).value || "";
+    if (!gn || gn < 1 || gn > 38) { esitoRisultati("Metti un numero di giornata fra 1 e 38.", "warn"); return; }
+    var letti = leggiRisultati(testo);
+    if (!letti.partite.length) {
+      esitoRisultati("Non ho riconosciuto nessuna partita." +
+        (letti.scarti.length ? " Righe non capite: " + letti.scarti.join(" · ") : ""), "warn");
+      return;
+    }
+    // Prima in locale, poi sul cloud: se la rete non c'e' il tool resta usabile
+    // e lo dice, invece di far credere che il dato sia al sicuro.
+    letti.partite.forEach(function (p) {
+      var i = -1;
+      for (var k = 0; k < RISULTATI_SA.length; k++) {
+        if (Number(RISULTATI_SA[k].giornata) === gn && RISULTATI_SA[k].casa === p.casa) { i = k; break; }
+      }
+      var riga = { giornata: gn, casa: p.casa, trasferta: p.trasferta, gol_casa: p.golCasa, gol_trasferta: p.golTrasferta };
+      if (i >= 0) RISULTATI_SA[i] = riga; else RISULTATI_SA.push(riga);
+    });
+    var nuovaCls = classificaDaRisultati(RISULTATI_SA);
+    CLASSIFICA_SA.length = 0;
+    nuovaCls.forEach(function (r) { CLASSIFICA_SA.push(r); });
+    invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
+
+    var msg = letti.partite.length + (letti.partite.length === 1 ? " partita letta" : " partite lette") + ": " +
+      letti.partite.map(function (p) { return p.etichetta; }).join(" · ");
+    if (letti.scarti.length) msg += " — non capite: " + letti.scarti.join(" · ");
+    var tono = letti.scarti.length ? "warn" : "good";
+
+    try {
+      var r1 = await sb.from("serie_a_risultati").upsert(letti.partite.map(function (p) {
+        return { giornata: gn, casa: p.casa, trasferta: p.trasferta, gol_casa: p.golCasa, gol_trasferta: p.golTrasferta };
+      }), { onConflict: "giornata,casa" });
+      if (r1.error) throw r1.error;
+      var r2 = await sb.from("serie_a_classifica").upsert(nuovaCls, { onConflict: "giornata,squadra" });
+      if (r2.error) throw r2.error;
+      msg += " — salvate, classifica ricalcolata su " + nuovaCls.length + " righe";
+    } catch (e) {
+      console.warn("serie_a_risultati:", e);
+      msg += " — applicate qui, ma NON salvate sul cloud (serve l'accesso)";
+      tono = "warn";
+    }
+    esitoRisultati(msg, tono);
+    var ta = document.getElementById("risTesto");
+    if (ta) ta.value = "";
+    // La forza degli avversari e' appena cambiata: tutto quello che ci si
+    // appoggia va ridisegnato, non solo questa scheda.
+    renderSerieA();
+    renderLegaCard(); renderResult(); renderFormAvvCard(); renderHome();
+  }
+
   function renderSerieA() {
     var host = document.getElementById("serieaHost");
     if (!host) return;
     var d = datiSerieA();
     if (!d.righe.length) {
-      host.innerHTML = '<div class="card"><p class="prof-nota">Non ci sono ancora voti o classifica da cui ricavare qualcosa.</p></div>';
+      // Il riquadro per incollare i risultati va mostrato SOPRATTUTTO qui: e'
+      // il caso in cui non c'e' ancora niente, ed e' da li' che si comincia.
+      host.innerHTML = boxRisultati() +
+        '<div class="card"><p class="prof-nota">Non ci sono ancora voti o classifica da cui ricavare qualcosa.</p></div>';
+      agganciaRisultati();
       return;
     }
     var righe = d.righe;
@@ -5357,7 +5785,8 @@ async function refreshLivePlayerNews() {
         '<div class="prof-blocco"><h4 class="cons-tit" data-tone="danger">Sotto le attese</h4>' + listaG(worst) + '</div>' +
       '</div><p class="prof-nota">Scarto medio per partita, solo per chi ha almeno due voti. Sul singolo giocatore due giornate sono quasi sempre rumore: serve uno scarto sopra 1,3 per un difensore e sopra 2,5 per un attaccante prima di poterlo chiamare rendimento. Questa lista dice <b>dove guardare</b>, non chi comprare.</p></div></details>';
 
-    host.innerHTML = boxCls + boxResa + boxTrend + boxGioc;
+    host.innerHTML = boxRisultati() + boxCls + boxResa + boxTrend + boxGioc;
+    agganciaRisultati();
   }
 
   // ---------------- Scheda Listone ----------------
@@ -6302,7 +6731,7 @@ async function refreshLivePlayerNews() {
       var oppTeam = avvCode ? teamByCode(avvCode) : null;
       var diff = oppTeam ? diffFromTier(oppTeam.tier) : "media";
       var raw = exp
-        + (difficoltaMod(diff, rp.r) + (casa ? CASA_DELTA : -CASA_DELTA))
+        + (difficoltaMod(diff, rp.r, oppTeam ? oppTeam.name : null) + (casa ? CASA_DELTA : -CASA_DELTA))
         + ((rp.r === "P" || rp.r === "D") ? cleanSheetTerm(rp.r, diff) : 0)
         + ((flags & 1) ? RIGORISTA_BONUS : 0)
         + ((flags & 2) ? PIAZZATI_BONUS : 0);
@@ -6362,6 +6791,7 @@ async function refreshLivePlayerNews() {
           bonus: bonusM,
           varianza: varM,
           centro: scelti.C.map(function (x) { return x.mv; }),
+          undici: scelti,
           mancanti: mancanti,
           reale: true,
           ufficiale: !!manuale.ufficiale,
@@ -6375,10 +6805,12 @@ async function refreshLivePlayerNews() {
       var shape = SHAPES[name];
       if (state.meta.modificatore && shape.D !== 4) return;
       var tot = 0, varianza = 0, ok = true, difs = [], gk = null, cents = [];
+      var undici = { P: [], D: [], C: [], A: [] };
       ["P", "D", "C", "A"].forEach(function (r) {
         var need = shape[r] || 0;
         if (pool[r].length < need) { ok = false; return; }
         var picked = pool[r].slice(0, need);
+        undici[r] = picked;
         var sub = pool[r][need];
         var subVal = sub ? sub.raw * sub.prob : 0;
         var sd = SD_FANTAVOTO_RUOLO[r] || 1.0;
@@ -6410,7 +6842,7 @@ async function refreshLivePlayerNews() {
       var totale = tot + bonus;
       // I voti puri dei suoi centrocampisti servono al modificatore di
       // centrocampo, che è un confronto diretto fra le due mediane.
-      if (!best || totale > best.totale) best = { modulo: name, totale: totale, bonus: bonus, varianza: varianza, centro: cents.map(function (x) { return x.mv; }) };
+      if (!best || totale > best.totale) best = { modulo: name, totale: totale, bonus: bonus, varianza: varianza, centro: cents.map(function (x) { return x.mv; }), undici: undici };
     });
     if (!best) return null;
     best.mancanti = mancanti;
@@ -7289,12 +7721,59 @@ async function refreshLivePlayerNews() {
     // metto sotto, a tutta larghezza e richiudibili.
     html += '</div><div class="pitch-card"><div class="pitch">' + pitchLinesSvg() + pitchDots(pitchData, bestShape) + '</div>' + legendaHtml() + '</div></div>';
 
-    html += '<details class="approfondimenti"><summary><span>Riserve consigliate</span><span class="ap-conta">' + bestResult.bench.length + '</span></summary><div class="ap-body"><div class="bench-list">';
-    if (!bestResult.bench.length) html += '<div class="empty-row">Nessuna riserva disponibile.</div>';
-    else bestResult.bench.forEach(function (x) {
-      html += '<div class="bench-item pl-riga">' + rigaGiocatoreHtml(x.p, x.s.raw, {}) + '</div>';
-    });
-    html += '</div></div></details>';
+    // Panchina: l'ordine in cui vanno messi in distinta, non una lista dei
+    // migliori rimasti. Sono due cose diverse — il secondo portiere puo' essere
+    // il piu' forte fuori dagli undici e servire quasi mai, mentre il terzo
+    // attaccante entra spesso perche' davanti i ballottaggi sono tanti.
+    var panc = panchinaConsigliata(bestResult.chosen);
+    var RUOLO_ET = { P: "portiere", D: "difensore", C: "centrocampista", A: "attaccante" };
+    html += '<details class="approfondimenti" open><summary><span>Panchina consigliata · ' + panc.maxCambi + ' cambi</span>' +
+      '<span class="ap-conta">' + panc.panchina.length + '</span></summary><div class="ap-body">';
+    if (!panc.panchina.length) {
+      html += '<div class="empty-row">Nessuna riserva disponibile: se salta un titolare la maglia resta vuota.</div>';
+    } else {
+      html += '<p class="prof-nota">In quest\'ordine. Ogni riga vale <b>quanto probabile e\' che serva</b> per <b>quanto rende chi entra</b>: ' +
+        'il primo cambio di un reparto conta molto piu\' del secondo, perche\' due titolari dello stesso reparto che saltano insieme sono rari. ' +
+        'La panchina copre in tutto <b>' + panc.vera.toFixed(2) + '</b> fantapunti attesi' +
+        (Math.abs(panc.copertura) >= 0.05
+          ? ', cioe\' <b>' + panc.copertura.toFixed(2) + '</b> rispetto a quanto il calcolo del modulo dava per scontato (assumeva che lo stesso sostituto coprisse ogni buco, quante volte serviva).'
+          : '.') + '</p>';
+      html += '<div class="bench-list">';
+      panc.panchina.forEach(function (x, i) {
+        html += '<div class="bench-item"><div class="pl-riga">' + rigaGiocatoreHtml(x.p, x.s.raw, {}) + '</div>' +
+          '<div class="warn-note">' + (i + 1) + '&ordm; cambio · entra se salta il ' + x.ordine + '&ordm; ' + RUOLO_ET[x.ruolo] +
+          ' · serve nel ' + Math.round(x.pServe * 100) + '% dei casi · vale ' + x.valore.toFixed(2) + ' fantapunti</div></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div></details>';
+
+    // L'undici che attribuiamo all'avversario. Il tool lo calcolava gia' per
+    // stimare i suoi punti, ma se lo teneva per se': vederlo serve a capire se
+    // la stima e' credibile, e a correggerla a mano quando non lo e'.
+    if (data.avversario && data.avversario.undici) {
+      var av = data.avversario, nUndici = 0;
+      ROLES.forEach(function (r) { nUndici += (av.undici[r.key] || []).length; });
+      html += '<details class="approfondimenti"><summary><span>Undici probabile di ' + escapeHtml(av.squadra) + '</span>' +
+        '<span class="ap-conta">' + (av.modulo || nUndici) + '</span></summary><div class="ap-body">';
+      html += '<p class="prof-nota">' + (av.ufficiale
+        ? 'Formazione <b>ufficiale</b>, inserita a mano: qui non si indovina niente.'
+        : (av.reale
+          ? 'Formazione <b>probabile</b> inserita a mano, pesata per la titolarita\': la notizia puo\' ancora cambiare.'
+          : 'Stima del tool: il suo <b>miglior undici</b> fra i moduli standard, con la difficolta\' della singola partita e il modificatore della lega. Non e\' quello che schierera\' per certo, e\' quello che gli conviene schierare.')) +
+        ' Vale <b>' + av.punti.toFixed(1) + '</b> fantapunti attesi, oscillazione &plusmn;' + Math.sqrt(av.varianza || 0).toFixed(1) + '.' +
+        (av.mancanti ? ' <b>' + av.mancanti + '</b> giocatori della sua rosa non sono nel listone e restano fuori dal conto.' : '') + '</p>';
+      html += '<div class="bench-list">';
+      ROLES.forEach(function (r) {
+        (av.undici[r.key] || []).forEach(function (x) {
+          html += '<div class="bench-item pl-riga">' +
+            '<span class="pl-ruolo" data-ruolo="' + r.key + '">' + r.key + '</span>' +
+            '<div class="pl-main"><div class="pl-top"><span class="pl-nome">' + escapeHtml(x.nome) + '</span></div></div>' +
+            '<div class="pl-punteggio"><span class="pl-voto" data-fascia="' + fasciaVoto(x.raw).key + '">' + x.raw.toFixed(1) + '</span></div></div>';
+        });
+      });
+      html += '</div></div></details>';
+    }
 
     html += '<details class="approfondimenti"><summary><span>Confronto fra i 7 moduli</span></summary><div class="ap-body">';
     html += '<div class="compare-wrap"><table class="compare-table"><thead><tr><th>Modulo</th><th>Senza bonus/malus</th><th>Con bonus/malus</th><th>Reparti</th></tr></thead><tbody>';
