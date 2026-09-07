@@ -950,6 +950,36 @@
     color: var(--text-muted); font-weight: 700;
   }
   .sez-nota { margin: 8px 0 0; font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  /* La Gazzetta di giornata. Unico posto del tool dove il testo alza la voce:
+     e' un pezzo di giornale, non una tabella, e deve sembrarlo. Nessun colore
+     nuovo — solo peso, corpo e una riga rossa in alto come le testate. */
+  .gazz { margin-top: 4px; }
+  .gazz-apertura {
+    border-top: 3px solid var(--danger); padding-top: 12px; margin-bottom: 18px;
+  }
+  .gazz-titolo {
+    margin: 0 0 6px; font-size: 21px; line-height: 1.15; font-weight: 800;
+    letter-spacing: -0.01em; text-wrap: balance; color: var(--text);
+  }
+  .gazz-occhiello { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text); }
+  .gazz-sez { margin-bottom: 16px; }
+  .gazz-sez h5 {
+    margin: 0 0 6px; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--text-muted);
+  }
+  .gazz-sez p { margin: 0; font-size: 13.5px; line-height: 1.55; }
+  .gazz-lista { margin: 0; padding-left: 18px; }
+  .gazz-lista li { font-size: 13.5px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+  .gazz-chiusura {
+    margin: 0; padding-top: 10px; border-top: 1px solid var(--line);
+    font-size: 12.5px; font-style: italic; color: var(--text-muted);
+  }
+  /* Il pulsante e' il motivo per cui la scheda esiste: senza un bordo si legge
+     come una nota e non come una cosa da premere. */
+  #gazzCopia { border: 1px solid var(--line); }
+  @media (max-width: 560px) { .gazz-titolo { font-size: 18px; } }
+
   .avv-piu { color: var(--good); font-weight: 700; }
   .avv-meno { color: var(--danger); font-weight: 700; }
   /* Tutta la prosa esplicativa in un solo posto, chiuso. Prima erano quattro
@@ -2703,6 +2733,7 @@
       <p>Chi affronti, come sono andati gli scontri diretti e la classifica generale.</p>
     </div>
     <div id="legaCardHost"></div>
+    <div id="gazzettaCardHost"></div>
     <div id="autopsiaCardHost"></div>
     <div id="risultatiCardHost"></div>
   </section>
@@ -2722,6 +2753,7 @@
       <h2>Dati di giornata</h2>
       <p>Voti e fantavoti reali, e la formazione che ogni squadra della lega ha schierato. Più dati veri entrano qui, più le previsioni diventano precise.</p>
     </div>
+    <div id="importVotiHost"></div>
     <div id="historyCardHost"></div>
     <div id="formAvvCardHost"></div>
   </section>
@@ -2814,6 +2846,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Lettura dei .xlsx dei voti, tutta nel browser: il file non lascia il
+     computer. Se il CDN non risponde il resto del tool funziona lo stesso e
+     l'importatore lo dice, invece di rompersi in silenzio. -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -3501,6 +3537,14 @@
         listoneValori: q[11].data || [],
         risultatiSA: q[12].data || []
       };
+      // I voti si leggono solo da collegati (sono materiale della redazione
+      // Fantacalcio.it, non nostro). Da sloggati la query non da' errore:
+      // torna zero righe. Senza questo controllo la cache verrebbe riscritta
+      // vuota e il tool si troverebbe senza storico senza dire perche'.
+      if ((!rif.voti || !rif.voti.length) && cache && cache.voti && cache.voti.length) {
+        rif.voti = cache.voti;
+        console.info("Voti non leggibili senza accesso: tengo quelli gia' scaricati.");
+      }
       if (!rifValidi(rif)) throw new Error("tabelle di riferimento vuote");
       applicaRiferimenti(rif);
       rifOrigine = "cloud";
@@ -6946,6 +6990,341 @@ async function refreshLivePlayerNews() {
   // giornata), usato per suggerire la Forma. state.meta.storico tiene invece,
   // per l'intera rosa, il valore atteso salvato ad ogni "Calcola formazione" a
   // confronto col punteggio reale che l'utente compila dopo aver giocato.
+  /* ===================================================================
+     IMPORTATORE DEI VOTI (07/09/2026)
+
+     Fino a oggi i voti di ogni giornata passavano a mano: file in chat,
+     SQL generato fuori, scritto nel database da qualcun altro. Era
+     l'unico punto in cui il tool non poteva funzionare da solo.
+
+     PERCHE' BASTA IL BROWSER. La policy di voti_giornata concede ALL a
+     `authenticated` con auth.uid() del proprietario: da loggato, il
+     client scrive direttamente. Nessun backend, nessuna chiave nuova.
+     E la chiave primaria e' (giornata, giocatore, fonte), quindi
+     l'upsert e' idempotente: ricaricare due volte lo stesso file non
+     duplica niente. E' la proprieta' che lo rende sicuro di domenica.
+
+     IL FANTAVOTO NON E' NEL FILE: si calcola dai bonus. La formula qui
+     sotto NON e' presa da un regolamento, e' stata VERIFICATA contro i
+     318 voti gia' in archivio della giornata 1: 311 identici, e le 7
+     differenze erano tutte portieri, tutte esattamente +1, tutte con
+     zero gol subiti. Da li' e' saltato fuori il bonus imbattibilita',
+     che mancava. Con quello, corrispondenza piena.
+
+     Tre trappole nei file, tutte viste sui file veri:
+       - 20 righe su 339 sono ALLENATORI (Ruolo 'ALL'): vanno scartate;
+       - ~26 voti a giornata hanno un asterisco ('6*'): va tolto prima
+         di convertire, e il flag conservato;
+       - qualche Nome ha spazi in coda ('Fini ').
+     =================================================================== */
+
+  var IMPORT_STATO = null;   // anteprima in attesa di conferma
+  var IMPORT_MSG = "";
+
+  function importNum(v) {
+    if (v == null || v === "") return { n: null, ufficio: false };
+    var s = String(v).trim();
+    var uff = s.indexOf("*") >= 0;
+    s = s.replace(/\*/g, "").replace(",", ".").trim();
+    if (s === "") return { n: null, ufficio: uff };
+    var n = Number(s);
+    return { n: isFinite(n) ? n : null, ufficio: uff };
+  }
+
+  // Verificata sui dati, non dedotta dal regolamento: vedi il blocco sopra.
+  function fantavotoDaBonus(r) {
+    if (r.voto == null) return null;
+    var t = r.voto
+      + 3 * r.gf - r.gs
+      + 3 * r.rp - 3 * r.rs + 3 * r.rf
+      - 2 * r.au - 0.5 * r.amm - r.esp + r.ass;
+    if (r.ruolo === "P" && r.gs === 0) t += 1;   // imbattibilita'
+    return Math.round(t * 100) / 100;
+  }
+
+  // Un foglio = una fonte voti. Il club sta su una riga da solo, poi
+  // l'intestazione, poi i giocatori: si tiene traccia dell'ultimo club visto.
+  function leggiFoglioVoti(ws) {
+    var righe = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+    var col = null, club = null, out = [], allenatori = 0, asterischi = 0;
+    for (var i = 0; i < righe.length; i++) {
+      var r = righe[i] || [];
+      var c0 = r[0];
+      if (c0 == null || c0 === "") continue;
+      if (String(c0).trim() === "Cod.") {
+        col = {};
+        for (var k = 0; k < r.length; k++) col[String(r[k]).trim()] = k;
+        continue;
+      }
+      // Riga di intestazione squadra: una cella sola, e non e' un numero.
+      if (typeof c0 === "string" && (r[1] == null || r[1] === "")) { club = c0.trim(); continue; }
+      if (!col) continue;
+      var cod = Number(c0);
+      if (!isFinite(cod)) continue;
+      var ruolo = String(r[col["Ruolo"]] || "").trim();
+      if (ruolo === "ALL") { allenatori++; continue; }   // gli allenatori non hanno fantavoto
+      var v = importNum(r[col["Voto"]]);
+      if (v.ufficio) asterischi++;
+      var g = function (nome) { var x = Number(r[col[nome]]); return isFinite(x) ? x : 0; };
+      var riga = {
+        cod: cod, club: club, ruolo: ruolo,
+        nome: String(r[col["Nome"]] || "").trim(),
+        voto: v.n, ufficio: v.ufficio,
+        gf: g("Gf"), gs: g("Gs"), rp: g("Rp"), rs: g("Rs"), rf: g("Rf"),
+        au: g("Au"), amm: g("Amm"), esp: g("Esp"), ass: g("Ass")
+      };
+      if (!riga.nome) continue;
+      riga.fantavoto = fantavotoDaBonus(riga);
+      out.push(riga);
+    }
+    return { righe: out, allenatori: allenatori, asterischi: asterischi };
+  }
+
+  // La giornata sta nel titolo ("Voti Fantacalcio 2ª giornata di campionato")
+  // oppure nel nome del file. Se non si trova, la si chiede: indovinarla
+  // significherebbe scrivere una giornata intera nel posto sbagliato.
+  function giornataDaFile(wb, nomeFile) {
+    var testo = "";
+    try {
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var prime = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false }).slice(0, 4);
+      testo = prime.map(function (r) { return (r || []).join(" "); }).join(" ");
+    } catch (e) { testo = ""; }
+    var m = testo.match(/(\d{1,2})\s*[ª^]?\s*giornata/i);
+    if (m) return Number(m[1]);
+    m = String(nomeFile || "").match(/giornata[_\s-]*(\d{1,2})/i);
+    return m ? Number(m[1]) : null;
+  }
+
+  // I fogli del file NON si chiamano come le fonti gia' in archivio: il foglio
+  // e' "Statistico", ma in tabella (e nelle regole della Cassina) la fonte si
+  // chiama "Statistico Alvin482". Scrivere il nome del foglio cosi' com'e'
+  // creerebbe una fonte gemella e spezzerebbe in due i voti dello stesso
+  // campionato, in silenzio. Presa prima di scrivere, non dopo.
+  var IMPORT_FONTI = { "Statistico": "Statistico Alvin482" };
+  function fonteDaFoglio(nome) {
+    var n = String(nome || "").trim();
+    return IMPORT_FONTI[n] || n;
+  }
+
+  function analizzaFileVoti(wb, nomeFile) {
+    var fonti = [], allenatori = 0, asterischi = 0, totale = 0;
+    wb.SheetNames.forEach(function (nome) {
+      var r = leggiFoglioVoti(wb.Sheets[nome]);
+      if (!r.righe.length) return;
+      fonti.push({ fonte: fonteDaFoglio(nome), foglio: nome, righe: r.righe });
+      allenatori += r.allenatori; asterischi += r.asterischi; totale += r.righe.length;
+    });
+    if (!fonti.length) return { errore: "Nel file non ho trovato nessuna tabella di voti (manca la riga «Cod.»)." };
+
+    // Chi non trova posto nel listone: elencato, mai indovinato. Un nome
+    // attribuito male sporca la fantamedia di un giocatore che non c'entra.
+    var noti = {};
+    RIF_LISTONE.forEach(function (l) { noti[normalizeNameKey(l.nome)] = true; });
+    var orfaniSet = {};
+    fonti.forEach(function (f) {
+      f.righe.forEach(function (r) { if (!noti[normalizeNameKey(r.nome)]) orfaniSet[r.nome] = true; });
+    });
+
+    var giornata = giornataDaFile(wb, nomeFile);
+    // I risultati si ricavano da UNA fonte sola: i gol subiti sono un fatto, e
+    // sono identici in tutti i fogli. Si preferisce la redazione.
+    var perRisultati = fonti.filter(function (f) { return f.fonte === "Fantacalcio"; })[0] || fonti[0];
+    var ris = risultatiDaVoti(perRisultati.righe, giornata);
+
+    return {
+      nomeFile: nomeFile,
+      giornata: giornata,
+      risultati: ris.partite, risultatiMancanti: ris.mancanti,
+      scriviRisultati: ris.partite.length > 0,
+      fonti: fonti, totale: totale,
+      allenatori: allenatori, asterischi: asterischi,
+      senzaVoto: fonti.reduce(function (s, f) {
+        return s + f.righe.filter(function (r) { return r.voto == null; }).length;
+      }, 0),
+      orfani: Object.keys(orfaniSet).sort()
+    };
+  }
+
+  // I RISULTATI DI SERIE A SONO GIA' DENTRO IL FILE DEI VOTI (07/09/2026).
+  // I gol subiti dal portiere sono i gol dell'avversario: basta questo per
+  // ricostruire il tabellino, e li' dentro ci sono gia' rigori e autogol senza
+  // doverli sommare a parte. Verificato sulle 8 partite della giornata 3: le
+  // stesse otto inserite a mano, cifra per cifra.
+  //
+  // Si somma sui PORTIERI e non su tutti: nel file la colonna Gs e' compilata
+  // solo per loro, e con due portieri in una partita la somma resta giusta.
+  function risultatiDaVoti(righe, gn) {
+    if (!(gn >= 1) || !FIXTURES.length || !FIXTURES[gn - 1]) return { partite: [], mancanti: [] };
+    var subiti = {}, presente = {};
+    (righe || []).forEach(function (r) {
+      if (!r.club) return;
+      var t = teamByName(r.club);
+      if (!t) return;
+      presente[t.code] = true;
+      if (r.ruolo === "P" && r.voto != null) subiti[t.code] = (subiti[t.code] || 0) + r.gs;
+    });
+    var partite = [], mancanti = [];
+    FIXTURES[gn - 1].forEach(function (c) {
+      var casa = c[0], via = c[1];
+      // Serve il portiere di TUTTE E DUE: con uno solo si saprebbe quanti gol
+      // ha preso una squadra e non l'altra, cioe' mezzo risultato.
+      if (subiti[casa] == null || subiti[via] == null) {
+        if (presente[casa] || presente[via]) mancanti.push(casa + "-" + via);
+        return;
+      }
+      partite.push({
+        casa: casa, trasferta: via,
+        golCasa: subiti[via], golTrasferta: subiti[casa],
+        etichetta: casa + " " + subiti[via] + "-" + subiti[casa] + " " + via
+      });
+    });
+    return { partite: partite, mancanti: mancanti };
+  }
+
+  var IMPORT_BLOCCO = 500;
+  async function scriviVoti(an) {
+    if (!currentUser) return { ok: false, motivo: "Devi essere collegato al tuo account per scrivere i voti." };
+    if (!(an.giornata >= 1)) return { ok: false, motivo: "Manca il numero di giornata." };
+    var filari = [];
+    an.fonti.forEach(function (f) {
+      f.righe.forEach(function (r) {
+        if (r.voto == null) return;   // non ha giocato: non si scrive uno zero che non esiste
+        filari.push({
+          giornata: an.giornata, giocatore: r.nome, fonte: f.fonte,
+          voto: r.voto, fantavoto: r.fantavoto
+        });
+      });
+    });
+    if (!filari.length) return { ok: false, motivo: "Non c'e' nessun voto da scrivere." };
+    for (var i = 0; i < filari.length; i += IMPORT_BLOCCO) {
+      var pezzo = filari.slice(i, i + IMPORT_BLOCCO);
+      var res = await sb.from("voti_giornata").upsert(pezzo, { onConflict: "giornata,giocatore,fonte" });
+      if (res.error) return { ok: false, motivo: res.error.message, scritti: i };
+    }
+    return { ok: true, scritti: filari.length };
+  }
+
+  function renderImportVoti() {
+    var host = document.getElementById("importVotiHost");
+    if (!host) return;
+    var esistente = document.getElementById("importVotiCard");
+    var wasOpen = esistente ? esistente.open : false;
+    var an = IMPORT_STATO;
+
+    var corpo;
+    if (typeof XLSX === "undefined") {
+      corpo = '<p class="lega-note">Il lettore dei file .xlsx non si e\' caricato (serve la rete la prima volta). Ricarica la pagina e riprova.</p>';
+    } else if (!an) {
+      corpo = '<p class="lega-note">Scegli il file dei voti scaricato da Fantacalcio.it. Viene letto <b>qui nel browser</b>: il file non viene caricato da nessuna parte finche\' non premi Scrivi.</p>' +
+        '<p><input type="file" id="importFile" accept=".xlsx,.xls" /></p>';
+    } else if (an.errore) {
+      corpo = '<p class="lega-note">' + escapeHtml(an.errore) + '</p><p><button type="button" class="btn-ghost btn-small" id="importAnnulla">Scegli un altro file</button></p>';
+    } else {
+      var gio = an.giornata != null
+        ? '<b>giornata ' + an.giornata + '</b>'
+        : '<label>giornata <input type="text" inputmode="numeric" id="importG" class="num-in" value="" style="width:56px" /></label> <span class="avv-meno">non trovata nel file: scrivila</span>';
+      corpo =
+        '<div class="scoreboard">' +
+          '<div class="sb-card"><div class="sb-l">Righe</div><div class="sb-v">' + an.totale + '</div><div class="sb-sub">' + an.fonti.length + (an.fonti.length === 1 ? ' fonte' : ' fonti') + '</div></div>' +
+          '<div class="sb-card"><div class="sb-l">Senza voto</div><div class="sb-v">' + an.senzaVoto + '</div><div class="sb-sub">non scritti</div></div>' +
+          '<div class="sb-card"><div class="sb-l">Voti d\'ufficio</div><div class="sb-v">' + an.asterischi + '</div><div class="sb-sub">con asterisco</div></div>' +
+          '<div class="sb-card"><div class="sb-l">Allenatori</div><div class="sb-v">' + an.allenatori + '</div><div class="sb-sub">scartati</div></div>' +
+        '</div>' +
+        '<p class="lega-note">File <b>' + escapeHtml(an.nomeFile) + '</b> — ' + gio + '. Fonti trovate: ' +
+          an.fonti.map(function (f) {
+            var et = escapeHtml(f.fonte) + ' (' + f.righe.length + ')';
+            // Se il foglio si chiama diversamente dalla fonte, si dice: cosi'
+            // e' evidente dove finiranno i voti prima di scriverli.
+            if (f.foglio && f.foglio !== f.fonte) et += ' <span class="lega-note">dal foglio «' + escapeHtml(f.foglio) + '»</span>';
+            return et;
+          }).join(", ") + '.</p>' +
+        (an.orfani.length
+          ? '<p class="lega-note"><b>' + an.orfani.length + ' nomi non sono nel listone</b> e resteranno senza collegamento: ' +
+            escapeHtml(an.orfani.slice(0, 12).join(", ")) + (an.orfani.length > 12 ? ' e altri' : '') +
+            '. I voti si scrivono lo stesso: sono elencati, non indovinati.</p>'
+          : '<p class="lega-note">Tutti i nomi trovano corrispondenza nel listone.</p>') +
+        (an.risultati && an.risultati.length
+          ? '<div class="sez"><h4>Risultati di Serie A ricavati dal file</h4>' +
+            '<p class="lega-note">Dai gol subiti dai portieri. ' + an.risultati.length +
+            (an.risultati.length === 1 ? ' partita' : ' partite') +
+            (an.risultatiMancanti.length ? ' — incomplete: ' + escapeHtml(an.risultatiMancanti.join(", ")) : "") + '.</p>' +
+            '<p class="lega-note">' + an.risultati.map(function (p) { return escapeHtml(p.etichetta); }).join(" &nbsp;·&nbsp; ") + '</p>' +
+            '<label class="hide-assigned-toggle"><input type="checkbox" id="importRis"' + (an.scriviRisultati ? " checked" : "") + '> scrivi anche questi risultati</label></div>'
+          : "") +
+        (currentUser
+          ? '<p><button type="button" class="btn-primary btn-small" id="importScrivi">Scrivi i voti</button> ' +
+            '<button type="button" class="btn-ghost btn-small" id="importAnnulla">Annulla</button></p>'
+          : '<p class="lega-note"><b>Devi collegarti al tuo account</b> per scrivere: da qui in poi si tocca il database condiviso.</p>' +
+            '<p><button type="button" class="btn-ghost btn-small" id="importAnnulla">Annulla</button></p>');
+    }
+
+    host.innerHTML =
+      '<details class="intro" id="importVotiCard"' + (wasOpen || an ? " open" : "") + '>' +
+        '<summary>Carica i voti della giornata</summary>' +
+        '<div class="intro-body">' +
+          corpo +
+          (IMPORT_MSG ? '<p class="sez-nota">' + escapeHtml(IMPORT_MSG) + '</p>' : '') +
+          '<details class="aiuto"><summary>Cosa fa, esattamente</summary>' +
+            '<p>Legge tutti i fogli del file — sono le <b>fonti voti</b> (Fantacalcio, Statistico, Italia) — e le scrive tutte: la fonte giusta la sceglie gia\' ogni lega dalle sue regole.</p>' +
+            '<p>Il <b>fantavoto non e\' nel file</b>: viene calcolato dai bonus (gol, assist, rigori, cartellini) piu\' il <b>+1 di imbattibilita\' al portiere che non subisce gol</b>. La formula e\' stata verificata sui voti gia\' in archivio: 311 su 318 identici, e le 7 differenze erano esattamente i portieri imbattuti — da li\' e\' saltato fuori il bonus che mancava.</p>' +
+            '<p>Le righe degli <b>allenatori</b> vengono scartate, chi non ha preso voto non viene scritto (uno zero che non esiste falserebbe tutto), e riscrivere lo stesso file <b>non duplica niente</b>: la chiave e\' giornata + giocatore + fonte.</p>' +
+          '</details>' +
+        '</div>' +
+      '</details>';
+
+    var f = document.getElementById("importFile");
+    if (f) f.addEventListener("change", function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      IMPORT_MSG = "Leggo il file…"; renderImportVoti();
+      var fr = new FileReader();
+      fr.onload = function () {
+        try {
+          var wb = XLSX.read(new Uint8Array(fr.result), { type: "array" });
+          IMPORT_STATO = analizzaFileVoti(wb, file.name);
+        } catch (err) {
+          IMPORT_STATO = { errore: "Non riesco a leggere il file: " + (err && err.message ? err.message : err) };
+        }
+        IMPORT_MSG = ""; renderImportVoti();
+      };
+      fr.onerror = function () { IMPORT_STATO = { errore: "Lettura del file non riuscita." }; IMPORT_MSG = ""; renderImportVoti(); };
+      fr.readAsArrayBuffer(file);
+    });
+
+    var ann = document.getElementById("importAnnulla");
+    if (ann) ann.addEventListener("click", function () { IMPORT_STATO = null; IMPORT_MSG = ""; renderImportVoti(); });
+
+    var scr = document.getElementById("importScrivi");
+    if (scr) scr.addEventListener("click", async function () {
+      var g = document.getElementById("importG");
+      if (g) IMPORT_STATO.giornata = parseInt(String(g.value).trim(), 10);
+      if (!(IMPORT_STATO.giornata >= 1)) { IMPORT_MSG = "Scrivi il numero di giornata prima di continuare."; renderImportVoti(); return; }
+      var cbr = document.getElementById("importRis");
+      var vuoleRisultati = !!(cbr && cbr.checked && IMPORT_STATO.risultati && IMPORT_STATO.risultati.length);
+      var risultati = IMPORT_STATO.risultati, gRis = IMPORT_STATO.giornata;
+      scr.disabled = true; IMPORT_MSG = "Scrivo…"; renderImportVoti();
+      var r = await scriviVoti(IMPORT_STATO);
+      if (r.ok) {
+        IMPORT_STATO = null;
+        IMPORT_MSG = r.scritti + " voti scritti. Ricarico i dati…";
+        renderImportVoti();
+        // I risultati passano dallo stesso percorso del riquadro "incolla":
+        // ricalcola la classifica, salva e ridisegna tutto quello che dipende
+        // dalla forza delle squadre. Due strade separate divergerebbero.
+        if (vuoleRisultati) {
+          try { await applicaRisultati(gRis, risultati, []); } catch (e) { console.warn("risultati da voti:", e); }
+        }
+        try { localStorage.removeItem(RIF_CACHE_KEY); } catch (e) {}
+        await caricaRiferimenti();
+        IMPORT_MSG = r.scritti + " voti scritti e caricati.";
+      } else {
+        IMPORT_MSG = "Non scritti: " + r.motivo + (r.scritti ? " (i primi " + r.scritti + " erano gia' passati)" : "");
+      }
+      renderImportVoti();
+    });
+  }
+
   function normalizeNameKey(s) {
     return (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   }
@@ -7902,6 +8281,361 @@ async function refreshLivePlayerNews() {
   }
 
   /* ===================================================================
+     LA GAZZETTA DI GIORNATA (06/09/2026)
+
+     Il riassunto goliardico del turno di lega, da incollare nel gruppo.
+
+     PERCHE' NON LA SCRIVE UN'INTELLIGENZA ARTIFICIALE. Il tool e' una
+     pagina statica: non ha una chiave API e non puo' averla senza
+     regalarla a chiunque apra il sorgente. Ma la ragione vera e' un'altra:
+     un generatore a modelli non puo' inventarsi un gol che non c'e'
+     stato. Ogni numero qui dentro viene dai voti e dai risultati gia'
+     caricati; le frasi cambiano, i fatti no.
+
+     LA VARIETA' E' DETERMINISTICA. Le frasi si pescano con un seme
+     ricavato da lega + giornata, non a caso: ricalcolando la stessa
+     giornata esce identica (altrimenti "ma prima diceva un'altra cosa"),
+     mentre giornate diverse suonano diverse.
+
+     COSA E' NOSTRO E NON CE L'HA NESSUNO: il Rimpianto e il Rimorso.
+     Tutti sanno chi ha fatto piu' punti; solo qui si sa chi ha lasciato
+     in panchina il 10 di giornata.
+     =================================================================== */
+
+  var GAZZETTA_G = null;
+
+  // Seme stabile da una stringa: stessa giornata, stesse frasi.
+  function semeDa(s) {
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+    return h >>> 0;
+  }
+  function pesca(lista, seme, sale) {
+    if (!lista || !lista.length) return "";
+    return lista[(seme + sale * 2654435761) % lista.length];
+  }
+
+  // Tutti i fatti della giornata, raccolti una volta sola. Se manca qualcosa
+  // il campo resta null e il testo semplicemente non ne parla: meglio una
+  // Gazzetta piu' corta che una che si inventa le notizie.
+  function gazzettaDati(legaId, g) {
+    var L = RIF_LEGHE[legaId];
+    var gn = parseInt(g, 10);
+    if (!L || !(gn >= 1)) return null;
+
+    var esiti = esitiGiornata(gn);
+    var aut = autopsiaGiornata(legaId, gn);
+    var autPer = {};
+    aut.forEach(function (r) { autPer[r.squadra] = r; });
+
+    var proprietario = {}, ruoloDi = {};
+    Object.keys(L.squadre).forEach(function (sq) {
+      (L.squadre[sq].rosa || []).forEach(function (p) { proprietario[p.n] = sq; ruoloDi[p.n] = p.r; });
+    });
+
+    // Chi era davvero in campo. Senza formazioni caricate resta vuoto e le
+    // rubriche sui giocatori si spengono da sole.
+    var schierato = {};
+    var F = (LEGA_FORMAZIONI[legaId] || {})[String(gn)] || {};
+    Object.keys(F).forEach(function (sq) {
+      ((F[sq] && F[sq].nomi) || []).forEach(function (n) { schierato[n] = sq; });
+    });
+    var haFormazioni = Object.keys(schierato).length > 0;
+
+    var inCampo = [], inPanchina = [];
+    Object.keys(proprietario).forEach(function (n) {
+      var fv = fantavotoDi(gn, n);
+      if (fv == null) return;
+      var riga = { n: n, r: ruoloDi[n] || "?", f: fv, sq: proprietario[n] };
+      if (schierato[n]) inCampo.push(riga); else inPanchina.push(riga);
+    });
+    var perVoto = function (a, b) { return b.f - a.f; };
+    inCampo.sort(perVoto);
+    inPanchina.sort(perVoto);
+
+    var sfide = [];
+    coppieGiornata(gn).forEach(function (c) {
+      var a = c[0], b = c[1];
+      var ea = esiti[a], eb = esiti[b];
+      if (!ea || !eb) return;
+      sfide.push({
+        a: a, b: b, fa: ea.fanta, fb: eb.fanta,
+        ga: ea.gol, gb: eb.gol,
+        scarto: Math.abs(ea.fanta - eb.fanta),
+        pari: ea.esito === "N",
+        vincitore: ea.esito === "V" ? a : (eb.esito === "V" ? b : null),
+        perdente: ea.esito === "P" ? a : (eb.esito === "P" ? b : null)
+      });
+    });
+
+    // Chi ha sfiorato il gol successivo. E' il dolore piu' specifico del
+    // fantacalcio con le soglie e nessuno lo racconta.
+    var sfiorati = [];
+    if (soglieGolAttive()) {
+      Object.keys(esiti).forEach(function (sq) {
+        var p = prossimaSogliaGol(esiti[sq].fanta);
+        if (p && p.mancano > 0 && p.mancano <= 1) sfiorati.push({ sq: sq, mancano: p.mancano, gol: p.gol });
+      });
+      sfiorati.sort(function (a, b) { return a.mancano - b.mancano; });
+    }
+
+    return {
+      legaId: legaId, giornata: gn, haFormazioni: haFormazioni,
+      sfide: sfide, esiti: esiti,
+      migliore: inCampo[0] || null,
+      peggiore: inCampo.length ? inCampo[inCampo.length - 1] : null,
+      rimorso: inPanchina[0] || null,
+      rimpianto: aut.length ? aut[0] : null,
+      panchinaOro: aut.length ? aut[aut.length - 1] : null,
+      mediaRimpianto: aut.length ? aut.reduce(function (s, r) { return s + r.rimpianto; }, 0) / aut.length : null,
+      sfiorati: sfiorati,
+      classifica: classificaLega()
+    };
+  }
+
+  var GAZ_APERTURE_RIMPIANTO = [
+    "L'AVVERSARIO PIÙ DURO ERA LA PANCHINA",
+    "IL NEMICO IN CASA: {sq} SI BATTE DA SOLA",
+    "{sq}, LA SCONFITTA ERA GIÀ NELLA DISTINTA"
+  ];
+  var GAZ_APERTURE_GOLEADA = [
+    "{sq} NON FA PRIGIONIERI",
+    "PASSEGGIATA {sq}: {ris} E TUTTI A CASA",
+    "{sq} DILAGA, {avv} PRENDE APPUNTI"
+  ];
+  var GAZ_APERTURE_FENOMENO = [
+    "{gio} DA {voto}: SI ALZI CHI CE L'HA",
+    "{gio} PRENDE LA GIORNATA E SE LA PORTA VIA",
+    "UN {voto} DI {gio}: {sq} RINGRAZIA E INCASSA"
+  ];
+  var GAZ_APERTURE_PARI = [
+    "TURNO DA TRIPLA: SI DIVIDONO TUTTO",
+    "GIORNATA SENZA PADRONI",
+    "NESSUNO VUOLE VINCERE, E CI RIESCONO IN TANTI"
+  ];
+  var GAZ_CHIUSURE = [
+    "Appuntamento alla prossima, con le stesse buone intenzioni e gli stessi errori.",
+    "La classifica non perdona, il gruppo nemmeno.",
+    "Ci si rivede domenica: le scuse portatele già pronte.",
+    "Il bello del fantacalcio è che c'è sempre un'altra giornata per rovinarsi."
+  ];
+  var GAZ_ETICHETTE_BIDONE = [
+    "Il Bidone d'Oro",
+    "La Medaglia di Legno",
+    "Il Premio Rimborso"
+  ];
+
+  function fmtVoto(x) { return (Math.round(x * 10) / 10).toString().replace(".", ","); }
+
+  // Il testo, in blocchi. L'HTML e il testo semplice da incollare nascono
+  // dagli stessi blocchi: due formattazioni diverse della stessa Gazzetta,
+  // cosi' non possono raccontare due storie diverse.
+  function gazzettaBlocchi(legaId, g) {
+    var d = gazzettaDati(legaId, g);
+    if (!d || (!d.sfide.length && !d.migliore)) return null;
+    var seme = semeDa(legaId + "|" + d.giornata);
+    var B = [];
+
+    // --- apertura: si sceglie la notizia più grossa, in quest'ordine ---
+    var titolo = "", occhiello = "";
+    var goleada = d.sfide.slice().sort(function (a, b) { return b.scarto - a.scarto; })[0];
+    var tuttiPari = d.sfide.length > 1 && d.sfide.every(function (s) { return s.pari; });
+
+    if (d.rimpianto && d.rimpianto.rimpianto >= 10) {
+      titolo = pesca(GAZ_APERTURE_RIMPIANTO, seme, 1).replace("{sq}", d.rimpianto.squadra.toUpperCase());
+      occhiello = d.rimpianto.squadra + " ha schierato " + fmtVoto(d.rimpianto.reale) +
+        " potendo fare " + fmtVoto(d.rimpianto.ideale) + ": " + fmtVoto(d.rimpianto.rimpianto) +
+        " punti lasciati in panchina, record negativo di giornata.";
+    } else if (d.migliore && d.migliore.f >= 14) {
+      titolo = pesca(GAZ_APERTURE_FENOMENO, seme, 2)
+        .replace("{gio}", d.migliore.n.toUpperCase()).replace("{voto}", fmtVoto(d.migliore.f));
+      occhiello = d.migliore.n + " chiude a " + fmtVoto(d.migliore.f) + " e da solo vale più di mezzo reparto. " +
+        "Se lo gode " + d.migliore.sq + ".";
+      titolo = titolo.replace("{sq}", d.migliore.sq.toUpperCase());
+    } else if (goleada && goleada.scarto >= 12 && goleada.vincitore) {
+      var perd = goleada.vincitore === goleada.a ? goleada.b : goleada.a;
+      titolo = pesca(GAZ_APERTURE_GOLEADA, seme, 3)
+        .replace("{sq}", goleada.vincitore.toUpperCase())
+        .replace("{avv}", perd.toUpperCase())
+        .replace("{ris}", (goleada.ga != null ? goleada.ga + "-" + goleada.gb : fmtVoto(goleada.fa) + " a " + fmtVoto(goleada.fb)));
+      occhiello = goleada.vincitore + " ne mette " + fmtVoto(Math.max(goleada.fa, goleada.fb)) +
+        " contro " + fmtVoto(Math.min(goleada.fa, goleada.fb)) + ": " + fmtVoto(goleada.scarto) + " punti di scarto.";
+    } else if (tuttiPari) {
+      titolo = pesca(GAZ_APERTURE_PARI, seme, 4);
+      occhiello = "Tutte le sfide del turno finiscono pari: un punto a testa e nessuno che scappa.";
+    } else if (goleada && goleada.vincitore) {
+      titolo = goleada.vincitore.toUpperCase() + " LA SPUNTA";
+      occhiello = "Turno equilibrato, decide chi ha avuto la panchina meno traditrice.";
+    } else {
+      titolo = "GIORNATA " + d.giornata;
+      occhiello = "Il turno in breve.";
+    }
+    B.push({ tipo: "apertura", titolo: titolo, testo: occhiello });
+
+    // --- i risultati, uno per riga ---
+    if (d.sfide.length) {
+      var righe = d.sfide.map(function (s) {
+        var ris = (s.ga != null) ? s.ga + "-" + s.gb : fmtVoto(s.fa) + " – " + fmtVoto(s.fb);
+        var coda = s.pari
+          ? "un punto a testa"
+          : (s.scarto <= 2 ? "decisa da " + fmtVoto(s.scarto) + " punti" : fmtVoto(s.scarto) + " punti di scarto");
+        return s.a + " " + ris + " " + s.b + " — " + coda +
+          " (" + fmtVoto(s.fa) + " contro " + fmtVoto(s.fb) + ")";
+      });
+      B.push({ tipo: "elenco", titolo: "I risultati", righe: righe });
+    }
+
+    // --- le rubriche sui giocatori, solo con le formazioni caricate ---
+    if (d.haFormazioni) {
+      var prem = [];
+      if (d.migliore) prem.push({ et: "Il Pallone d'Oro", txt: d.migliore.n + " (" + d.migliore.sq + "): " + fmtVoto(d.migliore.f) });
+      if (d.peggiore && d.peggiore.f < 5.5) prem.push({ et: pesca(GAZ_ETICHETTE_BIDONE, seme, 5), txt: d.peggiore.n + " (" + d.peggiore.sq + "): " + fmtVoto(d.peggiore.f) + ", e giocava" });
+      if (d.rimorso && d.rimorso.f >= 8) prem.push({ et: "Il Rimorso", txt: d.rimorso.n + " ha fatto " + fmtVoto(d.rimorso.f) + " dalla panchina di " + d.rimorso.sq + ". Da lì non li danno." });
+      // Attenzione al verso, sbagliato una volta e corretto qui: `dentro` sono
+      // quelli della formazione ideale rimasti FUORI (dovevano entrare),
+      // `fuori` quelli schierati che non meritavano il posto. Invertirli fa
+      // dire alla Gazzetta l'esatto contrario, con la faccia di chi ci crede.
+      if (d.rimpianto) prem.push({ et: "Il Rimpianto", txt: d.rimpianto.squadra + ": " + fmtVoto(d.rimpianto.rimpianto) + " punti buttati" + (d.rimpianto.dentro.length && d.rimpianto.fuori.length ? " — ci voleva " + d.rimpianto.dentro[0].n + " (" + fmtVoto(d.rimpianto.dentro[0].f) + ") al posto di " + d.rimpianto.fuori[0].n + " (" + fmtVoto(d.rimpianto.fuori[0].f) + ")" : "") });
+      if (d.panchinaOro && d.panchinaOro.squadra !== (d.rimpianto && d.rimpianto.squadra)) {
+        prem.push({ et: "La Panchina d'Oro", txt: d.panchinaOro.squadra + ": solo " + fmtVoto(d.panchinaOro.rimpianto) + " punti lasciati per strada, il più pulito del turno" });
+      }
+      if (prem.length) B.push({ tipo: "premi", titolo: "Le pagelle della lega", premi: prem });
+    }
+
+    // --- il mezzo punto che vale un gol ---
+    if (d.sfiorati.length) {
+      var s0 = d.sfiorati[0];
+      B.push({
+        tipo: "nota", titolo: "Il rimpianto da mezzo punto",
+        testo: s0.sq + " ha mancato il " + s0.gol + "° gol per " + fmtVoto(s0.mancano) +
+               (s0.mancano === 0.5 ? " punto. Mezzo punto." : " punti.") +
+               (d.sfiorati.length > 1 ? " In coda anche " + d.sfiorati.slice(1, 3).map(function (x) { return x.sq; }).join(" e ") + "." : "")
+      });
+    }
+
+    // --- classifica in una riga ---
+    if (d.classifica.length) {
+      var c0 = d.classifica[0], cUlt = d.classifica[d.classifica.length - 1];
+      B.push({
+        tipo: "nota", titolo: "La classifica",
+        testo: "Comanda " + c0.t + " con " + c0.punti + (c0.punti === 1 ? " punto" : " punti") +
+               ". In fondo " + cUlt.t + " a " + cUlt.punti + ". " +
+               (d.mediaRimpianto != null ? "Media punti buttati del turno: " + fmtVoto(d.mediaRimpianto) + "." : "")
+      });
+    }
+
+    B.push({ tipo: "chiusura", testo: pesca(GAZ_CHIUSURE, seme, 6) });
+    return { giornata: d.giornata, blocchi: B };
+  }
+
+  // Versione da incollare nel gruppo: niente HTML, niente tabelle, righe corte.
+  function gazzettaTesto(legaId, g) {
+    var G = gazzettaBlocchi(legaId, g);
+    if (!G) return "";
+    var L = RIF_LEGHE[legaId];
+    var out = ["*" + ((L && L.nome) || "LEGA") + " — GIORNATA " + G.giornata + "*", ""];
+    G.blocchi.forEach(function (b) {
+      if (b.tipo === "apertura") { out.push("*" + b.titolo + "*", b.testo, ""); return; }
+      if (b.tipo === "elenco") { out.push("*" + b.titolo + "*"); b.righe.forEach(function (r) { out.push("• " + r); }); out.push(""); return; }
+      if (b.tipo === "premi") { out.push("*" + b.titolo + "*"); b.premi.forEach(function (p) { out.push("• " + p.et + ": " + p.txt); }); out.push(""); return; }
+      if (b.tipo === "nota") { out.push("*" + b.titolo + "* — " + b.testo, ""); return; }
+      if (b.tipo === "chiusura") { out.push(b.testo); }
+    });
+    return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  function gazzettaHtml(legaId, g) {
+    var G = gazzettaBlocchi(legaId, g);
+    if (!G) return '<p class="lega-note">Per la giornata ' + escapeHtml(String(g)) + ' non ci sono ancora abbastanza dati: servono i punteggi della lega, e per le pagelle anche le formazioni schierate.</p>';
+    return '<div class="gazz">' + G.blocchi.map(function (b) {
+      if (b.tipo === "apertura") {
+        return '<div class="gazz-apertura"><h4 class="gazz-titolo">' + escapeHtml(b.titolo) + '</h4>' +
+               '<p class="gazz-occhiello">' + escapeHtml(b.testo) + '</p></div>';
+      }
+      if (b.tipo === "elenco") {
+        return '<div class="gazz-sez"><h5>' + escapeHtml(b.titolo) + '</h5><ul class="gazz-lista">' +
+               b.righe.map(function (r) { return '<li>' + escapeHtml(r) + '</li>'; }).join("") + '</ul></div>';
+      }
+      if (b.tipo === "premi") {
+        return '<div class="gazz-sez"><h5>' + escapeHtml(b.titolo) + '</h5><ul class="gazz-lista">' +
+               b.premi.map(function (p) { return '<li><b>' + escapeHtml(p.et) + '</b>: ' + escapeHtml(p.txt) + '</li>'; }).join("") + '</ul></div>';
+      }
+      if (b.tipo === "nota") {
+        return '<div class="gazz-sez"><h5>' + escapeHtml(b.titolo) + '</h5><p>' + escapeHtml(b.testo) + '</p></div>';
+      }
+      return '<p class="gazz-chiusura">' + escapeHtml(b.testo) + '</p>';
+    }).join("") + '</div>';
+  }
+
+  function renderGazzettaCard() {
+    var host = document.getElementById("gazzettaCardHost");
+    if (!host) return;
+    var esistente = document.getElementById("gazzettaCard");
+    var wasOpen = esistente ? esistente.open : false;
+    var lid = legaAttivaId();
+
+    // Le giornate raccontabili sono quelle con almeno un punteggio caricato:
+    // senza risultati non c'e' nessuna notizia, solo previsioni.
+    var gg = Object.keys(punteggiLega() || {}).map(Number)
+              .filter(function (n) { return n >= 1; }).sort(function (a, b) { return a - b; });
+
+    if (!lid || !gg.length) {
+      host.innerHTML =
+        '<details class="intro" id="gazzettaCard">' +
+          '<summary>La Gazzetta di giornata</summary>' +
+          '<div class="intro-body"><p class="lega-note">Il riassunto del turno, pronto da incollare nel gruppo. Per ora è vuoto: servono i punteggi della giornata, che si inseriscono qui sotto in <b>Risultati di giornata</b>. Con anche le formazioni caricate escono pure le pagelle — il Pallone d\'Oro, il Bidone e il Rimpianto.</p></div>' +
+        '</details>';
+      return;
+    }
+
+    var gSel = String(GAZZETTA_G || gg[gg.length - 1]);
+    if (gg.indexOf(Number(gSel)) < 0) gSel = String(gg[gg.length - 1]);
+
+    var sel = '<label class="lega-note">Giornata <select id="gazzettaG">' +
+      gg.map(function (n) {
+        return '<option value="' + n + '"' + (String(n) === gSel ? " selected" : "") + '>' + n + '</option>';
+      }).join("") + '</select></label>';
+
+    host.innerHTML =
+      '<details class="intro" id="gazzettaCard"' + (wasOpen ? " open" : "") + '>' +
+        '<summary>La Gazzetta di giornata</summary>' +
+        '<div class="intro-body">' +
+          sel +
+          '<div class="sez-testa"><button type="button" class="btn-ghost btn-small" id="gazzCopia">Copia per il gruppo</button>' +
+          '<span class="lega-note" id="gazzEsito"></span></div>' +
+          gazzettaHtml(lid, gSel) +
+          '<details class="aiuto"><summary>Come nasce</summary>' +
+            '<p>Le frasi sono modelli scelti con un seme ricavato da lega e giornata: la stessa giornata esce sempre uguale, giornate diverse suonano diverse. <b>I numeri arrivano tutti dai voti e dai risultati caricati</b> — nessuna riga viene inventata, e le rubriche senza dati semplicemente non compaiono.</p>' +
+            '<p><b>Il Rimpianto</b> e <b>Il Rimorso</b> vengono dall\'autopsia e non li ha nessun altro: uno dice quanti punti una squadra ha lasciato in panchina, l\'altro chi era il migliore rimasto fuori.</p>' +
+          '</details>' +
+        '</div>' +
+      '</details>';
+
+    var s = document.getElementById("gazzettaG");
+    if (s) s.addEventListener("change", function (e) { GAZZETTA_G = e.target.value; renderGazzettaCard(); });
+
+    var b = document.getElementById("gazzCopia");
+    if (b) b.addEventListener("click", function () {
+      var testo = gazzettaTesto(lid, gSel);
+      var esito = document.getElementById("gazzEsito");
+      function ok() { if (esito) { esito.textContent = "copiata"; setTimeout(function () { esito.textContent = ""; }, 2000); } }
+      function ko() { if (esito) esito.textContent = "copia non riuscita"; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(testo).then(ok, ko);
+      } else {
+        // Fallback per i browser senza clipboard API: la textarea fuori schermo
+        // e' brutta ma funziona ovunque, e questo pulsante deve funzionare.
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = testo; ta.style.position = "fixed"; ta.style.left = "-9999px";
+          document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+          document.body.removeChild(ta); ok();
+        } catch (e) { ko(); }
+      }
+    });
+  }
+
+  /* ===================================================================
      SCHEDA AVVERSARIO (06/09/2026)
 
      Una tabella per ogni squadra della lega: rosa completa con quanto
@@ -8239,6 +8973,9 @@ async function refreshLivePlayerNews() {
           '<summary>Autopsia delle formazioni</summary>' +
           '<div class="intro-body"><p class="lega-note">Qui finisce il conto di quanto ogni squadra ha lasciato per strada: i fantavoti schierati contro la <b>migliore formazione che poteva schierare</b> con i voti già usciti.<br><br>Per ora è vuoto perché non c\'è nessuna formazione caricata per questa lega. Servono gli undici davvero schierati, giornata per giornata: si caricano dalla scheda <b>Dati di giornata</b>.</p></div>' +
         '</details>';
+      // La Gazzetta vive senza formazioni (con i soli risultati fa comunque i
+      // titoli e le sfide), quindi va disegnata anche da questo ramo.
+      renderGazzettaCard();
       return;
     }
 
@@ -8313,6 +9050,7 @@ async function refreshLivePlayerNews() {
 
     var s = document.getElementById("autopsiaG");
     if (s) s.addEventListener("change", function (e) { AUTOPSIA_G = e.target.value; renderAutopsiaCard(); });
+    renderGazzettaCard();
   }
 
   function renderLegaCard() {
@@ -8881,6 +9619,9 @@ async function refreshLivePlayerNews() {
         renderHistoryCard();
       });
     });
+    // Stessa scheda, stesso ciclo di disegno: agganciarlo qui evita di
+    // aggiungere la chiamata in dieci punti e di dimenticarne uno.
+    renderImportVoti();
   }
 
   // ---------------- render: result ----------------
