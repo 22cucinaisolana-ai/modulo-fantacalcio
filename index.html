@@ -3187,16 +3187,38 @@
     return parts.join(" ");
   }
 
+  // ORARIO DELLA PRIMA PARTITA, DAL DATABASE (07/09/2026)
+  // Prima andava scritto a mano in Impostazioni ogni settimana, e una domenica
+  // dimenticata voleva dire nessun conto alla rovescia. Ora la tabella
+  // serie_a_orari tiene il calcio d'inizio della prima partita di ogni giornata
+  // — l'unico che conta, perche' la scadenza si misura da li'.
+  //
+  // La tabella e' PARZIALE per forza: la Lega ufficializza gli orari due o tre
+  // giornate alla volta. Una giornata che manca vuol dire "non ancora
+  // ufficiale", e va detto invece di riempirlo con un orario verosimile.
+  //
+  // Un orario scritto a mano vince sempre: e' una scelta esplicita, e serve
+  // quando un anticipo cambia dopo che la riga e' stata caricata.
+  var ORARI_SA = {};
+  function orarioPrimaPartita(g) {
+    var manuale = state.meta.primaPartita;
+    if (manuale) return { raw: manuale, fonte: "manuale" };
+    var r = ORARI_SA[String(parseInt(g, 10))];
+    if (r && r.inizio) return { raw: r.inizio, fonte: "calendario", partita: r.partita };
+    return null;
+  }
+
   function updateDeadlinePill() {
     var pill = document.getElementById("deadlinePill");
     if (!pill) return;
     var labelEl = pill.querySelector(".label");
     pill.classList.remove("ok", "warn", "danger");
-    var raw = state.meta.primaPartita;
-    if (!raw) {
-      labelEl.textContent = "1ª partita: da impostare";
+    var o = orarioPrimaPartita(state.meta.giornata);
+    if (!o) {
+      labelEl.textContent = "1ª partita: orario non ancora ufficiale";
       return;
     }
+    var raw = o.raw;
     var kickoff = new Date(raw);
     if (isNaN(kickoff.getTime())) {
       labelEl.textContent = "Orario non valido";
@@ -3388,6 +3410,10 @@
     (rif.classifica || []).forEach(function (r) { CLASSIFICA_SA.push(r); });
     RISULTATI_SA.length = 0;
     (rif.risultatiSA || []).forEach(function (r) { RISULTATI_SA.push(r); });
+    Object.keys(ORARI_SA).forEach(function (k) { delete ORARI_SA[k]; });
+    (rif.orari || []).forEach(function (r) {
+      if (r && r.giornata != null && r.inizio) ORARI_SA[String(r.giornata)] = { inizio: r.inizio, partita: r.partita || "" };
+    });
 
     (rif.legaFormazioni || []).forEach(function (f) {
       var lid = f.lega_id || LEGA_PREDEFINITA, g = String(f.giornata);
@@ -3612,7 +3638,8 @@
         // In fondo alla lista, non in mezzo: gli indici qui sotto sono
         // posizionali e spostarne uno li sfasa tutti (successo il 04/09 con
         // serie_a_classifica).
-        sb.from("serie_a_risultati").select("giornata,casa,trasferta,gol_casa,gol_trasferta").order("giornata").limit(400)
+        sb.from("serie_a_risultati").select("giornata,casa,trasferta,gol_casa,gol_trasferta").order("giornata").limit(400),
+        sb.from("serie_a_orari").select("giornata,inizio,partita").order("giornata").limit(50)
       ]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var rif = {
@@ -3625,7 +3652,8 @@
         voti: q[7].data, risultati: q[8].data, leghe: q[9].data,
         legaFormazioni: q[10].data || [],
         listoneValori: q[11].data || [],
-        risultatiSA: q[12].data || []
+        risultatiSA: q[12].data || [],
+        orari: q[13].data || []
       };
       // I voti si leggono solo da collegati (sono materiale della redazione
       // Fantacalcio.it, non nostro). Da sloggati la query non da' errore:
@@ -10239,9 +10267,10 @@ async function refreshLivePlayerNews() {
   // pagina di errori.
 
   function homeScadenza() {
-    var raw = state.meta.primaPartita;
-    if (!raw) return { tono: "muted", titolo: "Orario della 1ª partita non impostato",
-      nota: "Senza l'orario non posso dirti quanto manca. Lo imposti in Impostazioni." };
+    var o = orarioPrimaPartita(state.meta.giornata);
+    if (!o) return { tono: "muted", titolo: "Orario della 1ª partita non ancora ufficiale",
+      nota: "La Lega li pubblica due o tre giornate alla volta. Appena esce lo trovi qui da solo; se lo sai già, puoi scriverlo in Impostazioni." };
+    var raw = o.raw;
     var kick = new Date(raw);
     if (isNaN(kick.getTime())) return { tono: "muted", titolo: "Orario non valido", nota: "" };
     var dl = new Date(kick.getTime() - minutiAnticipoScadenza() * 60000);
