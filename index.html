@@ -15,6 +15,9 @@
     --bg: #eef1ea;
     --surface: #ffffff;
     --surface-2: #e4e8df;
+    /* Righe alternate: appena percettibile. Piu' scuro di cosi' la tabella
+       sembra a scacchi e i numeri smettono di incolonnarsi all'occhio. */
+    --zebra: #f5f8f2;
     --text: #1a231d;
     --text-muted: #5b6a5f;
     --line: #d5dcce;
@@ -89,6 +92,8 @@
       --bg: #0f1512;
       --surface: #171f19;
       --surface-2: #1e2822;
+    --zebra: #1c2620;
+      --zebra: #1c2620;
       --text: #eaf0ea;
       --text-muted: #93a397;
       --line: #2b362e;
@@ -549,12 +554,15 @@
   #formAvvCard .fa-body { padding-top: 12px; }
   /* Le tabelle non devono spalmarsi su 1200px: le colonne finiscono cosi
      lontane da rendere illeggibile la riga. */
-  .history-table, .compare-table { max-width: 760px; }
+  /* IL TETTO DI LARGHEZZA E' CADUTO CON LO ZEBRATO (07/09/2026).
+     Le tabelle erano tenute strette perche' su una riga lunga l'occhio salta
+     rigo: era il rimedio giusto finche' le righe erano tutte dello stesso
+     colore. Ora che si alternano, la riga si segue da sola, e una tabella
+     stretta dentro una scheda larga sembrava solo un errore di impaginazione. */
   /* Anche i campi hanno una larghezza utile: un'area di incolla larga 1180px
      non aiuta a incollare meglio, sbilancia solo la scheda. */
   .history-card textarea, .history-card .history-paste-row input,
   #formAvvCard .fa-pick select { max-width: 720px; }
-  .f1-table { max-width: 640px; }
   /* Riquadro "Risultati di giornata": stessa misura utile dell'area voti. */
   .ris-riga { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
   .ris-lab { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
@@ -740,9 +748,17 @@
   .history-table input.history-reale-input { width: 72px; }
 
   /* ---------- Role sections ---------- */
+  /* Anche i blocchi a comparsa sono schede: prima galleggiavano sul fondo
+     della pagina mentre tutto il resto stava dentro un riquadro, e la scheda
+     sembrava finire a meta'. */
   .section {
-    margin-top: 28px;
+    margin: 0 0 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 16px;
   }
+  .section > summary { cursor: pointer; }
   .section-head {
     display: flex;
     align-items: baseline;
@@ -943,13 +959,56 @@
   .quota[data-ruolo="D"] { background: var(--ruolo-d); }
   .quota[data-ruolo="C"] { background: var(--ruolo-c); }
   .quota[data-ruolo="A"] { background: var(--ruolo-a); }
-  /* Sezioni: una regola sola per la spaziatura, invece di margini sparsi. */
-  .sez { margin: 0 0 22px; }
+  /* SEZIONI: OGNUNA E' UNA SCHEDA BIANCA (07/09/2026).
+     Prima .sez era solo spaziatura e le sezioni galleggiavano sul fondo della
+     pagina: dove finiva una e cominciava l'altra lo diceva solo un titolino in
+     maiuscoletto. Ora ogni sezione e' un riquadro, come le tabelle. */
+  .sez {
+    margin: 0 0 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+  }
   .sez > h4 {
     margin: 0 0 10px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em;
     color: var(--text-muted); font-weight: 700;
   }
   .sez-nota { margin: 8px 0 0; font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; }
+  /* Una tabella dentro una sezione non porta il proprio riquadro: due bordi
+     concentrici a 1px di distanza sono l'errore piu' visibile di tutti. Resta
+     invece lo scorrimento orizzontale, che serve. */
+  .sez .f1-wrap, .sez .history-table-wrap {
+    background: transparent; border: 0; border-radius: 0; padding: 0;
+  }
+
+  /* RIGHE ALTERNATE, ovunque ci sia una tabella. Su dieci-venti righe di numeri
+     e' l'unica cosa che impedisce all'occhio di saltare riga. Si usa una tinta
+     invece di un bordo perche' i bordi ci sono gia' e sommandosi fanno grata. */
+  .f1-table tbody tr:nth-child(even),
+  .history-table tbody tr:nth-child(even),
+  .compare-table tbody tr:nth-child(even) { background: var(--zebra); }
+  /* La riga della propria squadra vince sempre sullo zebrato: e' l'unica riga
+     che si cerca, e perderla in mezzo alle altre sarebbe il colmo. */
+  .f1-table tbody tr.pl-mine,
+  .f1-table tbody tr.pl-mine:nth-child(even) { background: var(--accent-soft); }
+
+  /* Elenchi a righe alternate, per le sezioni che non sono tabelle. */
+  .zebra-lista { list-style: none; margin: 0; padding: 0; }
+  .zebra-lista > li {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 7px 10px; border-radius: 6px; font-size: 13.5px;
+  }
+  .zebra-lista > li:nth-child(even) { background: var(--zebra); }
+
+  /* Il turno della lega in Home: tre colonne fisse cosi' i risultati si
+     incolonnano invece di ballare con la lunghezza dei nomi. */
+  .home-turno > li { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: baseline; }
+  .ht-sq { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ht-dx { text-align: right; }
+  .ht-ris { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ht-fp { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+  .home-turno > li.ht-mia { background: var(--accent-soft); font-weight: 700; }
 
   /* La Gazzetta di giornata. Unico posto del tool dove il testo alza la voce:
      e' un pezzo di giornale, non una tabella, e deve sembrarlo. Nessun colore
@@ -969,8 +1028,12 @@
     letter-spacing: .06em; color: var(--text-muted);
   }
   .gazz-sez p { margin: 0; font-size: 13.5px; line-height: 1.55; }
-  .gazz-lista { margin: 0; padding-left: 18px; }
-  .gazz-lista li { font-size: 13.5px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+  .gazz-lista { margin: 0; padding: 0; list-style: none; }
+  .gazz-lista li {
+    font-size: 13.5px; line-height: 1.6; font-variant-numeric: tabular-nums;
+    padding: 5px 8px; border-radius: 6px;
+  }
+  .gazz-lista li:nth-child(even) { background: var(--zebra); }
   .gazz-chiusura {
     margin: 0; padding-top: 10px; border-top: 1px solid var(--line);
     font-size: 12.5px; font-style: italic; color: var(--text-muted);
@@ -985,7 +1048,16 @@
   /* Tutta la prosa esplicativa in un solo posto, chiuso. Prima erano quattro
      paragrafi sparsi fra le tabelle: si leggevano una volta e poi facevano
      solo rumore fra un dato e l'altro. */
-  .aiuto { margin-top: 4px; font-size: 12.5px; color: var(--text-muted); }
+  .aiuto {
+    margin: 0 0 18px; font-size: 12.5px; color: var(--text-muted);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px 16px;
+  }
+  /* Dentro una sezione l'aiuto e' gia' in una scheda: niente riquadro dentro
+     il riquadro. */
+  .sez .aiuto, .intro-body .aiuto {
+    margin: 8px 0 0; background: transparent; border: 0; border-radius: 0; padding: 0;
+  }
   /* Dentro .intro il summary eredita lo stile dei titoli di sezione: maiuscolo,
      verde, in grande. Su un "come si legge" e' sbagliato — sembra l'inizio di
      un blocco di dati e quello che segue sembra appartenergli. Qui torna a
@@ -1009,9 +1081,6 @@
      quattro colonne qui le stringe fino a farle sembrare compresse contro il
      margine sinistro. 860 e' la larghezza in cui le nove colonne respirano
      senza che la riga diventi difficile da seguire. */
-  #avversariHost .f1-table { max-width: 860px; }
-  #avversariHost .sez .f1-table { max-width: 640px; }
-  #avversariHost .avv-col-rosa .f1-table { max-width: none; }
   /* Rosa a sinistra, campo a destra. La colonna del campo e' fissa: e' un
      disegno con proporzioni sue, allargarlo non aggiunge informazione. */
   .avv-griglia { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 26px; align-items: start; }
@@ -1049,8 +1118,16 @@
   .avv-sort:hover { color: var(--accent-strong); text-decoration: underline; }
   .avv-sort.on { color: var(--accent-strong); font-weight: 700; }
   th.num .avv-sort { width: 100%; text-align: right; }
-  .avv-su  { background: var(--good-soft); }
-  .avv-giu { background: var(--danger-soft); }
+  /* LO SCARTO SI COLORA NELLA CELLA, NON NELLA RIGA (07/09/2026).
+     Tingere l'intera riga su venticinque giocatori riempiva la tabella di
+     verde: con quasi tutti sopra le attese il colore smetteva di segnalare
+     qualcosa e diventava sfondo, e per giunta copriva le righe alternate, che
+     sono l'unica cosa che tiene l'occhio sul rigo giusto. Ora il colore sta
+     dove c'e' il numero che lo giustifica. */
+  .avv-su  td:last-child { color: var(--good); font-weight: 700; }
+  .avv-giu td:last-child { color: var(--danger); font-weight: 700; }
+  .avv-su  td:last-child::before { content: "\25B2 "; font-size: 8px; vertical-align: 1px; }
+  .avv-giu td:last-child::before { content: "\25BC "; font-size: 8px; vertical-align: 1px; }
   .fa-foot { display: grid; gap: 9px; padding-top: 4px; border-top: 1px solid var(--line); }
   .fa-uff { display: flex; align-items: baseline; gap: 8px; font-size: 12px; flex-wrap: wrap; }
   .fa-uff-nota { font-size: 11px; color: var(--text-muted); }
@@ -2191,8 +2268,11 @@
   .prof-blocco h4 { margin: 0 0 2px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
   .prof-n { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
   .prof-sotto { margin: 0 0 8px; font-size: 11.5px; color: var(--text-muted); line-height: 1.45; }
-  .prof-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
-  .prof-lista li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  /* Righe alternate al posto della linea sotto ogni voce: sei righe con sei
+     filetti facevano grata, la tinta si legge meglio e pesa meno. */
+  .prof-lista { list-style: none; margin: 0; padding: 0; }
+  .prof-lista li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 5px 8px; border-radius: 6px; }
+  .prof-lista li:nth-child(even) { background: var(--zebra); }
   .prof-nome { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .prof-num { flex: none; font-family: var(--font-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--text-muted); min-width: 34px; text-align: right; }
   .prof-num[data-tone="good"] { color: var(--good); font-weight: 700; }
@@ -2207,7 +2287,7 @@
   .lst-barra .search-input { flex: 1 1 220px; min-width: 0; }
   .lst-filtri { display: flex; gap: 4px; flex-wrap: wrap; }
   .lst-somma { font-size: 11.5px; color: var(--text-muted); padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
-  .lst-head, .lst-lista li { display: grid; grid-template-columns: 20px 16px 1fr 46px 126px 26px 34px 44px 44px; gap: 8px; align-items: center; padding: 6px 2px; }
+  .lst-head, .lst-lista li { display: grid; grid-template-columns: 20px 16px 1fr 46px 126px 26px 34px 44px 44px; gap: 8px; align-items: center; padding: 6px 8px; }
   .lst-head { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); border-bottom: 1px solid var(--line); padding: 0 2px 4px; }
   /* Le intestazioni sono pulsanti: devono sembrare intestazioni finche' non ci
      passi sopra, e dire chiaramente quale colonna sta ordinando. */
@@ -2219,9 +2299,18 @@
   .lst-th:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
   .lst-th.att { color: var(--accent); font-weight: 700; }
   .lst-arr { font-size: 8px; line-height: 1; }
+  /* .card non aveva nessuna regola: il Listone era l'unica scheda del tool
+     appoggiata direttamente sul fondo pagina, e si vedeva. */
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 16px 16px;
+  }
   .lst-lista { list-style: none; margin: 0; padding: 0; }
-  .lst-lista li { border-bottom: 1px solid var(--line); font-size: 12.5px; }
-  .lst-lista li:last-child { border-bottom: 0; }
+  /* Sessanta righe di numeri: qui lo zebrato non e' un vezzo, e' l'unica cosa
+     che tiene l'occhio sulla riga giusta fino in fondo. Sostituisce il filetto
+     sotto ogni voce, che a sessanta righe faceva grata. */
+  .lst-lista li { font-size: 12.5px; border-radius: 6px; }
+  .lst-lista li:nth-child(even) { background: var(--zebra); }
   .lst-lista li.lst-fl { opacity: .55; }
   .lst-ico { font-size: 12px; text-align: center; line-height: 1; }
   .lst-ico[data-cls="libero"] { filter: grayscale(1); opacity: .8; }
@@ -2255,8 +2344,9 @@
   .sa-barra i[data-tone="danger"] { color: var(--danger); }
   .sa-barra i[data-tone="warn"] { color: var(--warn); }
   .sa-barra i[data-tone="muted"] { color: var(--text-muted); opacity: .5; }
-  .sa-riga > summary { display: grid; grid-template-columns: 1fr 110px 46px; gap: 10px; align-items: center; padding: 7px 4px; }
+  .sa-riga > summary { display: grid; grid-template-columns: 1fr 110px 46px; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 6px; }
   .sa-riga { border-bottom: 1px solid var(--line); }
+  .sa-riga:nth-of-type(even) > summary { background: var(--zebra); }
   .sa-riga:last-of-type { border-bottom: 0; }
   .sa-riga > summary { cursor: pointer; font-size: 13px; list-style: none; }
   .sa-riga > summary::-webkit-details-marker { display: none; }
@@ -5950,10 +6040,48 @@ async function refreshLivePlayerNews() {
   //   CLASSIFICA — il dato certo. Punti, gol fatti, gol subiti.
   //   LIVELLO    — scarto medio dei giocatori del club dalle attese, su tutte
   //                le giornate. Su ~30 voti e' gia' un segnale vero.
-  //   TREND      — differenza fra l'ultima giornata e la precedente. Con poche
-  //                giornate e' dominato da CHI hanno affrontato, non dalla
-  //                forma: va letto come indizio, non come verdetto. Lo dico
-  //                nella nota invece di far finta che sia un dato solido.
+  //   TREND      — come sta andando adesso rispetto a prima.
+  //
+  // IL TREND ERA UNA GIORNATA CONTRO LA PRECEDENTE, ED ERA RUMORE (07/09/2026).
+  // Misurato sui voti veri: lo scarto di un singolo giocatore ha SD ~1,3 e la
+  // media di un club sta su ~15 giocatori, quindi la media di club per giornata
+  // ha un errore di **0,31**; la differenza fra due giornate ne ha **0,44**.
+  // Con venti club, il piu' estremo per puro caso arriva intorno a 1,1 — cioe'
+  // esattamente i numeri che il riquadro mostrava ogni settimana. Sembrava una
+  // classifica della forma, era la classifica di chi aveva pescato meglio.
+  //
+  // Ora si confronta una FINESTRA di giornate contro tutte le precedenti:
+  // mediare tre giornate taglia l'errore quasi a meta' (0,25). La finestra si
+  // adatta a quante giornate ci sono davvero — non ha senso chiedere sei
+  // giornate a settembre — e il titolo dice sempre quali sta confrontando, cosi'
+  // non c'e' modo di equivocare cosa si sta guardando.
+  var SA_FINESTRA = 3;
+  // SD dello scarto di un singolo giocatore, misurata sulle giornate 1-3:
+  // 1,240 · 1,184 · 1,452. Serve a dire quando un movimento supera il rumore.
+  var SA_SD_GIOC = 1.3;
+
+  // La finestra piu' grande che lascia almeno una giornata di confronto.
+  // Con tre giornate e finestra 3 si usa 2: meglio un confronto onesto e
+  // dichiarato che nessun riquadro.
+  function finestraTrend(giornate, scelta) {
+    if (!giornate || giornate.length < 2) return null;
+    var n = Math.min(scelta, giornate.length - 1);
+    if (n < 1) return null;
+    return { recenti: giornate.slice(giornate.length - n), precedenti: giornate.slice(0, giornate.length - n) };
+  }
+
+  // Media pesata dello scarto su un gruppo di giornate: si sommano i totali,
+  // non le medie. Una giornata con cinque voti non deve pesare come una con
+  // quindici.
+  function scartoFinestra(perG, sq, giornate) {
+    var somma = 0, n = 0;
+    (giornate || []).forEach(function (g) {
+      var k = perG[sq + "|" + g];
+      if (k) { somma += k.somma; n += k.n; }
+    });
+    return n ? { media: somma / n, n: n } : null;
+  }
+
   function datiSerieA() {
     var perSq = {}, perG = {};
     for (var i = 0; i < LISTONE.length; i++) {
@@ -5973,6 +6101,7 @@ async function refreshLivePlayerNews() {
     }
     var giornate = Object.keys(VOTI).map(Number).filter(function (x) { return !isNaN(x); }).sort(function (a, b) { return a - b; });
     var ultima = giornate[giornate.length - 1], penultima = giornate[giornate.length - 2];
+    var fin = finestraTrend(giornate, SA_FINESTRA);
     var cls = {};
     CLASSIFICA_SA.forEach(function (c) {
       if (!cls[c.squadra] || Number(c.giornata) > Number(cls[c.squadra].giornata)) cls[c.squadra] = c;
@@ -5985,8 +6114,19 @@ async function refreshLivePlayerNews() {
       var a = perSq[sq] || { somma: 0, n: 0, gioc: [] };
       var media = a.n ? a.somma / a.n : null;
       var z = a.n ? media / (1.2 / Math.sqrt(a.n)) : null;
-      var ku = perG[sq + "|" + ultima], kp = penultima != null ? perG[sq + "|" + penultima] : null;
-      var trend = (ku && kp && ku.n >= 5 && kp.n >= 5) ? (ku.somma / ku.n) - (kp.somma / kp.n) : null;
+      // Il trend confronta due finestre, non due giornate. Soglia a 8 voti per
+      // lato: sotto, l'errore della media e' piu' grande del movimento che
+      // dovrebbe misurare.
+      var trend = null, trendErr = null, trendSopraRumore = false;
+      if (fin) {
+        var rec = scartoFinestra(perG, sq, fin.recenti);
+        var pre = scartoFinestra(perG, sq, fin.precedenti);
+        if (rec && pre && rec.n >= 8 && pre.n >= 8) {
+          trend = rec.media - pre.media;
+          trendErr = SA_SD_GIOC * Math.sqrt(1 / rec.n + 1 / pre.n);
+          trendSopraRumore = Math.abs(trend) >= 2 * trendErr;
+        }
+      }
       // Aggrega per giocatore (piu' giornate insieme) prima di fare la classifica interna.
       var byN = {};
       a.gioc.forEach(function (x) {
@@ -5999,9 +6139,24 @@ async function refreshLivePlayerNews() {
       var team = teamByCode(sq);
       out.push({ cod: sq, nome: team ? team.name : sq, cls: cls[sq] || null,
                  media: media, n: a.n, z: z, trend: trend,
+                 trendErr: trendErr, trendSopraRumore: trendSopraRumore,
                  top: lista.slice(0, 3), flop: lista.slice(-3).reverse() });
     });
-    return { righe: out, ultima: ultima, penultima: penultima };
+    return { righe: out, ultima: ultima, penultima: penultima, finestra: fin, giornate: giornate };
+  }
+
+  // "ultime 2 (2ª-3ª) contro la 1ª" — il titolo dice sempre cosa sta
+  // confrontando, cosi' non si puo' scambiare una finestra per un'altra.
+  function etichettaGiornate(l) {
+    if (!l || !l.length) return "";
+    if (l.length === 1) return l[0] + "ª";
+    return l[0] + "ª-" + l[l.length - 1] + "ª";
+  }
+  function titoloTrend(d) {
+    if (!d.finestra) return "Chi sale e chi scende";
+    var r = d.finestra.recenti, p = d.finestra.precedenti;
+    return "Chi sale e chi scende · ultime " + r.length + " (" + etichettaGiornate(r) +
+           ") contro " + (p.length === 1 ? "la " : "le ") + etichettaGiornate(p);
   }
 
   // Quattro riquadri invece di una tabella sola: i tre segnali hanno
@@ -6041,32 +6196,6 @@ async function refreshLivePlayerNews() {
   }
   // Formati accettati, tutti quelli in cui uno scrive un risultato:
   //   Genoa-Como 1-2 · Genoa 1-2 Como · Genoa 1 Como 2 · GEN-COM 1-2
-  function leggiRisultati(testo) {
-    var out = [], scarti = [];
-    String(testo || "").split(/\n+/).forEach(function (riga) {
-      var r = riga.trim();
-      if (!r) return;
-      var m, casa = null, ospite = null, gc = null, go = null;
-      // "Squadra n - n Squadra" oppure "Squadra n Squadra n"
-      m = r.match(/^(.+?)\s+(\d{1,2})\s*[-–—:]\s*(\d{1,2})\s+(.+?)$/);
-      if (m) { casa = m[1]; gc = m[2]; go = m[3]; ospite = m[4]; }
-      if (!casa) {
-        // "Squadra - Squadra n - n"
-        m = r.match(/^(.+?)\s*[-–—]\s*(.+?)\s+(\d{1,2})\s*[-–—:]\s*(\d{1,2})\s*$/);
-        if (m) { casa = m[1]; ospite = m[2]; gc = m[3]; go = m[4]; }
-      }
-      if (!casa) {
-        // "Squadra n Squadra n"
-        m = r.match(/^(.+?)\s+(\d{1,2})\s+(.+?)\s+(\d{1,2})\s*$/);
-        if (m) { casa = m[1]; gc = m[2]; ospite = m[3]; go = m[4]; }
-      }
-      var a = squadraDaTesto(casa), b = squadraDaTesto(ospite);
-      if (!a || !b || a.code === b.code) { scarti.push(r); return; }
-      out.push({ casa: a.code, trasferta: b.code, golCasa: Number(gc), golTrasferta: Number(go),
-                 etichetta: a.name + " " + gc + "-" + go + " " + b.name });
-    });
-    return { partite: out, scarti: scarti };
-  }
   // Classifica cumulata, giornata per giornata, ricavata dai risultati. Se una
   // giornata e' incompleta va bene lo stesso: "giocate" conta le partite vere.
   function classificaDaRisultati(righe) {
@@ -6108,43 +6237,6 @@ async function refreshLivePlayerNews() {
   // l'elemento vecchio sparirebbe senza che nessuno lo legga. E' successo, ed
   // e' il tipo di errore che non da' segno: il dato entra, la conferma no.
   var RIS_MSG = null;
-  function boxRisultati() {
-    var g = giornataSAsuggerita();
-    var quante = RISULTATI_SA.length;
-    var buchi = giornateIncomplete();
-    return '<details class="section"' + (RIS_MSG ? ' open' : '') + '><summary><span>Risultati di giornata ' +
-      '<span class="section-hint">incollali e la classifica si rifà da sola</span></span></summary>' +
-      '<div class="section-body">' +
-      '<p class="prof-nota">Una partita per riga, come ti viene: <b>Genoa-Como 1-2</b>, <b>Genoa 1-2 Como</b>, ' +
-      '<b>Genoa 1 Como 2</b>, anche con le sigle. Da qui si ricalcolano punti, gol fatti e subiti — e con ' +
-      'loro la <b>forza degli avversari</b>, che è quello che sposta i voti attesi. ' +
-      'Il <i>tier</i> del listone non va toccato: è il pronostico di luglio, e serve che resti fermo mentre la ' +
-      'classifica lo corregge. Se lo riscrivessi a mano ogni settimana il campo verrebbe contato due volte.' +
-      '</p>' +
-      // Lo stato dell'archivio va detto qui, non scoperto dopo: la classifica
-      // e' RICALCOLATA dai risultati, quindi caricare solo l'ultima giornata
-      // non aggiorna la classifica — la riscrive contando solo quella.
-      '<p class="prof-nota">' + (quante
-        ? 'In archivio ci sono <b>' + quante + '</b> partite' +
-          (buchi.length
-            ? ', ma <b>mancano partite</b> nelle giornate ' + buchi.map(function (b) { return b.giornata + 'ª (' + b.trovate + '/' + b.attese + ')'; }).join(' · ') +
-              '. Finché mancano, punti e forza sono calcolati per difetto.'
-            : ': le giornate caricate sono complete.')
-        : '<b>L\'archivio è vuoto.</b> La classifica qui non si aggiorna, si <i>ricalcola</i> da zero sui risultati: ' +
-          'quindi la prima volta vanno caricate <b>tutte le giornate dalla 1ª</b>, non solo l\'ultima. ' +
-          'Sono una ventina di righe una volta sola, e poi ogni settimana bastano le dieci della giornata nuova.') +
-      '</p>' +
-      '<div class="ris-riga"><label class="ris-lab">Giornata <input type="text" inputmode="numeric" id="risGiornata" class="num-in" value="' + g + '" /></label>' +
-      '<button type="button" class="btn" id="risBtn">Carica risultati</button></div>' +
-      '<textarea id="risTesto" class="paste-area" rows="6" placeholder="Genoa-Como 1-2&#10;Inter-Torino 3-0&#10;..."></textarea>' +
-      '<div class="ris-feedback" id="risFeedback"' + (RIS_MSG ? ' data-tone="' + RIS_MSG.tono + '"' : '') + '>' +
-      (RIS_MSG ? escapeHtml(RIS_MSG.testo) : "") + '</div>' +
-      '</div></details>';
-  }
-  function agganciaRisultati() {
-    var btn = document.getElementById("risBtn");
-    if (btn) btn.addEventListener("click", caricaRisultatiIncollati);
-  }
   // Quali giornate, fra la prima e l'ultima caricata, non hanno tutte le
   // partite. "Attese" = squadre / 2, cioe' 10 in Serie A: non un numero fisso,
   // cosi' regge anche se un giorno il campionato cambia formato.
@@ -6226,6 +6318,12 @@ async function refreshLivePlayerNews() {
       '<div class="cal-lista">' + righe + '</div>' +
       '<p class="prof-nota">Le partite lasciate vuote non vengono toccate: puoi compilare quello che sai adesso e tornare dopo. ' +
       'Un risultato già inserito si corregge riscrivendolo.</p>' +
+      // Il riscontro viveva nel riquadro dove si incollava, che non c'e' piu':
+      // senza spostarlo qui, esitoRisultati avrebbe scritto su un elemento
+      // inesistente e la conferma sarebbe sparita in silenzio. E' esattamente
+      // l'errore contro cui mette in guardia il commento di RIS_MSG.
+      '<div class="ris-feedback" id="risFeedback"' + (RIS_MSG ? ' data-tone="' + RIS_MSG.tono + '"' : '') + '>' +
+      (RIS_MSG ? escapeHtml(RIS_MSG.testo) : "") + '</div>' +
       '</div></details>';
   }
   function agganciaCalendario() {
@@ -6303,20 +6401,6 @@ async function refreshLivePlayerNews() {
     var fb = document.getElementById("risFeedback");
     if (fb) { fb.textContent = testo; fb.dataset.tone = RIS_MSG.tono; }
   }
-  async function caricaRisultatiIncollati() {
-    var gn = parseInt((document.getElementById("risGiornata") || {}).value, 10);
-    var testo = (document.getElementById("risTesto") || {}).value || "";
-    if (!gn || gn < 1 || gn > 38) { esitoRisultati("Metti un numero di giornata fra 1 e 38.", "warn"); return; }
-    var letti = leggiRisultati(testo);
-    if (!letti.partite.length) {
-      esitoRisultati("Non ho riconosciuto nessuna partita." +
-        (letti.scarti.length ? " Righe non capite: " + letti.scarti.join(" · ") : ""), "warn");
-      return;
-    }
-    var ta = document.getElementById("risTesto");
-    if (ta) ta.value = "";
-    await applicaRisultati(gn, letti.partite, letti.scarti);
-  }
   // Salvataggio condiviso fra il riquadro dove si incolla e il calendario che
   // si compila: un percorso solo, cosi' i due non possono divergere.
   async function applicaRisultati(gn, partite, scarti) {
@@ -6382,9 +6466,9 @@ async function refreshLivePlayerNews() {
     if (!d.righe.length) {
       // Il riquadro per incollare i risultati va mostrato SOPRATTUTTO qui: e'
       // il caso in cui non c'e' ancora niente, ed e' da li' che si comincia.
-      host.innerHTML = boxCalendario() + boxRisultati() +
+      host.innerHTML = boxCalendario() +
         '<div class="card"><p class="prof-nota">Non ci sono ancora voti o classifica da cui ricavare qualcosa.</p></div>';
-      agganciaRisultati(); agganciaCalendario();
+      agganciaCalendario();
       return;
     }
     var righe = d.righe;
@@ -6464,17 +6548,32 @@ async function refreshLivePlayerNews() {
     var giu = giuTop.slice(0, 6);
     function lista(l, seg) {
       return '<ul class="prof-lista">' + l.map(function (r) {
+        // Colorato solo chi supera il doppio del proprio errore: sotto quella
+        // soglia il movimento e' compatibile col caso, e dipingerlo di verde
+        // lo farebbe sembrare una notizia.
         return '<li><span class="prof-nome">' + escapeHtml(r.nome) + '</span>' +
-          '<span class="sa-trend" data-tone="' + (Math.abs(r.trend) >= 0.9 ? (r.trend > 0 ? "good" : "danger") : "muted") + '">' +
+          '<span class="sa-trend" data-tone="' + (r.trendSopraRumore ? (r.trend > 0 ? "good" : "danger") : "muted") + '">' +
           seg + " " + (r.trend > 0 ? "+" : "") + r.trend.toFixed(2) + '</span></li>';
       }).join("") + '</ul>';
     }
-    var boxTrend = !conTrend.length ? "" :
-      '<section class="sez"><h4>Chi sale e chi scende · giornata ' + d.ultima + ' contro la ' + d.penultima + '</h4>' +
+    var nSopra = conTrend.filter(function (r) { return r.trendSopraRumore; }).length;
+    var selFin = '<label class="lega-note">Finestra <select id="saFinestra">' +
+      [3, 5].map(function (n) {
+        return '<option value="' + n + '"' + (n === SA_FINESTRA ? " selected" : "") + '>ultime ' + n + '</option>';
+      }).join("") + '</select></label>';
+    var boxTrend = !conTrend.length
+      ? (d.giornate.length < 2
+          ? '<section class="sez"><h4>Chi sale e chi scende</h4><p class="lega-note">Serve almeno una seconda giornata di voti per poter confrontare qualcosa.</p></section>'
+          : "")
+      : '<section class="sez"><div class="sez-testa"><h4>' + escapeHtml(titoloTrend(d)) + '</h4>' + selFin + '</div>' +
       '<div class="prof-grid">' +
         '<div class="prof-blocco"><h4 class="cons-tit" data-tone="good">In crescita</h4>' + (su.length ? lista(su, "&#9650;") : '<span class="sa-vuoto">&mdash;</span>') + '</div>' +
         '<div class="prof-blocco"><h4 class="cons-tit" data-tone="danger">In caduta</h4>' + (giu.length ? lista(giu, "&#9660;") : '<span class="sa-vuoto">&mdash;</span>') + '</div>' +
-      '</div></section>';
+      '</div>' +
+      '<p class="sez-nota">' + (nSopra
+        ? nSopra + (nSopra === 1 ? ' movimento supera' : ' movimenti superano') + ' il rumore di misura: sono quelli colorati.'
+        : 'Nessun movimento supera il rumore di misura: per ora sono tutti compatibili col caso.') + '</p>' +
+      '</section>';
 
     // --- 4. i singoli, su tutta la Serie A ---
     var tutti = [];
@@ -6507,14 +6606,20 @@ async function refreshLivePlayerNews() {
       '<details class="aiuto"><summary>Come si legge questa scheda</summary>' +
         '<p><b>Resa</b> è lo scarto medio dei giocatori di quel club dalle attese del listone, in errori standard: sopra <b>+2</b> il club rende davvero più del previsto, sotto <b>−2</b> davvero meno. Aggrega una trentina di voti, quindi dice già qualcosa dopo poche giornate — al contrario del dato di un singolo giocatore.</p>' +
         '<p><b>Non è corretta per la difficoltà degli avversari</b>: chi ha avuto un calendario facile sembra in forma. Con poche giornate la correzione sarebbe più rumorosa del dato che corregge, quindi per ora va incrociata a mente con chi hanno affrontato.</p>' +
-        '<p><b>Chi sale e chi scende</b> con poche giornate è dominato da <b>chi hanno affrontato</b>, non dalla forma: una squadra che ha appena giocato contro l\'ultima in classifica sale, e non vuol dire niente. Diventa affidabile verso la quinta o sesta giornata. Fino ad allora fidati della Resa.</p>' +
+        '<p><b>Chi sale e chi scende</b> confronta una <b>finestra di giornate</b> con tutte le precedenti, non l\'ultima giornata con la penultima. Il motivo è misurato: lo scarto di un singolo giocatore oscilla di ~1,3 e la media di un club sta su una quindicina di giocatori, quindi <b>la media di club di una giornata ha un errore di 0,31</b> e la differenza fra due giornate ne ha <b>0,44</b>. Con venti squadre, il movimento più estremo per puro caso arriva vicino a 1,1: erano esattamente i numeri che comparivano qui ogni settimana. Mediare tre giornate taglia l\'errore quasi a metà.</p>' +
+        '<p>La finestra si adatta a quante giornate ci sono davvero, e il titolo dice sempre quali sta confrontando. <b>Colorati solo i movimenti che superano il doppio del proprio errore</b>: gli altri restano grigi perché sono compatibili col caso. Resta comunque vero che con poche giornate pesa <b>chi hanno affrontato</b> più della forma — la Resa, che usa tutte le giornate, resta il segnale più solido.</p>' +
         '<p><b>I singoli</b> sono lo scarto medio per partita, solo per chi ha almeno due voti. Su un giocatore due giornate sono quasi sempre rumore: serve uno scarto sopra 1,3 per un difensore e sopra 2,5 per un attaccante prima di poterlo chiamare rendimento. Quella lista dice <b>dove guardare</b>, non chi comprare.</p>' +
       '</details>';
 
     host.innerHTML = '<div class="scoreboard">' + tiles + '</div>' +
       boxCls + boxResa + boxTrend + boxGioc + aiuto +
-      boxCalendario() + boxRisultati() + boxArchivioRisultati();
-    agganciaRisultati(); agganciaCalendario();
+      boxCalendario() + boxArchivioRisultati();
+    agganciaCalendario();
+    var sf = document.getElementById("saFinestra");
+    if (sf) sf.addEventListener("change", function (e) {
+      SA_FINESTRA = parseInt(e.target.value, 10) || 3;
+      renderSerieA();
+    });
   }
 
   // ---------------- Scheda Listone ----------------
@@ -10283,6 +10388,31 @@ async function refreshLivePlayerNews() {
       h += '<div class="hc-empty">Nessun risultato caricato.</div>';
     }
     h += '</div></div>';
+
+    // --- il turno della lega (07/09/2026) ---
+    // Chi affronti lo dice gia' la scheda sopra, ma non le altre tre sfide: e
+    // con le soglie gol la classifica si muove anche per come finiscono quelle.
+    // Punteggi solo dove ci sono: una casella vuota e' "non ancora", non zero.
+    var coppie = coppieGiornata(g);
+    if (coppie.length) {
+      var eg = esitiGiornata(g);
+      h += '<div class="home-card"><div class="hc-lab">Il turno della lega · giornata ' + escapeHtml(String(g)) + '</div>' +
+        '<ul class="zebra-lista home-turno">' +
+        coppie.map(function (c) {
+          var a = c[0], b = c[1];
+          var ea = eg[a], eb = eg[b];
+          var mia = (a === LEGA_MIA || b === LEGA_MIA);
+          var punteggio = "&mdash;";
+          if (ea && eb) {
+            punteggio = (ea.gol != null ? ea.gol + "-" + eb.gol : fmtVoto(ea.fanta) + " - " + fmtVoto(eb.fanta));
+            if (ea.gol != null) punteggio += ' <span class="ht-fp">' + fmtVoto(ea.fanta) + " / " + fmtVoto(eb.fanta) + '</span>';
+          }
+          return '<li' + (mia ? ' class="ht-mia"' : '') + '>' +
+            '<span class="ht-sq">' + escapeHtml(a) + '</span>' +
+            '<span class="ht-ris">' + punteggio + '</span>' +
+            '<span class="ht-sq ht-dx">' + escapeHtml(b) + '</span></li>';
+        }).join("") + '</ul></div>';
+    }
 
     // --- da sistemare ---
     var av = homeAvvisi();
