@@ -2799,6 +2799,7 @@
   </section>
 
   <section class="tab-panel" id="tab-schiera" role="tabpanel" aria-labelledby="tabbtn-schiera" hidden>
+    <div id="statiAvvisoHost"></div>
     <div id="consigliatiHost"></div>
     <div class="result" id="resultSection">
       <div class="result-empty" id="resultEmpty">Vai su <b>Rosa</b>, aggiungi i tuoi giocatori, poi premi <b>Calcola formazione</b> qui in alto per vedere l'undici consigliato.</div>
@@ -2812,6 +2813,7 @@
       <h2>La tua rosa</h2>
       <p>Stato, fantamedia, forma e note di ogni giocatore. È da qui che l'algoritmo prende i dati.</p>
     </div>
+    <div id="statiHost"></div>
     <div id="profiloCardHost"></div>
     <div id="sections"></div>
   </section>
@@ -6822,6 +6824,9 @@ async function refreshLivePlayerNews() {
 
   function renderSections() {
     var host = document.getElementById("sections");
+    // Lo stato sospetto si disegna insieme alla rosa: si scopre e si corregge
+    // nella stessa schermata, altrimenti resta un avviso che nessuno segue.
+    renderStatiSospetti();
     renderProfiloRosa();
     host.innerHTML = "";
     aggiornaContatoreRosa();
@@ -7730,6 +7735,177 @@ async function refreshLivePlayerNews() {
   // Volutamente NON corregge niente in automatico: con tre giornate una
   // percentuale osservata è rumore, e sostituire un numero scelto a tavolino
   // con un numero rumoroso non è un miglioramento. È un conto da guardare.
+  /* ===================================================================
+     STATI SOSPETTI (08/09/2026)
+
+     NATO DA UN ERRORE VERO, COSTATO 17,5 PUNTI IN UNA DOMENICA.
+     Alla 3ª giornata della Desaparesidos il tool ha lasciato in panchina
+     Hermoso e Sagrado, che hanno fatto 10 tutti e due. Non era un difetto
+     del calcolo: erano segnati "ballottaggio", e a 0,55 di probabilita' non
+     potevano entrare negli undici. Il motore aveva ragione, il dato in
+     ingresso no — Hermoso aveva gia' giocato tre partite su tre.
+     Ne bencho' due, e nessuno se ne accorse fino a lunedi'.
+
+     Lo Stato lo scrive una persona e invecchia in silenzio. Le presenze
+     invece si sanno. Confrontarli e' gratis, e nessun altro pezzo del tool
+     lo faceva.
+
+     PERCHE' LA BINOMIALE E NON UNA SOGLIA A OCCHIO. "Gioca piu' di quanto
+     dice lo stato" non e' una soglia fissa: tre presenze su tre per un
+     ballottaggio (0,55) capitano nel 17% dei casi — sospetto; per un
+     titolare (0,95) nell'86% — normale. La stessa osservazione significa
+     cose opposte a seconda dello stato, quindi il conto va fatto, non
+     stimato. Si segnala quando quello che si e' visto capiterebbe meno di
+     una volta su cinque.
+     =================================================================== */
+  var STATI_SOGLIA = 0.20;      // sotto questa probabilita' il dato stona
+  var STATI_FINESTRA = 4;       // ultime N giornate chiuse: piu' indietro non serve
+  var STATI_MIN = 3;            // sotto tre giornate qualunque conto e' rumore
+
+  // Coefficiente binomiale "n su k". NOME DIVERSO DA combinazioni() APPOSTA:
+  // piu' su esiste gia' una combinazioni(arr, k) che restituisce le liste di
+  // k elementi, e vive nello stesso scope. Due dichiarazioni con lo stesso
+  // nome non danno errore: l'ultima vince, in silenzio, e il modificatore
+  // avrebbe iniziato a moltiplicare array. Se serve un altro conto simile,
+  // dargli ancora un altro nome.
+  function coeffBinomiale(n, k) {
+    if (k < 0 || k > n) return 0;
+    var r = 1;
+    for (var i = 1; i <= k; i++) r = r * (n - k + i) / i;
+    return r;
+  }
+  // P(esattamente k successi su n con probabilita' p)
+  function binomiale(k, n, p) {
+    if (p <= 0) return k === 0 ? 1 : 0;
+    if (p >= 1) return k === n ? 1 : 0;
+    return coeffBinomiale(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+  }
+  function binomialeAlmeno(k, n, p) {
+    var t = 0;
+    for (var i = k; i <= n; i++) t += binomiale(i, n, p);
+    return t;
+  }
+  function binomialeAlMassimo(k, n, p) {
+    var t = 0;
+    for (var i = 0; i <= k; i++) t += binomiale(i, n, p);
+    return t;
+  }
+
+  function probabilitaStato(key) {
+    for (var i = 0; i < STATUS.length; i++) if (STATUS[i].key === key) return STATUS[i].prob;
+    return null;
+  }
+  function etichettaStato(key) {
+    for (var i = 0; i < STATUS.length; i++) if (STATUS[i].key === key) return STATUS[i].label;
+    return key || "—";
+  }
+
+  // Le giornate su cui giudicare: le ultime chiuse, cioe' quelle per cui
+  // esistono voti. Guardare piu' indietro punirebbe chi era infortunato ad
+  // agosto ed e' rientrato.
+  function giornateChiuse() {
+    return Object.keys(VOTI).map(Number)
+      .filter(function (n) { return n >= 1; })
+      .sort(function (a, b) { return a - b; })
+      .slice(-STATI_FINESTRA);
+  }
+
+  function statiSospetti() {
+    var gg = giornateChiuse();
+    if (gg.length < STATI_MIN) return { giornate: gg, righe: [] };
+    var out = [];
+    (state.players || []).forEach(function (p) {
+      if (!p.name) return;
+      var pr = probabilitaStato(p.status);
+      if (pr == null) return;
+      var hist = Array.isArray(p.votiStorico) ? p.votiStorico : [];
+      var presenze = 0, somma = 0, nf = 0;
+      gg.forEach(function (g) {
+        var h = hist.filter(function (x) { return String(x.g) === String(g); })[0];
+        if (h && h.v != null && h.v !== "") {
+          presenze++;
+          if (h.f != null && h.f !== "") { somma += Number(h.f); nf++; }
+        }
+      });
+      var n = gg.length;
+      var atteso = pr * n;
+      var verso = null, prob = null;
+      if (presenze > atteso) {
+        prob = binomialeAlmeno(presenze, n, pr);
+        if (prob <= STATI_SOGLIA) verso = "gioca";
+      } else if (presenze < atteso) {
+        prob = binomialeAlMassimo(presenze, n, pr);
+        if (prob <= STATI_SOGLIA) verso = "non gioca";
+      }
+      if (!verso) return;
+      out.push({
+        nome: p.name, ruolo: p.role, stato: p.status, etichetta: etichettaStato(p.status),
+        presenze: presenze, giornate: n, prob: prob, verso: verso,
+        media: nf ? somma / nf : null
+      });
+    });
+    // Prima chi gioca ed e' tenuto fuori: e' l'errore che costa punti veri.
+    // A parita', prima chi rende di piu'.
+    out.sort(function (a, b) {
+      if (a.verso !== b.verso) return a.verso === "gioca" ? -1 : 1;
+      return (b.media == null ? -99 : b.media) - (a.media == null ? -99 : a.media);
+    });
+    return { giornate: gg, righe: out };
+  }
+
+  function statiSospettiHtml() {
+    var s = statiSospetti();
+    if (!s.righe.length) {
+      if (s.giornate.length < STATI_MIN) {
+        return '<section class="sez"><h4>Stati da controllare</h4><p class="lega-note">Servono almeno ' +
+          STATI_MIN + ' giornate con i voti caricati prima di poter dire se uno Stato stona con la realtà.</p></section>';
+      }
+      return '<section class="sez"><h4>Stati da controllare</h4><p class="lega-note">Nessuno stona: su ' +
+        s.giornate.length + ' giornate, quello che hai impostato regge il confronto con le presenze vere.</p></section>';
+    }
+    var righe = s.righe.map(function (r) {
+      var tono = r.verso === "gioca" ? "good" : "danger";
+      var frase = r.verso === "gioca"
+        ? 'ha giocato <b>' + r.presenze + ' su ' + r.giornate + '</b> ma è segnato «' + escapeHtml(r.etichetta) + '»'
+        : 'ha giocato <b>' + r.presenze + ' su ' + r.giornate + '</b> pur essendo segnato «' + escapeHtml(r.etichetta) + '»';
+      return '<tr><td>' + escapeHtml(r.nome) + '</td>' +
+        '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(r.ruolo) + '">' + escapeHtml(r.ruolo) + '</span></td>' +
+        '<td class="num" data-tone="' + tono + '">' + (r.media != null ? r.media.toFixed(2) : "—") + '</td>' +
+        '<td>' + frase + '</td>' +
+        '<td class="num">' + Math.round(r.prob * 100) + '%</td></tr>';
+    }).join("");
+    return '<section class="sez"><h4>Stati da controllare <span class="count-badge">' + s.righe.length + '</span></h4>' +
+      '<p class="lega-note">Lo Stato lo scrivi tu e invecchia in silenzio; le presenze invece si sanno. Qui le due cose si confrontano sulle ultime ' +
+      s.giornate.length + ' giornate.</p>' +
+      '<div class="f1-wrap"><table class="f1-table"><thead><tr>' +
+      '<th>Giocatore</th><th>R</th><th class="num">Media</th><th>Cosa stona</th><th class="num">Probabilità</th>' +
+      '</tr></thead><tbody>' + righe + '</tbody></table></div>' +
+      '<p class="sez-nota">L\'ultima colonna è quanto sarebbe probabile vedere quelle presenze <b>se lo Stato fosse giusto</b>. Sotto il ' +
+      Math.round(STATI_SOGLIA * 100) + '% vale la pena guardare.</p>' +
+      '<details class="aiuto"><summary>Perché conta</summary>' +
+      '<p>Il tool sceglie l\'undici moltiplicando il valore atteso per la <b>probabilità di scendere in campo</b>, che viene dallo Stato: titolare 95%, ballottaggio 55%, panchina 15%, assente 0. Uno Stato vecchio non sbaglia di poco — esclude il giocatore dal calcolo.</p>' +
+      '<p>È successo davvero: alla 3ª giornata della Desaparesidos Hermoso e Sagrado erano a «ballottaggio», sono rimasti fuori e hanno fatto <b>10 tutti e due</b>. Il calcolo era giusto, il dato in ingresso no.</p>' +
+      '</details></section>';
+  }
+
+  function renderStatiSospetti() {
+    var host = document.getElementById("statiHost");
+    if (host) host.innerHTML = statiSospettiHtml();
+    // In Schiera basta la riga d'avviso: e' il posto dove si preme Calcola,
+    // e un avviso lungo li' verrebbe scavalcato.
+    var av = document.getElementById("statiAvvisoHost");
+    if (av) {
+      var s = statiSospetti();
+      var quanti = s.righe.filter(function (r) { return r.verso === "gioca"; }).length;
+      av.innerHTML = quanti
+        ? '<div class="ris-feedback" data-tone="warn">' + quanti +
+          (quanti === 1 ? ' giocatore gioca' : ' giocatori giocano') + ' più di quanto dica il loro Stato (' +
+          escapeHtml(s.righe.filter(function (r) { return r.verso === "gioca"; }).map(function (r) { return r.nome; }).join(", ")) +
+          '). Finché resta così, il calcolo li tiene fuori: correggili in <b>Rosa</b>.</div>'
+        : "";
+    }
+  }
+
   function taraturaStati() {
     var conteggio = {};
     STATUS.forEach(function (s) { conteggio[s.key] = { label: s.label, prob: s.prob, previsti: 0, giocati: 0 }; });
