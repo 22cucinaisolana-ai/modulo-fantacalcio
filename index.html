@@ -993,6 +993,29 @@
   .f1-table tbody tr.pl-mine,
   .f1-table tbody tr.pl-mine:nth-child(even) { background: var(--accent-soft); }
 
+  /* FORMAZIONE DI PANCIA. Pastiglie invece di caselle: undici scelte su
+     venticinque si fanno con il pollice, e una casella spuntata piccola in una
+     lista lunga si perde. Colori dai token, quindi validi nei tre temi. */
+  .pancia-gruppo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+  .pancia-ruolo {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    min-width: 20px; text-align: center; color: var(--text-muted);
+  }
+  .pancia-chip {
+    font: inherit; font-size: 12px; cursor: pointer;
+    padding: 5px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  }
+  .pancia-chip:hover { border-color: var(--accent); }
+  .pancia-chip.on {
+    background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600;
+  }
+  .pancia-azioni { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+  .pancia-esito { font-size: 12px; }
+  .pancia-esito[data-tone="warn"] { color: var(--warn); }
+  .pancia-esito[data-tone="good"] { color: var(--good); }
+  .pancia-xi { font-size: 13px; line-height: 1.7; margin: 6px 0; }
+
   /* Elenchi a righe alternate, per le sezioni che non sono tabelle. */
   .zebra-lista { list-style: none; margin: 0; padding: 0; }
   .zebra-lista > li {
@@ -2800,6 +2823,7 @@
 
   <section class="tab-panel" id="tab-schiera" role="tabpanel" aria-labelledby="tabbtn-schiera" hidden>
     <div id="statiAvvisoHost"></div>
+    <div id="panciaHost"></div>
     <div id="consigliatiHost"></div>
     <div class="result" id="resultSection">
       <div class="result-empty" id="resultEmpty">Vai su <b>Rosa</b>, aggiungi i tuoi giocatori, poi premi <b>Calcola formazione</b> qui in alto per vedere l'undici consigliato.</div>
@@ -3753,7 +3777,7 @@
       giornata: state.meta.giornata || "1", primaPartita: "", manualLineup: null,
       modulo: "auto", modificatore: true, includiPortiere: true,
       modificatoreCentrocampo: true, strategia: "equilibrato",
-      punteggiLega: {}, storico: []
+      punteggiLega: {}, storico: [], pance: {}
     };
     state.players = [];
     normalizzaStato();
@@ -3818,6 +3842,7 @@
     if (!state.archivio || typeof state.archivio !== "object") state.archivio = {};
     if (!m.punteggiLega || typeof m.punteggiLega !== "object") m.punteggiLega = {};
     if (!Array.isArray(m.storico)) m.storico = [];
+    if (!m.pance || typeof m.pance !== "object" || Array.isArray(m.pance)) m.pance = {};
     // Modificatore attivo ⇒ la difesa deve stare a 4: un modulo forzato con 3 o
     // 5 difensori è incompatibile, si torna su Auto.
     if (m.modificatore && m.modulo !== "auto" && SHAPES[m.modulo] && SHAPES[m.modulo].D !== 4) m.modulo = "auto";
@@ -6827,6 +6852,9 @@ async function refreshLivePlayerNews() {
     // Lo stato sospetto si disegna insieme alla rosa: si scopre e si corregge
     // nella stessa schermata, altrimenti resta un avviso che nessuno segue.
     renderStatiSospetti();
+    // La pancia vive in Schiera ma dipende dalla rosa: si ridisegna quando la
+    // rosa cambia, altrimenti resterebbero i chip di un giocatore svincolato.
+    renderPanciaCard();
     renderProfiloRosa();
     host.innerHTML = "";
     aggiornaContatoreRosa();
@@ -7713,6 +7741,13 @@ async function refreshLivePlayerNews() {
       });
     }
 
+    // Copia della formazione di pancia dentro la riga dello storico, così la
+    // riga si legge da sola fra sei mesi senza dover incrociare due strutture.
+    // panciaPrima dice se c'era: una giornata calcolata senza pancia va contata
+    // come mancante, non come pareggio.
+    var pancia = panciaDi(g);
+    var panciaPrima = !!pancia;
+
     if (entry) {
       // Giornata già chiusa: il punteggio reale è noto, quindi la previsione di
       // allora è un dato storico e non va riscritta. Senza questo, ricalcolare
@@ -7723,8 +7758,12 @@ async function refreshLivePlayerNews() {
       entry.modulo = modulo; entry.previstoSenza = previstoSenza; entry.previsto = previsto; entry.ts = ts; entry.v = 2;
       entry.stati = stati;
       if (previsioni.length) entry.previsioni = previsioni;
+      // Solo se non c'era già: una pancia scritta prima del PRIMO calcolo resta
+      // quella, anche se si ricalcola. Altrimenti bastava ricalcolare due volte
+      // per farsene entrare una vista dopo il suggerimento.
+      if (entry.pancia == null) { entry.pancia = pancia; entry.panciaPrima = panciaPrima; }
     } else {
-      state.meta.storico.push({ g: g, modulo: modulo, previstoSenza: previstoSenza, previsto: previsto, ts: ts, reale: "", v: 2, stati: stati, previsioni: previsioni });
+      state.meta.storico.push({ g: g, modulo: modulo, previstoSenza: previstoSenza, previsto: previsto, ts: ts, reale: "", v: 2, stati: stati, previsioni: previsioni, pancia: pancia, panciaPrima: panciaPrima });
     }
   }
 
@@ -7904,6 +7943,180 @@ async function refreshLivePlayerNews() {
           '). Finché resta così, il calcolo li tiene fuori: correggili in <b>Rosa</b>.</div>'
         : "";
     }
+  }
+
+  /* ===================================================================
+     FORMAZIONE DI PANCIA (08/09/2026)
+
+     PERCHE' ESISTE. Il test fino a gennaio deve rispondere a "fa meglio di
+     cosa?", e i termini di paragone sono quattro: Pancia, Tool, Banale
+     (i migliori 11 per fantamedia) e Senno di poi (l'autopsia). Tre si
+     ricavano dai dati in qualunque momento. Il primo no.
+
+     PERCHE' VA SCRITTA PRIMA. Appena vedi il suggerimento la tua scelta e'
+     contaminata: non ricordi piu' cosa avresti fatto da solo, ricordi cosa
+     hai pensato del suggerimento. Non e' un problema di onesta', e' come
+     funziona la memoria. Quindi il campo si chiude quando premi Calcola, e
+     una giornata calcolata senza pancia resta senza: si dice e si va avanti,
+     non si finge di ricostruirla.
+
+     DOVE STA. In state.meta.pance, non nello storico: lo storico lo scrive
+     snapshotPrevisione e ha una forma sua: infilarci dentro una voce a meta'
+     (con la pancia e senza previsto) manderebbe in errore la tabella "Dopo la
+     giornata", che si aspetta previsto sempre presente. snapshotPrevisione ne
+     prende una copia quando gira, cosi' la riga dello storico resta un
+     oggetto completo e leggibile da solo.
+     =================================================================== */
+  function panceMappa() {
+    if (!state.meta.pance || typeof state.meta.pance !== "object") state.meta.pance = {};
+    return state.meta.pance;
+  }
+  function panciaDi(g) {
+    var p = panceMappa()[String(g)];
+    return (p && Array.isArray(p.xi) && p.xi.length) ? p : null;
+  }
+  // Una giornata e' chiusa quando il calcolo e' gia' stato fatto: da li' in poi
+  // la pancia non e' piu' pancia.
+  function panciaChiusa(g) {
+    var h = (state.meta.storico || []).find(function (x) { return x.g === String(g); });
+    return !!(h && h.previsto != null && h.previsto !== "");
+  }
+  // Modulo corrispondente a una selezione, o null se non e' un modulo valido.
+  function moduloDaSelezione(nomi) {
+    var conta = { P: 0, D: 0, C: 0, A: 0 };
+    nomi.forEach(function (n) {
+      var p = (state.players || []).find(function (x) { return x.name === n; });
+      if (p && conta[p.role] != null) conta[p.role]++;
+    });
+    var chiavi = Object.keys(SHAPES);
+    for (var i = 0; i < chiavi.length; i++) {
+      var s = SHAPES[chiavi[i]];
+      if (s.P === conta.P && s.D === conta.D && s.C === conta.C && s.A === conta.A) return chiavi[i];
+    }
+    return null;
+  }
+  function salvaPancia(g, nomi) {
+    var modulo = moduloDaSelezione(nomi);
+    if (!modulo) return null;
+    panceMappa()[String(g)] = { xi: nomi.slice(), modulo: modulo, ts: formatDateIt(new Date()) };
+    return modulo;
+  }
+  // Punteggio vero di un undici, per il confronto quando i voti sono arrivati.
+  // Senza modificatore: la pancia e il tool possono avere difese diverse, e
+  // sommarci due modificatori diversi confonderebbe due cose in un numero solo.
+  function totaleReale(nomi, g) {
+    var tot = 0, mancanti = 0;
+    nomi.forEach(function (n) {
+      var p = (state.players || []).find(function (x) { return x.name === n; });
+      var v = p && (p.votiStorico || []).find(function (h) { return h.g === String(g); });
+      if (v && v.f != null && v.f !== "") tot += Number(v.f); else mancanti++;
+    });
+    return { tot: Math.round(tot * 10) / 10, mancanti: mancanti };
+  }
+
+  function panciaHtml() {
+    var g = state.meta.giornata || "";
+    if (!g) {
+      return '<section class="sez"><h4>La tua formazione di pancia</h4>' +
+        '<p class="lega-note">Imposta prima la giornata in <b>Home</b>.</p></section>';
+    }
+    var salvata = panciaDi(g);
+    var chiusa = panciaChiusa(g);
+
+    // Caso peggiore e piu' importante da dire chiaramente: calcolo gia' fatto,
+    // pancia mai scritta. Non si recupera, e fingere di poterlo fare
+    // rovinerebbe la misura senza che nessuno se ne accorga.
+    if (chiusa && !salvata) {
+      return '<section class="sez"><h4>La tua formazione di pancia</h4>' +
+        '<p class="lega-note">Per la <b>giornata ' + escapeHtml(g) + '</b> hai già calcolato la formazione senza averla scritta prima. ' +
+        'Per questa giornata il confronto è perso: dopo aver visto il suggerimento, quello che avresti fatto da solo non lo sai più nemmeno tu.</p>' +
+        '<p class="sez-nota">Dalla prossima: apri <b>Schiera</b>, scegli i tuoi 11 qui, salva, e <i>poi</i> premi Calcola.</p></section>';
+    }
+
+    if (chiusa && salvata) {
+      var reale = totaleReale(salvata.xi, g);
+      var h = (state.meta.storico || []).find(function (x) { return x.g === String(g); });
+      var confronto = "";
+      if (h && h.previsioni && h.previsioni.length) {
+        var realeTool = totaleReale(h.previsioni.map(function (x) { return x.n; }), g);
+        if (!reale.mancanti && !realeTool.mancanti) {
+          var d = Math.round((realeTool.tot - reale.tot) * 10) / 10;
+          confronto = '<p class="sez-nota">Con i voti veri di questa giornata: <b>pancia ' + reale.tot.toFixed(1) +
+            '</b> contro <b>tool ' + realeTool.tot.toFixed(1) + '</b> — ' +
+            (d === 0 ? 'pari.' : (d > 0 ? 'il tool ha fatto <b>+' + d.toFixed(1) + '</b>.' : 'la pancia ha fatto <b>+' + Math.abs(d).toFixed(1) + '</b>.')) +
+            ' Senza modificatore: le due difese sono diverse e sommarne due confonderebbe le cose.</p>';
+        } else {
+          confronto = '<p class="sez-nota">Il confronto compare quando ci sono i voti di tutti e ventidue i nomi coinvolti.</p>';
+        }
+      }
+      return '<section class="sez"><h4>La tua formazione di pancia <span class="count-badge">' + escapeHtml(salvata.modulo) + '</span></h4>' +
+        '<p class="lega-note">Scritta il ' + escapeHtml(salvata.ts) + ', prima del calcolo. Da qui in poi non si tocca più.</p>' +
+        '<p class="pancia-xi">' + salvata.xi.map(function (n) { return escapeHtml(n); }).join(" · ") + '</p>' +
+        confronto + '</section>';
+    }
+
+    // Ancora aperta: si sceglie.
+    var scelti = salvata ? salvata.xi.slice() : [];
+    var gruppi = ROLES.map(function (r) {
+      var lista = (state.players || []).filter(function (p) { return p.role === r.key && p.name; });
+      if (!lista.length) return "";
+      return '<div class="pancia-gruppo"><span class="pancia-ruolo" data-ruolo="' + r.key + '">' + r.key + '</span>' +
+        lista.map(function (p) {
+          var on = scelti.indexOf(p.name) >= 0;
+          return '<button type="button" class="pancia-chip' + (on ? " on" : "") + '" data-nome="' +
+            escapeAttr(p.name) + '" aria-pressed="' + (on ? "true" : "false") + '">' + escapeHtml(p.name) + '</button>';
+        }).join("") + '</div>';
+    }).join("");
+
+    return '<section class="sez" id="panciaSez"><h4>La tua formazione di pancia <span class="count-badge" id="panciaConta">' +
+      scelti.length + '/11</span></h4>' +
+      '<p class="lega-note">Scegli i tuoi 11 <b>prima</b> di premere Calcola. Serve a rispondere alla sola domanda che conta a gennaio: il tool fa meglio di te, o è un passatempo?</p>' +
+      gruppi +
+      '<div class="pancia-azioni"><button class="btn btn-small" type="button" id="panciaSalva">' +
+      (salvata ? "Aggiorna la formazione di pancia" : "Salva la formazione di pancia") + '</button>' +
+      '<span class="pancia-esito" id="panciaEsito"></span></div>' +
+      '<p class="sez-nota">Si chiude da sola appena calcoli: dopo aver visto il suggerimento non è più la tua idea, è la tua reazione al suggerimento.</p>' +
+      '</section>';
+  }
+
+  function renderPanciaCard() {
+    var host = document.getElementById("panciaHost");
+    if (!host) return;
+    host.innerHTML = panciaHtml();
+    var sez = document.getElementById("panciaSez");
+    if (!sez) return;
+    var conta = document.getElementById("panciaConta");
+    var esito = document.getElementById("panciaEsito");
+    function selezione() {
+      return Array.prototype.map.call(sez.querySelectorAll(".pancia-chip.on"), function (b) { return b.dataset.nome; });
+    }
+    function aggiorna() {
+      var n = selezione().length;
+      if (conta) conta.textContent = n + "/11";
+      if (esito) esito.textContent = "";
+    }
+    sez.querySelectorAll(".pancia-chip").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var on = btn.classList.toggle("on");
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        aggiorna();
+      });
+    });
+    var salva = document.getElementById("panciaSalva");
+    if (salva) salva.addEventListener("click", function () {
+      var nomi = selezione();
+      if (nomi.length !== 11) {
+        if (esito) { esito.dataset.tone = "warn"; esito.textContent = "Servono esattamente 11 nomi, ne hai " + nomi.length + "."; }
+        return;
+      }
+      var modulo = salvaPancia(state.meta.giornata, nomi);
+      if (!modulo) {
+        if (esito) { esito.dataset.tone = "warn"; esito.textContent = "Questi 11 non formano un modulo valido: serve 1 portiere e una fra " + Object.keys(SHAPES).join(", ") + "."; }
+        return;
+      }
+      scheduleSave();
+      if (esito) { esito.dataset.tone = "good"; esito.textContent = "Salvata: " + modulo + ". Ora puoi calcolare."; }
+    });
   }
 
   function taraturaStati() {
@@ -9948,7 +10161,22 @@ async function refreshLivePlayerNews() {
 
   var ROW_ORDER = ["A", "C", "D", "P"]; // attack at top of the pitch
 
-  function renderResult() {
+  // `esplicito` = l'utente ha davvero premuto "Calcola formazione".
+  //
+  // TROVATO L'08/09/2026, ed era un bug vecchio. renderResult() viene chiamata
+  // da mezzo tool per ridisegnare — cambio squadra, risultati di Serie A
+  // caricati, voti applicati — e in fondo chiamava snapshotPrevisione(). Ogni
+  // ridisegno scriveva quindi una riga di storico, con la data di oggi, per una
+  // giornata che nessuno aveva chiesto di calcolare.
+  //
+  // Due danni. Il primo: lo storico si riempiva di previsioni mai fatte, e
+  // sembravano previsioni vere — nella 22-LEAGUE le righe della 3ª e della 4ª
+  // sono comparse cosi', tutte e due datate 08/09, la 3ª a giornata gia'
+  // giocata. Il secondo, peggiore: la formazione di pancia si sarebbe chiusa da
+  // sola prima ancora di poterla scrivere.
+  //
+  // Ora lo storico lo scrive solo il pulsante. Ridisegnare non e' prevedere.
+  function renderResult(esplicito) {
     var data = computeAll();
     document.getElementById("resultEmpty").style.display = "none";
     var host = document.getElementById("resultContent");
@@ -10171,8 +10399,14 @@ async function refreshLivePlayerNews() {
         renderResult();
       });
     });
-    snapshotPrevisione(data.best, bestResult.totalSenzaBonus, bestResult.total, bestResult.chosen);
-    renderHistoryCard();
+    if (esplicito) {
+      snapshotPrevisione(data.best, bestResult.totalSenzaBonus, bestResult.total, bestResult.chosen);
+      // Dopo il calcolo la pancia si chiude: il riquadro va ridisegnato subito,
+      // altrimenti resta a schermo modificabile proprio nel momento in cui non
+      // deve piu' esserlo.
+      renderPanciaCard();
+      renderHistoryCard();
+    }
     scheduleSave();
   }
 
@@ -10828,7 +11062,7 @@ async function refreshLivePlayerNews() {
     wireTabs();
     wireListone();
     document.getElementById("computeBtn").addEventListener("click", function () {
-      renderResult();
+      renderResult(true);   // l'unico punto in cui si scrive nello storico
       // "Calcola formazione" sta nella barra fissa e si preme da qualunque
       // scheda: se sei sulla Rosa il risultato comparirebbe in una scheda che
       // non stai guardando, quindi ti ci porto.
