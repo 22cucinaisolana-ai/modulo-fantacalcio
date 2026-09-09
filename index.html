@@ -3226,6 +3226,43 @@
   // Un orario scritto a mano vince sempre: e' una scelta esplicita, e serve
   // quando un anticipo cambia dopo che la riga e' stata caricata.
   var ORARI_SA = {};
+
+  /* ===================================================================
+     INDISPONIBILI (09/09/2026)
+
+     UNA SOLA TABELLA PER TUTTE LE LEGHE. Un infortunio e' una proprieta' del
+     giocatore, non della lega: Yildiz e' fuori per chiunque lo abbia in rosa.
+
+     NATO DA UN CASO VERO. In Fanta Serie A il tool schierava nell'undici
+     probabile dell'avversario Yildiz, McTominay e Orsolini, tutti e tre
+     infortunati, perche' l'unica cosa che sapeva era la titolarita' del
+     listone — un numero deciso prima del campionato che non invecchia mai.
+
+     DUE GRADI, E LA DIFFERENZA E' IL PUNTO DI TUTTO IL MECCANISMO.
+     'out' = non gioca, esce dal calcolo. 'dubbio' = incerto, pesa meno ma
+     resta dentro. Il vecchio classificatore automatico delle notizie non
+     aveva questa distinzione: trasformava ogni dubbio in una certezza e
+     sbagliava otto righe su venticinque. Un dubbio trattato da certezza e'
+     lo stesso errore, nell'altra direzione, di uno Stato mai aggiornato.
+
+     PERCHE' NON SI DEDUCE DALLE PRESENZE. Una regola "non gioca da due
+     giornate" trova Yildiz e Zaniolo ma NON trova Locatelli, che ha giocato
+     tutte e tre le giornate e poi si e' operato al menisco. Gli infortuni
+     freschi — gli unici che contano per la formazione di venerdi' — sono
+     invisibili ai dati storici per costruzione.
+     =================================================================== */
+  var INDISPONIBILI = {};
+  // Quanto pesa ancora un giocatore in dubbio. Non zero: "in dubbio" vuol dire
+  // che non si sa, e dare per certa l'assenza costa quanto darla per esclusa.
+  var IND_DUBBIO_PESO = 0.5;
+  function indisponibile(nome) {
+    return INDISPONIBILI[String(nome || "").trim()] || null;
+  }
+  function indisponibileFuori(nome) {
+    var i = indisponibile(nome);
+    return !!(i && i.grado === "out");
+  }
+
   function orarioPrimaPartita(g) {
     var manuale = state.meta.primaPartita;
     if (manuale) return { raw: manuale, fonte: "manuale" };
@@ -3439,6 +3476,15 @@
     Object.keys(ORARI_SA).forEach(function (k) { delete ORARI_SA[k]; });
     (rif.orari || []).forEach(function (r) {
       if (r && r.giornata != null && r.inizio) ORARI_SA[String(r.giornata)] = { inizio: r.inizio, partita: r.partita || "" };
+    });
+    Object.keys(INDISPONIBILI).forEach(function (k) { delete INDISPONIBILI[k]; });
+    (rif.indisponibili || []).forEach(function (r) {
+      if (!r || !r.giocatore) return;
+      INDISPONIBILI[String(r.giocatore).trim()] = {
+        squadra: r.squadra || "", tipo: r.tipo || "infortunio",
+        grado: r.grado === "dubbio" ? "dubbio" : "out",
+        rientro: r.rientro || "", nota: r.nota || "", fonte: r.fonte || ""
+      };
     });
 
     (rif.legaFormazioni || []).forEach(function (f) {
@@ -3665,7 +3711,8 @@
         // posizionali e spostarne uno li sfasa tutti (successo il 04/09 con
         // serie_a_classifica).
         sb.from("serie_a_risultati").select("giornata,casa,trasferta,gol_casa,gol_trasferta").order("giornata").limit(400),
-        sb.from("serie_a_orari").select("giornata,inizio,partita").order("giornata").limit(50)
+        sb.from("serie_a_orari").select("giornata,inizio,partita").order("giornata").limit(50),
+        sb.from("indisponibili").select("giocatore,squadra,tipo,grado,rientro,nota,fonte").limit(500)
       ]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var rif = {
@@ -3679,7 +3726,8 @@
         legaFormazioni: q[10].data || [],
         listoneValori: q[11].data || [],
         risultatiSA: q[12].data || [],
-        orari: q[13].data || []
+        orari: q[13].data || [],
+        indisponibili: q[14].data || []
       };
       // I voti si leggono solo da collegati (sono materiale della redazione
       // Fantacalcio.it, non nostro). Da sloggati la query non da' errore:
@@ -5447,7 +5495,10 @@ async function refreshLivePlayerNews() {
       // L'undici che gli attribuiamo. Finora restava dentro la funzione: il
       // tool sapeva chi pensava schierasse e non lo diceva a nessuno.
       undici: stima.undici || null, modulo: stima.modulo || null,
-      reale: !!stima.reale, ufficiale: !!stima.ufficiale, mancanti: stima.mancanti || 0
+      reale: !!stima.reale, ufficiale: !!stima.ufficiale, mancanti: stima.mancanti || 0,
+      // Va portata fin qui: calcolarla e poi lasciarla dentro la funzione
+      // significa togliere giocatori dall'undici senza dire perche'.
+      esclusi: stima.esclusi || []
     } : null;
     _avvCache = { chiave: chiave, valore: valore };
     return valore;
@@ -7927,21 +7978,67 @@ async function refreshLivePlayerNews() {
       '</details></section>';
   }
 
+  // Giocatori della MIA rosa che risultano indisponibili ma non sono segnati
+  // "assente". E' il caso Locatelli: nessuna presenza mancata, quindi il
+  // controllo sugli Stati non puo' vederlo — lo sa solo la notizia.
+  function indisponibiliInRosa() {
+    return (state.players || []).filter(function (p) {
+      if (!p.name) return false;
+      var i = indisponibile(p.name);
+      if (!i) return false;
+      if (i.grado === "out" && p.status === "assente") return false;   // gia' gestito
+      return true;
+    }).map(function (p) {
+      var i = indisponibile(p.name);
+      return { nome: p.name, ruolo: p.role, stato: p.status, grado: i.grado, nota: i.nota, rientro: i.rientro, fonte: i.fonte };
+    }).sort(function (a, b) { return (a.grado === "out" ? 0 : 1) - (b.grado === "out" ? 0 : 1); });
+  }
+
+  function indisponibiliRosaHtml() {
+    var righe = indisponibiliInRosa();
+    if (!righe.length) return "";
+    return '<section class="sez"><h4>Indisponibili nella tua rosa <span class="count-badge">' + righe.length + '</span></h4>' +
+      '<p class="lega-note">Notizie di infortunio e squalifica, per tutte le leghe. Il tool <b>non cambia lo Stato da solo</b>: lo decidi tu, qui c\'è solo quello che è stato letto.</p>' +
+      '<div class="f1-wrap"><table class="f1-table"><thead><tr>' +
+      '<th>Giocatore</th><th>R</th><th>Stato attuale</th><th>Notizia</th><th>Rientro</th>' +
+      '</tr></thead><tbody>' +
+      righe.map(function (r) {
+        return '<tr><td>' + escapeHtml(r.nome) + '</td>' +
+          '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(r.ruolo) + '">' + escapeHtml(r.ruolo) + '</span></td>' +
+          '<td data-tone="' + (r.grado === "out" ? "danger" : "warn") + '">' + escapeHtml(etichettaStato(r.stato)) + '</td>' +
+          '<td>' + (r.grado === "out" ? '<b>fuori</b>' : 'in dubbio') + (r.nota ? ' — ' + escapeHtml(r.nota) : '') + '</td>' +
+          '<td>' + escapeHtml(r.rientro || "—") + '</td></tr>';
+      }).join("") + '</tbody></table></div>' +
+      '<p class="sez-nota">Chi è <b>fuori</b> va messo su «assente»: finché non lo fai il calcolo continua a schierarlo. Chi è <b>in dubbio</b> valutalo tu — un dubbio dato per certo costa quanto un infortunio ignorato.</p>' +
+      '</section>';
+  }
+
   function renderStatiSospetti() {
     var host = document.getElementById("statiHost");
-    if (host) host.innerHTML = statiSospettiHtml();
+    if (host) host.innerHTML = indisponibiliRosaHtml() + statiSospettiHtml();
     // In Schiera basta la riga d'avviso: e' il posto dove si preme Calcola,
     // e un avviso lungo li' verrebbe scavalcato.
     var av = document.getElementById("statiAvvisoHost");
     if (av) {
       var s = statiSospetti();
       var quanti = s.righe.filter(function (r) { return r.verso === "gioca"; }).length;
-      av.innerHTML = quanti
-        ? '<div class="ris-feedback" data-tone="warn">' + quanti +
+      // L'infortunio va prima dello Stato fermo: un giocatore fuori schierato
+      // vale zero, uno Stato pessimista costa qualche punto.
+      var fuori = indisponibiliInRosa().filter(function (r) { return r.grado === "out"; });
+      var avvisi = "";
+      if (fuori.length) {
+        avvisi += '<div class="ris-feedback" data-tone="danger">' + fuori.length +
+          (fuori.length === 1 ? ' giocatore risulta indisponibile' : ' giocatori risultano indisponibili') + ' e non è su «assente» (' +
+          escapeHtml(fuori.map(function (r) { return r.nome; }).join(", ")) +
+          '). Il calcolo continua a schierarli: correggili in <b>Rosa</b>.</div>';
+      }
+      if (quanti) {
+        avvisi += '<div class="ris-feedback" data-tone="warn">' + quanti +
           (quanti === 1 ? ' giocatore gioca' : ' giocatori giocano') + ' più di quanto dica il loro Stato (' +
           escapeHtml(s.righe.filter(function (r) { return r.verso === "gioca"; }).map(function (r) { return r.nome; }).join(", ")) +
-          '). Finché resta così, il calcolo li tiene fuori: correggili in <b>Rosa</b>.</div>'
-        : "";
+          '). Finché resta così, il calcolo li tiene fuori: correggili in <b>Rosa</b>.</div>';
+      }
+      av.innerHTML = avvisi;
     }
   }
 
@@ -8308,10 +8405,16 @@ async function refreshLivePlayerNews() {
     var gn = parseInt(g, 10);
     if (!sq || !gn) return null;
     var mancanti = 0;
+    var esclusi = [];   // indisponibili certi, tolti dal calcolo
     var pool = { P: [], D: [], C: [], A: [] };
     sq.rosa.forEach(function (rp) {
       var l = listoneGet(rp.n);
       if (!l || l[3] == null) { mancanti++; return; }
+      // Chi e' fuori non entra nel pool: il modulo migliore va cercato sui
+      // giocatori che possono davvero scendere in campo, altrimenti si stima
+      // un avversario che non esiste. Chi e' in dubbio resta, pesato meno.
+      var ind = indisponibile(rp.n);
+      if (ind && ind.grado === "out") { esclusi.push({ n: rp.n, r: rp.r, nota: ind.nota, rientro: ind.rientro }); return; }
       var team = l[2], exp = fantamediaEffettivaListone(rp.n, l[3]), mv = mediaVotoEffettivaListone(rp.n, l[4], l[3]), tit = l[5] || 3, flags = l[6] || 0;
       var round = FIXTURES[gn - 1] || [];
       var avvCode = null, casa = true;
@@ -8330,6 +8433,7 @@ async function refreshLivePlayerNews() {
       // con più titolari certi ha meno probabilità di dover ripiegare su una
       // riserva scarsa. Non è più una probabilità di scendere in campo.
       var prob = TITOLARITA_PESO[tit] != null ? TITOLARITA_PESO[tit] : 0.93;
+      if (ind) prob = prob * IND_DUBBIO_PESO;   // resta 'dubbio': gli 'out' sono gia' usciti sopra
       // mv arriva già con il fallback e con i voti veri applicati da
       // mediaVotoEffettivaListone; qui resta solo l'ultima rete di sicurezza.
       pool[rp.r].push({ nome: rp.n, raw: raw, prob: prob, ev: raw * prob, mv: (mv != null ? mv : exp - 0.2) });
@@ -8389,6 +8493,7 @@ async function refreshLivePlayerNews() {
           centro: scelti.C.map(function (x) { return x.mv; }),
           undici: scelti,
           mancanti: mancanti,
+          esclusi: esclusi,
           reale: true,
           ufficiale: !!manuale.ufficiale,
           riconosciuti: trovati
@@ -8443,6 +8548,7 @@ async function refreshLivePlayerNews() {
     });
     if (!best) return null;
     best.mancanti = mancanti;
+    best.esclusi = esclusi;
     return best;
   }
 
@@ -10360,6 +10466,18 @@ async function refreshLivePlayerNews() {
           : 'Stima del tool: il suo <b>miglior undici</b> fra i moduli standard, con la difficolta\' della singola partita e il modificatore della lega. Non e\' quello che schierera\' per certo, e\' quello che gli conviene schierare.')) +
         ' Vale <b>' + av.punti.toFixed(1) + '</b> fantapunti attesi, oscillazione &plusmn;' + Math.sqrt(av.varianza || 0).toFixed(1) + '.' +
         (av.mancanti ? ' <b>' + av.mancanti + '</b> giocatori della sua rosa non sono nel listone e restano fuori dal conto.' : '') + '</p>';
+      // Chi e' stato tolto perche' indisponibile va detto: senza, un undici
+      // improvvisamente piu' debole sembra un errore del tool.
+      // Solo quando l'undici e' una STIMA: se la formazione e' stata inserita a
+      // mano quei nomi non sono stati esclusi da niente, e scrivere "escluso"
+      // accanto a un giocatore che compare in campo e' una contraddizione.
+      if (!av.reale && av.esclusi && av.esclusi.length) {
+        html += '<p class="prof-nota"><b>Esclusi perché indisponibili</b> (' + av.esclusi.length + '): ' +
+          av.esclusi.map(function (e) {
+            return '<b>' + escapeHtml(e.n) + '</b>' + (e.nota ? ' — ' + escapeHtml(e.nota) : '') +
+              (e.rientro ? ', rientro ' + escapeHtml(e.rientro) : '');
+          }).join(' · ') + '.</p>';
+      }
       html += '<div class="bench-list">';
       ROLES.forEach(function (r) {
         (av.undici[r.key] || []).forEach(function (x) {
