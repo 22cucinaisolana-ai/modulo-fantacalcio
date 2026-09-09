@@ -2889,14 +2889,14 @@
   <section class="tab-panel" id="tab-numeri" role="tabpanel" aria-labelledby="tabbtn-numeri" hidden>
     <div class="tab-intro">
       <h2>I numeri</h2>
-      <p>Tutto quello che i dati raccolti dicono: sopra la giornata da schierare, sotto le squadre e la ricerca su tutta la Serie A. I tuoi sono segnati con un punto.</p>
+      <p>Prima i tuoi, reparto per reparto, con le colonne che contano per ciascuno. Poi tutti gli altri in un&rsquo;unica tabella, con la squadra della lega che li possiede &mdash; filtrala sul tuo avversario di giornata e guardi la sua rosa con gli stessi numeri della tua.</p>
     </div>
     <div id="numeriAvvisoHost"></div>
     <div id="numeriGiornataHost"></div>
     <div id="numeriProbHost"></div>
+    <div id="numeriEsploraHost"></div>
     <div id="numeriLettureHost"></div>
     <div id="numeriSquadreHost"></div>
-    <div id="numeriEsploraHost"></div>
   </section>
 
   <!-- SCHEDA 2: ROSA — i 25 giocatori, per reparto -->
@@ -9776,7 +9776,7 @@ async function refreshLivePlayerNews() {
      singolo giocatore un attaccante e' rumore puro. Le letture qui
      sotto sono spunti, non verdetti.
      =================================================================== */
-  var NUM_F = { testo: "", ruolo: "", squadra: "", famiglia: "attacco", soloMiei: false };
+  var NUM_F = { testo: "", ruolo: "", squadra: "", famiglia: "attacco", soloMiei: false, proprietario: "" };
 
   // I giocatori che possiedo, in TUTTE le leghe. Serve per il punto verde
   // nelle tabelle di ricerca: la' la domanda e' "questo e' mio da qualche
@@ -9907,6 +9907,105 @@ async function refreshLivePlayerNews() {
       '<th>Giocatore</th><th>R</th><th>Partita</th><th>Forza avv.</th><th>Notizia</th><th>Min</th><th>Tit.</th><th>&ge;6,5</th><th>xG+xA</th><th>Trend</th>' +
       '</tr></thead><tbody>' + righe.map(cella).join("") + '</tbody></table></div>' +
       '<p class="sez-nota">Nessuno di questi numeri entra nel calcolo della formazione: quello usa fantamedia, stato, avversario e undici probabili. Qui c\'&egrave; il perch&eacute;, non il quanto.</p>' +
+      '</section>';
+  }
+
+  /* -------------------------------------------------------------------
+     I MIEI, IN DETTAGLIO (09/09/2026, rifatta su richiesta)
+
+     Prima c'era una tabella sola con dieci colonne uguali per tutti. Ma
+     le colonne che contano NON sono le stesse per ruolo: su un portiere
+     l'xG e' aria, su un attaccante le spazzate sono aria, e su un
+     difensore l'unica cosa che vale davvero e' la fascia del
+     modificatore. Una tabella che va bene per tutti va bene per nessuno.
+
+     Quindi quattro blocchi, uno per reparto, ognuno con le sue colonne.
+     Dentro un reparto le righe sono confrontabili fra loro, che e' la
+     cosa che serve quando devi scegliere fra due difensori.
+
+     Colonne comuni a tutti, perche' decidono la giornata prima dei
+     numeri: la partita, quanto concede l'avversario, cosa dice l'undici
+     probabile, i minuti e la titolarita'.
+     ------------------------------------------------------------------- */
+  var COLONNE_REPARTO = {
+    P: [["parate_per_partita","Parate/pt",1],["clean_sheet","Clean sheet",0],["gol_subiti","Gol subiti",0],["mv","MV",2],["fmv","FMV",2],["rating_sm","Rating",2]],
+    D: [["perc_voto_65","≥6,5",-1],["perc_voto_6","≥6",-1],["mv","MV",2],["contrasti","Contr.",0],["intercetti","Interc.",0],["spazzate","Spazz.",0],["duelli_vinti","Duelli",0],["perc_senza_cartellini","Senza cart.",-1],["rating_sm","Rating",2]],
+    C: [["fmv","FMV",2],["mv","MV",2],["xg","xG",2],["xa","xA",2],["tiri","Tiri",0],["passaggi_chiave","Pass. chiave",0],["occasioni_create","Occ. create",0],["perc_con_bonus","Con bonus",-1],["rating_sm","Rating",2]],
+    A: [["fmv","FMV",2],["xg","xG",2],["xa","xA",2],["tiri","Tiri",0],["tiri_in_porta","In porta",0],["occasioni_mancate","Occ. mancate",0],["perc_conversione","% Gol su tiri",-1],["perc_con_bonus","Con bonus",-1],["rating_sm","Rating",2]]
+  };
+  var NOME_REPARTO = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
+
+  function numeriMieiHtml() {
+    if (!STATS.length) return "";
+    var g = state.meta.giornata || "";
+    var gg = String(parseInt(g, 10));
+    var miei = nomiMieiLegaAttiva();
+    var righe = Object.keys(miei).map(function (nome) {
+      var l = listoneGet(nome);
+      if (!l) return null;
+      var code = l[2];
+      var avv = avversarioDi(code, g);
+      var fz = avv ? forzaDi(avv.code) : null;
+      var pubblicato = !!(PROBABILI_SQUADRE[gg] && PROBABILI_SQUADRE[gg][code]);
+      var dentro = !!(PROBABILI[gg] && PROBABILI[gg][nome]);
+      var ind = indisponibile(nome);
+      return {
+        nome: nome, ruolo: l[1], code: code, s: statsDi(nome),
+        avv: avv ? avv.code : null, casa: avv ? avv.casa : null,
+        forza: l[1] === "P" || l[1] === "D" ? (fz ? Number(fz.attacco_corretto) : null) : (fz ? Number(fz.difesa_corretta) : null),
+        stato: pubblicato ? (dentro ? "gioca" : "fuori") : "?",
+        ind: ind ? ind.grado : null
+      };
+    }).filter(Boolean);
+    if (!righe.length) return "";
+    var nomeLega = (RIF_LEGHE[legaAttivaId()] && RIF_LEGHE[legaAttivaId()].nome) || legaAttivaId();
+    var nomeMia = (RIF_LEGHE[legaAttivaId()] && RIF_LEGHE[legaAttivaId()].miaSquadra) || LEGA_MIA;
+
+    function blocco(ruolo) {
+      var rr = righe.filter(function (r) { return r.ruolo === ruolo; });
+      if (!rr.length) return "";
+      var cols = COLONNE_REPARTO[ruolo];
+      // Ordine di partenza: la colonna che conta per quel reparto. Sul
+      // difensore la fascia, su tutti gli altri la fantamedia.
+      var chiave = ruolo === "D" ? "perc_voto_65" : "fmv";
+      rr.sort(function (a, b) {
+        var va = a.s ? Number(a.s[chiave] || 0) : -1, vb = b.s ? Number(b.s[chiave] || 0) : -1;
+        return vb - va;
+      });
+      // Per il portiere e il difensore la forza che conta e' l'attacco che
+      // affrontano, per gli altri la difesa: i gol subiti cadono addosso a
+      // loro, il bonus di un attaccante dipende dal fatto che segni.
+      var etichettaForza = (ruolo === "P" || ruolo === "D") ? "Attacco avv." : "Difesa avv.";
+      return '<h5>' + NOME_REPARTO[ruolo] + ' <span class="count-badge">' + rr.length + '</span></h5>' +
+        '<div class="f1-wrap"><table class="f1-table"><thead><tr>' +
+        '<th>Giocatore</th><th>Partita</th><th>' + etichettaForza + '</th><th>Notizia</th><th>Min/pt</th><th>% tit.</th>' +
+        cols.map(function (c) { return '<th>' + c[1] + '</th>'; }).join("") + '</tr></thead><tbody>' +
+        rr.map(function (r) {
+          var s = r.s;
+          var buono = (ruolo === "P" || ruolo === "D") ? (r.forza != null && r.forza < 0.9) : (r.forza != null && r.forza > 1.1);
+          var cattivo = (ruolo === "P" || ruolo === "D") ? (r.forza != null && r.forza > 1.15) : (r.forza != null && r.forza < 0.85);
+          return '<tr>' +
+            '<td>' + (r.stato === "gioca" ? '<span class="pt-ok">&bull;</span> ' : r.stato === "fuori" ? '<span class="pt-ko">&bull;</span> ' : '') + escapeHtml(r.nome) + '</td>' +
+            '<td>' + escapeHtml(r.code || "") + (r.avv ? ' <span class="mini">' + (r.casa ? "vs" : "a") + ' ' + escapeHtml(r.avv) + '</span>' : '') + '</td>' +
+            '<td data-tone="' + (buono ? "ok" : cattivo ? "danger" : "") + '">' + (r.forza == null ? "—" : num(r.forza, 2)) + '</td>' +
+            '<td data-tone="' + (r.ind === "out" ? "danger" : r.ind === "dubbio" ? "warn" : r.stato === "gioca" ? "ok" : r.stato === "fuori" ? "danger" : "") + '">' +
+              (r.ind === "out" ? "infortunato" : r.stato === "gioca" ? "probabile" : r.stato === "fuori" ? "fuori dagli 11" : "—") +
+              (r.ind === "dubbio" ? " (dubbio)" : "") + '</td>' +
+            '<td>' + (s ? num(s.minuti_per_partita, 0) : "—") + '</td>' +
+            '<td>' + (s ? perc(s.perc_da_titolare) : "—") + '</td>' +
+            cols.map(function (c) {
+              var v = s ? s[c[0]] : null;
+              return '<td>' + (c[2] === -1 ? perc(v) : num(v, c[2])) + '</td>';
+            }).join("") + '</tr>';
+        }).join("") + '</tbody></table></div>';
+    }
+
+    return '<section class="sez"><h4>I miei, in dettaglio <span class="count-badge">' + righe.length + '</span></h4>' +
+      '<p class="lega-note">Giornata <b>' + escapeHtml(String(g)) + '</b> &middot; <b>' + escapeHtml(nomeMia) + '</b> in ' + escapeHtml(nomeLega) + '. ' +
+      'Un blocco per reparto, perch&eacute; le colonne che contano non sono le stesse: su un portiere l\'xG &egrave; aria, su un difensore conta solo la fascia del modificatore. ' +
+      'Dentro un reparto le righe si confrontano fra loro. Ferma il mouse su un\'intestazione per la spiegazione, clicca per ordinare.</p>' +
+      ["P","D","C","A"].map(blocco).join("") +
+      '<p class="sez-nota">La forza dell\'avversario &egrave; corretta per il calendario che ha gi&agrave; affrontato: 1,00 &egrave; la media del campionato. Per portieri e difensori &egrave; l\'<b>attacco</b> che affrontano, per gli altri la <b>difesa</b>.</p>' +
       '</section>';
   }
 
@@ -10115,12 +10214,23 @@ async function refreshLivePlayerNews() {
   function numeriEsploraHtml() {
     if (!STATS.length) return "";
     var miei = nomiMiei();
+    // Chi possiede chi, nella lega attiva. E' la colonna che trasforma questa
+    // tabella da elenco di statistiche in strumento di lega: con il filtro sul
+    // proprietario si guarda la rosa dell'avversario di giornata con gli stessi
+    // numeri con cui si guarda la propria, e i liberi sono il mercato.
+    var prop = proprietari();
+    var nomeMia = (RIF_LEGHE[legaAttivaId()] && RIF_LEGHE[legaAttivaId()].miaSquadra) || LEGA_MIA;
     var fam = FAMIGLIE[NUM_F.famiglia] || FAMIGLIE.attacco;
     var q = NUM_F.testo.trim().toLowerCase();
     var righe = STATS.filter(function (s) {
       if (NUM_F.soloMiei && !miei[String(s.giocatore).trim()]) return false;
       if (NUM_F.ruolo && s.ruolo !== NUM_F.ruolo) return false;
       if (NUM_F.squadra && s.squadra !== NUM_F.squadra) return false;
+      if (NUM_F.proprietario) {
+        var o = prop[normalizeNameKey(s.giocatore)] || "";
+        if (NUM_F.proprietario === "__liberi__") { if (o) return false; }
+        else if (o !== NUM_F.proprietario) return false;
+      }
       if (q && String(s.giocatore || "").toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
@@ -10136,6 +10246,19 @@ async function refreshLivePlayerNews() {
     var opzSq = ['<option value="">Tutte</option>'].concat(Object.keys(squadre).sort().map(function (c) {
       return '<option value="' + escapeAttr(c) + '"' + (NUM_F.squadra === c ? " selected" : "") + '>' + escapeHtml(c) + '</option>';
     })).join("");
+    // L'avversario di giornata in cima alla lista dei proprietari: e' quello
+    // che si guarda nove volte su dieci.
+    var avvGiornata = null;
+    try { avvGiornata = legaAvversario(state.meta.giornata || ""); } catch (e) { avvGiornata = null; }
+    var squadreLega = Object.keys(LEGA_SQUADRE).sort(function (a, b) {
+      var pa = a === nomeMia ? 0 : (a === avvGiornata ? 1 : 2);
+      var pb = b === nomeMia ? 0 : (b === avvGiornata ? 1 : 2);
+      return pa !== pb ? pa - pb : a.localeCompare(b, "it");
+    });
+    var opzProp = ['<option value="">Chiunque</option>'].concat(squadreLega.map(function (n) {
+      var eti = n + (n === nomeMia ? " (la mia)" : n === avvGiornata ? " (avversario di giornata)" : "");
+      return '<option value="' + escapeAttr(n) + '"' + (NUM_F.proprietario === n ? " selected" : "") + '>' + escapeHtml(eti) + '</option>';
+    })).concat(['<option value="__liberi__"' + (NUM_F.proprietario === "__liberi__" ? " selected" : "") + '>Svincolati</option>']).join("");
     var bottoniFam = Object.keys(FAMIGLIE).map(function (k) {
       return '<button type="button" class="btn btn-small' + (NUM_F.famiglia === k ? " btn-primary" : "") + '" data-fam="' + k + '">' + FAMIGLIE[k].label + '</button>';
     }).join(" ");
@@ -10147,15 +10270,19 @@ async function refreshLivePlayerNews() {
         ["P","D","C","A"].map(function (r) { return '<option value="' + r + '"' + (NUM_F.ruolo === r ? " selected" : "") + '>' + r + '</option>'; }).join("") +
       '</select>' +
       '<select id="numSquadra">' + opzSq + '</select>' +
+      '<select id="numProp" title="Filtra per la squadra della lega che lo possiede">' + opzProp + '</select>' +
       '<label class="num-solomiei"><input type="checkbox" id="numSoloMiei"' + (NUM_F.soloMiei ? " checked" : "") + ' /> Solo i miei</label>' +
       '</div>' +
       '<div class="num-fam">' + bottoniFam + '</div>' +
-      '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giocatore</th><th>R</th><th>Sq</th>' +
+      '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giocatore</th><th>R</th><th>Sq</th><th>Proprietario</th>' +
       fam.col.map(function (c) { return '<th>' + c[1] + '</th>'; }).join("") + '</tr></thead><tbody>' +
       righe.map(function (s) {
+        var o = prop[normalizeNameKey(s.giocatore)] || "";
         return '<tr><td>' + (miei[String(s.giocatore).trim()] ? '<span class="pt-ok">&bull;</span> ' : '') + escapeHtml(s.giocatore) + '</td>' +
           '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(s.ruolo || "") + '">' + escapeHtml(s.ruolo || "") + '</span></td>' +
           '<td>' + escapeHtml(s.squadra || "") + '</td>' +
+          '<td' + (o === nomeMia ? ' data-tone="ok"' : o === avvGiornata ? ' data-tone="warn"' : '') + '>' +
+            (o ? escapeHtml(o) : '<span class="mini">svincolato</span>') + '</td>' +
           fam.col.map(function (c) {
             var v = s[c[0]];
             return '<td>' + (NUM_PERCENTUALI[c[0]] ? perc(v) : num(v, c[2])) + '</td>';
@@ -10170,7 +10297,7 @@ async function refreshLivePlayerNews() {
     var a = document.getElementById("numeriAvvisoHost");
     if (a) a.innerHTML = numeriAvvisoHtml();
     var g = document.getElementById("numeriGiornataHost");
-    if (g) g.innerHTML = numeriGiornataHtml();
+    if (g) g.innerHTML = numeriMieiHtml();
     var pb = document.getElementById("numeriProbHost");
     if (pb) pb.innerHTML = numeriProbabilitaHtml();
     var l = document.getElementById("numeriLettureHost");
@@ -10195,6 +10322,8 @@ async function refreshLivePlayerNews() {
     if (r) r.addEventListener("change", function (ev) { NUM_F.ruolo = ev.target.value; renderNumeri(); });
     var sq = document.getElementById("numSquadra");
     if (sq) sq.addEventListener("change", function (ev) { NUM_F.squadra = ev.target.value; renderNumeri(); });
+    var pr = document.getElementById("numProp");
+    if (pr) pr.addEventListener("change", function (ev) { NUM_F.proprietario = ev.target.value; renderNumeri(); });
     var sm = document.getElementById("numSoloMiei");
     if (sm) sm.addEventListener("change", function (ev) { NUM_F.soloMiei = ev.target.checked; renderNumeri(); });
     document.querySelectorAll("[data-fam]").forEach(function (b) {
@@ -11940,6 +12069,7 @@ async function refreshLivePlayerNews() {
     "δ": "Quanto cambia il giudizio sulla difesa una volta tolto il calendario. Negativo = e' migliore di come sembra, ha affrontato attacchi forti.",
     "giocatore": "Nome come sta nel listone. Il punto verde davanti vuol dire che e' tuo.",
     "r": "Ruolo: portiere, difensore, centrocampista, attaccante.",
+    "proprietario": "La squadra della lega che ce l'ha in rosa. Vuoto vuol dire svincolato, cioe' prendibile. Con il filtro qui sopra si guarda la rosa dell'avversario di giornata con gli stessi numeri della propria.",
     // le altre schede
     "#": "Posizione in classifica.",
     "giornata": "La giornata di Serie A a cui si riferisce la riga.",
