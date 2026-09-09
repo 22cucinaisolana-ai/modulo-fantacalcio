@@ -695,6 +695,58 @@
   .f1-table, .history-table, .compare-table {
     width: 100%; border-collapse: collapse; font-size: 13px;
   }
+  /* Glossario: la sottolineatura tratteggiata dice "qui c'e' una
+     spiegazione" senza aggiungere icone in una riga gia' fitta. */
+  .ordinabile th.ha-glossa { text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .glossa-box {
+    position: absolute; z-index: 90; max-width: 300px; padding: 9px 11px;
+    background: var(--card, #fff); color: var(--text, #111);
+    border: 1px solid var(--line, #ddd); border-radius: 9px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.16);
+    font-size: 12.5px; line-height: 1.45; font-weight: 400; text-transform: none;
+    letter-spacing: 0; white-space: normal; pointer-events: none;
+    opacity: 0; transform: translateY(-3px); transition: opacity .12s ease, transform .12s ease;
+  }
+  .glossa-box.visibile { opacity: 1; transform: translateY(0); }
+  .glossa-box b { display: block; margin-bottom: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+  .glossa-box i { display: block; margin-top: 6px; font-style: normal; font-size: 11px; color: var(--text-muted); }
+  /* Ordinamento: l'intestazione e' cliccabile e mostra il verso. La freccia
+     sta in un ::after per non spostare il testo quando appare. */
+  .ordinabile th { cursor: pointer; user-select: none; position: relative; padding-right: 16px; }
+  .ordinabile th:hover { color: var(--text, inherit); }
+  .ordinabile th:focus-visible { outline: 2px solid var(--accent, #4a7dff); outline-offset: 2px; border-radius: 3px; }
+  .ordinabile th.ord-asc::after,
+  .ordinabile th.ord-desc::after {
+    content: ""; position: absolute; right: 4px; top: 50%;
+    border-left: 3.5px solid transparent; border-right: 3.5px solid transparent;
+  }
+  .ordinabile th.ord-asc::after { border-bottom: 4.5px solid currentColor; margin-top: -2px; }
+  .ordinabile th.ord-desc::after { border-top: 4.5px solid currentColor; margin-top: -2px; }
+  /* Apri/chiudi: il titolo porta il triangolo, e chiuso nasconde tutto il
+     resto della sezione. Il triangolo ruota, non cambia glifo. */
+  .acc-tit { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 7px; }
+  .acc-tit::before {
+    content: ""; flex: 0 0 auto; width: 0; height: 0;
+    border-left: 5px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent;
+    transform: rotate(90deg); transition: transform .14s ease; opacity: .55;
+  }
+  .sez-chiusa > .acc-tit::before { transform: rotate(0deg); }
+  .sez-chiusa > *:not(.acc-tit) { display: none !important; }
+  .acc-tit:focus-visible { outline: 2px solid var(--accent, #4a7dff); outline-offset: 3px; border-radius: 4px; }
+  /* Scheda Numeri. Il pallino davanti al nome dice "questo e' tuo" senza
+     rubare una colonna: in una tabella di 400 righe una colonna in piu'
+     costa piu' di quanto valga. */
+  .pt-ok { color: var(--ok, #2e7d4f); font-weight: 700; }
+  .pt-ko { color: var(--danger, #b3261e); font-weight: 700; }
+  .mini { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .num-filtri { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 8px; }
+  .num-filtri input[type="search"] { flex: 1 1 200px; min-width: 0; padding: 7px 10px; font: inherit; font-size: 13px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--card, transparent); color: inherit; }
+  .num-filtri select { padding: 7px 8px; font: inherit; font-size: 13px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--card, transparent); color: inherit; }
+  .num-solomiei { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
+  .num-fam { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .sez h5 { margin: 18px 0 6px; font-size: 13px; letter-spacing: .02em; }
   .f1-table th, .history-table th, .compare-table th {
     text-align: left;
     font-size: 10.5px;
@@ -2798,7 +2850,7 @@
 <nav class="tabbar" aria-label="Sezioni">
   <div class="tabbar-inner" role="tablist">
     <button class="tab-btn" type="button" role="tab" id="tabbtn-home" data-tab="home" aria-selected="false" aria-controls="tab-home"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7"/><path d="M5.5 9.2V20h13V9.2"/><path d="M10 20v-5.5h4V20"/></svg><span class="tab-lab">Home</span></button>
-    <button class="tab-btn" type="button" role="tab" id="tabbtn-schiera" data-tab="schiera" aria-selected="false" aria-controls="tab-schiera"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="1.5"/><path d="M12 4.5v15"/><circle cx="12" cy="12" r="2.6"/><path d="M2.5 9h3v6h-3M21.5 9h-3v6h3"/></svg><span class="tab-lab">Schiera</span></button>
+    <button class="tab-btn" type="button" role="tab" id="tabbtn-schiera" data-tab="schiera" aria-selected="false" aria-controls="tab-schiera"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="1.5"/><path d="M12 4.5v15"/><circle cx="12" cy="12" r="2.6"/><path d="M2.5 9h3v6h-3M21.5 9h-3v6h3"/></svg><span class="tab-lab">Schiera</span></button>    <button class="tab-btn" type="button" role="tab" id="tabbtn-numeri" data-tab="numeri" aria-selected="false" aria-controls="tab-numeri"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5 9 10l3.5 3.5L20 6"/><path d="M15.5 6H20v4.5"/><path d="M4 20h16"/></svg><span class="tab-lab">Numeri</span></button>
     <button class="tab-btn" type="button" role="tab" id="tabbtn-rosa" data-tab="rosa" aria-selected="false" aria-controls="tab-rosa"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h10"/><circle cx="19" cy="17.5" r="2"/></svg><span class="tab-lab">Rosa</span><span class="tab-count" id="tabCountRosa">0</span></button>
     <button class="tab-btn" type="button" role="tab" id="tabbtn-lega" data-tab="lega" aria-selected="false" aria-controls="tab-lega"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5.5H4.5V7a3 3 0 0 0 3 3M17 5.5h2.5V7a3 3 0 0 1-3 3"/><path d="M12 14v3.5M8.5 20h7"/></svg><span class="tab-lab">Lega</span></button>
     <button class="tab-btn" type="button" role="tab" id="tabbtn-avversari" data-tab="avversari" aria-selected="false" aria-controls="tab-avversari"><svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8" r="3"/><path d="M3 19v-1.5a5.5 5.5 0 0 1 11 0V19"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15 19v-1a4.4 4.4 0 0 1 6.5-3.8"/></svg><span class="tab-lab">Avversari</span></button>
@@ -2829,6 +2881,22 @@
       <div class="result-empty" id="resultEmpty">Vai su <b>Rosa</b>, aggiungi i tuoi giocatori, poi premi <b>Calcola formazione</b> qui in alto per vedere l'undici consigliato.</div>
       <div id="resultContent" style="display:none"></div>
     </div>
+  </section>
+
+  <!-- SCHEDA: NUMERI — tutto quello che dicono le statistiche raccolte.
+       Due parti volutamente separate: sopra la giornata da schierare, sotto
+       l'esplorazione. Sono due usi diversi e mescolarli li rovina entrambi. -->
+  <section class="tab-panel" id="tab-numeri" role="tabpanel" aria-labelledby="tabbtn-numeri" hidden>
+    <div class="tab-intro">
+      <h2>I numeri</h2>
+      <p>Tutto quello che i dati raccolti dicono: sopra la giornata da schierare, sotto le squadre e la ricerca su tutta la Serie A. I tuoi sono segnati con un punto.</p>
+    </div>
+    <div id="numeriAvvisoHost"></div>
+    <div id="numeriGiornataHost"></div>
+    <div id="numeriProbHost"></div>
+    <div id="numeriLettureHost"></div>
+    <div id="numeriSquadreHost"></div>
+    <div id="numeriEsploraHost"></div>
   </section>
 
   <!-- SCHEDA 2: ROSA — i 25 giocatori, per reparto -->
@@ -2873,6 +2941,7 @@
     <div id="historyCardHost"></div>
     <div id="formAvvCardHost"></div>
   </section>
+
 
   <!-- SCHEDA 5: GUIDA -->
   <!-- SCHEDA: SERIE A — classifica vera e rendimento dei club rispetto alle attese -->
@@ -3389,6 +3458,116 @@
     return (v && v.nomi && v.nomi.length) ? v : null;
   }
 
+  /* ===================================================================
+     UNDICI PROBABILI DELLA SERIE A (09/09/2026)
+
+     PERCHE' ESISTE. Backtest su 26 decisioni vere — gli otto della
+     22-LEAGUE alla 1a, gli otto alla 3a, i dieci del Desaparesidos alla
+     3a — con tutti gli ingredienti ricostruiti usando solo il passato.
+     Confrontando i metodi a parita' di rosa e di modulo:
+
+       oracolo (fantavoto vero)      0,3% di buchi   79,96 punti
+       i 26 manager veri             3,1%            70,75
+       nostro punteggio x p(gioca)   7,0%            68,42
+       fmv di mercato               13,3%            62,81
+       nostro punteggio senza p     16,1%            61,77
+
+     I manager veri battono ogni metodo automatico, e non perche'
+     prevedano meglio: il loro fantavoto medio per giocatore che gioca
+     e' PIU' BASSO del nostro. Vincono perche' non schierano chi non
+     gioca. Dando a tutti disponibilita' perfetta il nostro ordinamento
+     batte quello di mercato di 0,35 punti a giornata — dentro il rumore
+     (t = 0,35: servirebbero 1.600 decisioni per dimostrarlo). Sapere
+     chi gioca ne vale NOVE.
+
+     Cioe': tutto il margine misurabile sta qui, non nel punteggio.
+
+     COSA FA E COSA NON FA. Non tocca lo Stato: quello resta un campo
+     tuo, e il tool non l'ha mai scritto da solo. Cambia soltanto la
+     PROBABILITA' usata nel calcolo, e solo quando c'e' un undici
+     probabile per la giornata giusta. Uno Stato fermo su "ballottaggio"
+     smette cosi' di costare punti anche se te ne dimentichi.
+
+     LE REGOLE, e perche' non sono 1 e 0:
+       - dentro l'undici probabile  -> 0,95, come un titolare. Non 1:
+         la probabile e' una notizia, non la distinta.
+       - la sua squadra ha l'undici probabile ma lui non c'e' -> 0,20.
+         Non zero: entra dalla panchina e a volte prende voto.
+       - 'out' negli indisponibili -> resta 0, vince l'infortunio.
+       - dentro l'undici ma segnato 'dubbio' -> 0,75, via di mezzo fra
+         la notizia piu' fresca e la cautela.
+
+     LA FRESCHEZZA E' LA CONDIZIONE. Una probabile letta due giorni
+     prima vale poco: le formazioni si decidono la mattina. Se l'ultima
+     lettura e' piu' vecchia di 24 ore dal calcio d'inizio l'override
+     si spegne da solo e il pannello lo dice. Meglio tornare allo Stato
+     manuale che fidarsi di una notizia scaduta.
+     =================================================================== */
+  // Statistiche avanzate (Fantalab, tutta la Serie A) e profili di squadra.
+  // Sono materiale di lettura: nessuna di queste righe entra nel calcolo della
+  // formazione, che continua a lavorare su fantamedia, stato e avversario.
+  var STATS = [];
+  var STATS_BY_NOME = {};
+  var PROFILI_SQ = [];
+  var FORZA_SQ = [];
+  function statsDi(nome) { return STATS_BY_NOME[String(nome || "").trim()] || null; }
+  function forzaDi(code) {
+    for (var i = 0; i < FORZA_SQ.length; i++) if (FORZA_SQ[i].squadra === code) return FORZA_SQ[i];
+    return null;
+  }
+  function profiloDi(code) {
+    for (var i = 0; i < PROFILI_SQ.length; i++) if (PROFILI_SQ[i].squadra === code) return PROFILI_SQ[i];
+    return null;
+  }
+
+  var PROBABILI = {};        // PROBABILI[giornata][nome] = { squadra, ordine }
+  var PROBABILI_SQUADRE = {}; // PROBABILI_SQUADRE[giornata][codice] = true
+  var PROBABILI_LETTE = {};   // PROBABILI_LETTE[giornata] = timestamp piu' recente
+  var PROB_IN_UNDICI = 0.95;
+  var PROB_FUORI_UNDICI = 0.20;
+  var PROB_IN_UNDICI_DUBBIO = 0.75;
+  var PROBABILI_ORE_MAX = 24;   // oltre, la notizia e' vecchia e non si usa
+  var PROBABILI_OFF_KEY = "moduloProbabiliOff";
+
+  function probabiliSpente() {
+    try { return localStorage.getItem(PROBABILI_OFF_KEY) === "1"; } catch (e) { return false; }
+  }
+  function probabiliSetOff(off) {
+    try { localStorage.setItem(PROBABILI_OFF_KEY, off ? "1" : "0"); } catch (e) {}
+  }
+  // Quante ore prima del calcio d'inizio e' stata letta la probabile.
+  function probabiliAnticipoOre(g) {
+    var gg = String(parseInt(g, 10));
+    var letta = PROBABILI_LETTE[gg];
+    var o = ORARI_SA[gg];
+    if (!letta || !o || !o.inizio) return null;
+    var d = (new Date(o.inizio).getTime() - new Date(letta).getTime()) / 3600000;
+    return isFinite(d) ? d : null;
+  }
+  // Stato dell'informazione per la giornata: c'e'? e' fresca? quante righe?
+  function probabiliStato(g) {
+    var gg = String(parseInt(g, 10));
+    var mappa = PROBABILI[gg];
+    var righe = mappa ? Object.keys(mappa).length : 0;
+    if (!righe) return { attive: false, motivo: "assenti", righe: 0, ore: null };
+    if (probabiliSpente()) return { attive: false, motivo: "spente", righe: righe, ore: probabiliAnticipoOre(gg) };
+    var ore = probabiliAnticipoOre(gg);
+    if (ore != null && ore > PROBABILI_ORE_MAX) return { attive: false, motivo: "vecchie", righe: righe, ore: ore };
+    return { attive: true, motivo: "ok", righe: righe, ore: ore, squadre: Object.keys(PROBABILI_SQUADRE[gg] || {}).length };
+  }
+  // La probabilita' che il tool deve usare, o null se non c'e' nulla da dire.
+  // 'squadraCode' serve per il caso "la sua squadra ha pubblicato l'undici ma
+  // lui non c'e' dentro": senza quello non si distingue da "nessun dato".
+  function probabiliProb(nome, squadraCode, g, statoDubbio) {
+    var st = probabiliStato(g);
+    if (!st.attive) return null;
+    var gg = String(parseInt(g, 10));
+    var n = String(nome || "").trim();
+    if (PROBABILI[gg][n]) return statoDubbio ? PROB_IN_UNDICI_DUBBIO : PROB_IN_UNDICI;
+    if (squadraCode && PROBABILI_SQUADRE[gg] && PROBABILI_SQUADRE[gg][squadraCode]) return PROB_FUORI_UNDICI;
+    return null;
+  }
+
   var RIF_CACHE_KEY = "moduloRiferimentiV1";
   var rifOrigine = "";
 
@@ -3485,6 +3664,35 @@
         grado: r.grado === "dubbio" ? "dubbio" : "out",
         rientro: r.rientro || "", nota: r.nota || "", fonte: r.fonte || ""
       };
+    });
+
+    // Statistiche avanzate, profili e forza delle squadre. Come i voti: da
+    // sloggato tornano zero righe, e in quel caso si tiene quello che c'e' gia'
+    // invece di riscrivere la cache vuota.
+    STATS.length = 0;
+    (rif.stats || []).forEach(function (r) { STATS.push(r); });
+    Object.keys(STATS_BY_NOME).forEach(function (k) { delete STATS_BY_NOME[k]; });
+    STATS.forEach(function (r) { if (r && r.giocatore) STATS_BY_NOME[String(r.giocatore).trim()] = r; });
+    PROFILI_SQ.length = 0;
+    (rif.profiliSquadre || []).forEach(function (r) { PROFILI_SQ.push(r); });
+    FORZA_SQ.length = 0;
+    (rif.forzaSquadre || []).forEach(function (r) { FORZA_SQ.push(r); });
+
+    // Undici probabili della Serie A. Tre indici perche' servono tre domande
+    // diverse: "questo giocatore c'e'?", "la sua squadra ha pubblicato?" (che
+    // e' quello che distingue un panchinaro da un dato mancante) e "quando
+    // l'abbiamo letta?" (senza, non si sa se fidarsi).
+    Object.keys(PROBABILI).forEach(function (k) { delete PROBABILI[k]; });
+    Object.keys(PROBABILI_SQUADRE).forEach(function (k) { delete PROBABILI_SQUADRE[k]; });
+    Object.keys(PROBABILI_LETTE).forEach(function (k) { delete PROBABILI_LETTE[k]; });
+    (rif.probabili || []).forEach(function (r) {
+      if (!r || !r.giocatore || r.giornata == null) return;
+      var g = String(parseInt(r.giornata, 10));
+      if (!PROBABILI[g]) PROBABILI[g] = {};
+      if (!PROBABILI_SQUADRE[g]) PROBABILI_SQUADRE[g] = {};
+      PROBABILI[g][String(r.giocatore).trim()] = { squadra: r.squadra || "", ordine: r.ordine != null ? Number(r.ordine) : null };
+      if (r.squadra) PROBABILI_SQUADRE[g][String(r.squadra).trim()] = true;
+      if (r.updated_at && (!PROBABILI_LETTE[g] || r.updated_at > PROBABILI_LETTE[g])) PROBABILI_LETTE[g] = r.updated_at;
     });
 
     (rif.legaFormazioni || []).forEach(function (f) {
@@ -3712,7 +3920,17 @@
         // serie_a_classifica).
         sb.from("serie_a_risultati").select("giornata,casa,trasferta,gol_casa,gol_trasferta").order("giornata").limit(400),
         sb.from("serie_a_orari").select("giornata,inizio,partita").order("giornata").limit(50),
-        sb.from("indisponibili").select("giocatore,squadra,tipo,grado,rientro,nota,fonte").limit(500)
+        sb.from("indisponibili").select("giocatore,squadra,tipo,grado,rientro,nota,fonte").limit(500),
+        // In fondo, come dice il commento sopra: gli indici sono posizionali.
+        sb.from("probabili_formazioni").select("giornata,giocatore,squadra,avversario,casa,ordine,updated_at").order("giornata").limit(2000),
+        // Statistiche avanzate: leggibili solo da collegato (sono di Fantalab,
+        // non nostre, e il tool e' pubblico). Da sloggato tornano zero righe
+        // senza errore, e la scheda Numeri lo dice invece di mostrare vuoto.
+        tutteLeRighe(function (da, a) {
+          return sb.from("stats_avanzate").select("fc_id,giocatore,ruolo,squadra,squadra_prod,presenze,mv,fmv,perc_voto_6,perc_voto_65,perc_con_bonus,perc_senza_cartellini,bonus_malus,minuti_per_partita,perc_da_titolare,minuti_totali,trend_forma,mv_5,fmv_5,rating_sm,xg,xa,tiri,tiri_in_porta,passaggi_chiave,occasioni_create,occasioni_mancate,perc_conversione,gol_fatti,assist,perc_cross_riusciti,perc_dribbling,perc_passaggi,contrasti,intercetti,spazzate,duelli_vinti,duelli_totali,duelli_aerei_vinti,falli,errori_da_gol,tiri_bloccati,parate,parate_per_partita,clean_sheet,gol_subiti,in_listone").order("giocatore").range(da, a);
+        }),
+        sb.from("profilo_squadre").select("squadra,giocatori_usati,xg_totale,xg_per_partita,tiri,tiri_per_partita,passaggi_chiave,occasioni_create,contrasti,intercetti,spazzate,duelli_vinti,gf,gs").limit(40),
+        sb.from("forza_corretta").select("squadra,gf_tot,gs_tot,attacco_grezzo,difesa_grezza,attacco_corretto,difesa_corretta,quanto_cambia_difesa").limit(40)
       ]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var rif = {
@@ -3727,7 +3945,11 @@
         listoneValori: q[11].data || [],
         risultatiSA: q[12].data || [],
         orari: q[13].data || [],
-        indisponibili: q[14].data || []
+        indisponibili: q[14].data || [],
+        probabili: q[15].data || [],
+        stats: q[16].data || [],
+        profiliSquadre: q[17].data || [],
+        forzaSquadre: q[18].data || []
       };
       // I voti si leggono solo da collegati (sono materiale della redazione
       // Fantacalcio.it, non nostro). Da sloggati la query non da' errore:
@@ -4159,11 +4381,13 @@ async function refreshLivePlayerNews() {
       updateAuthButton();
       if (currentUser) {
         var cloud = await cloudLoad();
+        if (cloud && Array.isArray(cloud.players)) STATO_DIMOSTRATIVO = false;
         if (cloud && Array.isArray(cloud.players)) {
           state = cloud;
           if (!state.meta) state.meta = { giornata: "" };
           setSaveStatus("ok", "Caricato dal cloud");
           localSave();
+          avvisoDimostrativo();
           return;
         }
       }
@@ -4173,10 +4397,40 @@ async function refreshLivePlayerNews() {
     var backup = localLoad();
     if (backup && Array.isArray(backup.players)) {
       state = backup;
+      STATO_DIMOSTRATIVO = false;
       setSaveStatus("ok", currentUser ? "Locale: cloud vuoto" : "Salvato localmente");
     } else {
+      // Nessun backup locale e niente dal cloud: quello che si vede e' la
+      // rosa di esempio, ferma alla 1a giornata di agosto. Va detto, perche'
+      // e' indistinguibile da una rosa vera e porta a chiedersi perche' il
+      // tool "mostra la prima giornata".
+      STATO_DIMOSTRATIVO = true;
       setSaveStatus("ok", currentUser ? "Nuova rosa" : "Locale");
     }
+    avvisoDimostrativo();
+  }
+
+  // Il cartello, in cima a tutto: se la rosa e' quella di esempio nessun
+  // numero di questo tool significa niente, quindi non va nascosto in fondo
+  // a una scheda.
+  var STATO_DIMOSTRATIVO = false;
+  function avvisoDimostrativo() {
+    var id = "avvisoDemo";
+    var el = document.getElementById(id);
+    if (!STATO_DIMOSTRATIVO) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement("div");
+      el.id = id;
+      el.className = "ris-feedback";
+      el.setAttribute("data-tone", "danger");
+      el.style.margin = "10px 0";
+      var host = document.querySelector(".wrap") || document.body;
+      host.insertBefore(el, host.firstChild);
+    }
+    el.innerHTML = '<b>Questa &egrave; la rosa di esempio, non la tua.</b> ' +
+      'Non ho trovato n&eacute; un salvataggio su questo dispositivo n&eacute; uno sul cloud, quindi il tool sta mostrando i ' +
+      'venticinque di partenza, fermi alla <b>1&ordf; giornata</b> — &egrave; il motivo per cui vedi avversari di agosto. ' +
+      'Premi <b>Accedi</b> in alto: la tua rosa torna dal cloud e con essa la giornata giusta.';
   }
 
   async function openAuth() {
@@ -5142,7 +5396,17 @@ async function refreshLivePlayerNews() {
     var statusKey = statusByKey(p.status).key;
     var prob = profile.statusProb[statusKey];
     if (prob == null) prob = statusByKey(p.status).prob;
-    return { raw: raw, adj: raw * prob, rawNoBonus: rawNoBonus, adjNoBonus: rawNoBonus * prob, prob: prob };
+    // L'undici probabile, quando c'e' ed e' fresco, sa piu' dello Stato: e' la
+    // notizia di stamattina contro un campo che hai compilato marted'. Vince
+    // lui, tranne su chi e' 'out' e su chi hai messo tu su «assente» — quelli
+    // restano a zero, perche' un'assenza certa e' un fatto piu' forte di una
+    // probabile. Vedi il blocco UNDICI PROBABILI sopra per il perche'.
+    var fonteProb = "stato";
+    if (statusKey !== "assente" && !indisponibileFuori(p.name)) {
+      var pp = probabiliProb(p.name, mia, state.meta.giornata, !!indisponibile(p.name));
+      if (pp != null) { prob = pp; fonteProb = "probabili"; }
+    }
+    return { raw: raw, adj: raw * prob, rawNoBonus: rawNoBonus, adjNoBonus: rawNoBonus * prob, prob: prob, fonteProb: fonteProb };
   }
 
   // Valore atteso tenendo conto della SOSTITUZIONE (aggiunto 23/08/2026).
@@ -8013,9 +8277,75 @@ async function refreshLivePlayerNews() {
       '</section>';
   }
 
+  // Cosa cambia l'undici probabile sulla TUA rosa: chi il tool dava per
+  // titolare e non c'e', chi davi per panchinaro e invece gioca. E' la parte
+  // che si vede: l'override lavora nel calcolo, ma se non lo mostra sembra
+  // che il tool abbia cambiato idea da solo.
+  function probabiliInRosa() {
+    var g = state.meta.giornata || "";
+    var st = probabiliStato(g);
+    if (!st.attive) return [];
+    var gg = String(parseInt(g, 10));
+    return (state.players || []).filter(function (p) { return !!p.name; }).map(function (p) {
+      var l = listoneGet(p.name);
+      var team = l ? l[2] : null;
+      if (!team || !PROBABILI_SQUADRE[gg] || !PROBABILI_SQUADRE[gg][team]) return null;
+      var dentro = !!PROBABILI[gg][String(p.name).trim()];
+      var profile = strategyProfile();
+      var k = statusByKey(p.status).key;
+      var pStato = profile.statusProb[k];
+      if (pStato == null) pStato = statusByKey(p.status).prob;
+      var pNuova = dentro ? (indisponibile(p.name) ? PROB_IN_UNDICI_DUBBIO : PROB_IN_UNDICI) : PROB_FUORI_UNDICI;
+      if (k === "assente" || indisponibileFuori(p.name)) return null;   // l'assenza certa vince, niente da dire
+      if (Math.abs(pNuova - pStato) < 0.12) return null;                // scarto trascurabile: non vale una riga
+      return { nome: p.name, ruolo: p.role, stato: p.status, dentro: dentro, pStato: pStato, pNuova: pNuova, squadra: team };
+    }).filter(Boolean).sort(function (a, b) { return (b.pNuova - b.pStato) - (a.pNuova - a.pStato); });
+  }
+
+  function probabiliRosaHtml() {
+    var g = state.meta.giornata || "";
+    var st = probabiliStato(g);
+    var ore = st.ore != null ? (Math.round(st.ore * 10) / 10) : null;
+    var testaOff = '<button type="button" id="probabiliToggle" class="btn btn-small">' + (probabiliSpente() ? "Riattiva" : "Disattiva") + '</button>';
+    if (!st.attive) {
+      var perche = st.motivo === "assenti" ? 'Nessun undici probabile caricato per la ' + escapeHtml(String(g)) + '&ordf;.'
+        : st.motivo === "spente" ? 'Override <b>disattivato a mano</b>: il calcolo usa solo lo Stato.'
+        : 'Ultima lettura <b>' + ore + ' ore</b> prima del calcio d\'inizio: troppo vecchia (limite ' + PROBABILI_ORE_MAX + 'h). Il calcolo torna allo Stato finché non la rileggi.';
+      return '<section class="sez"><h4>Undici probabili</h4>' +
+        '<p class="lega-note" data-tone="warn">' + perche + '</p>' +
+        (st.righe ? '<p class="sez-nota">' + st.righe + ' righe in archivio. ' + testaOff + '</p>' : '') +
+        '</section>';
+    }
+    var righe = probabiliInRosa();
+    return '<section class="sez"><h4>Undici probabili <span class="count-badge">' + st.squadre + '/20</span></h4>' +
+      '<p class="lega-note">Letti <b>' + ore + ' ore</b> prima del calcio d\'inizio. Chi &egrave; nell\'undici vale ' + PROB_IN_UNDICI +
+      ', chi &egrave; fuori ' + PROB_FUORI_UNDICI + '. <b>Lo Stato non viene toccato</b>: cambia solo la probabilit&agrave; usata nel calcolo. ' + testaOff + '</p>' +
+      (righe.length
+        ? '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giocatore</th><th>R</th><th>Stato</th><th>Probabile</th><th>p</th></tr></thead><tbody>' +
+          righe.map(function (r) {
+            return '<tr><td>' + escapeHtml(r.nome) + '</td>' +
+              '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(r.ruolo) + '">' + escapeHtml(r.ruolo) + '</span></td>' +
+              '<td>' + escapeHtml(etichettaStato(r.stato)) + '</td>' +
+              '<td data-tone="' + (r.dentro ? "ok" : "warn") + '">' + (r.dentro ? "gioca" : "fuori dagli undici") + '</td>' +
+              '<td>' + r.pStato + ' &rarr; <b>' + r.pNuova + '</b></td></tr>';
+          }).join("") + '</tbody></table></div>' +
+          '<p class="sez-nota">Sono i casi in cui la notizia e lo Stato non dicono la stessa cosa. Se vuoi che resti anche dopo, cambia lo Stato in <b>Rosa</b>.</p>'
+        : '<p class="sez-nota">Nessuno scarto: Stato e undici probabili dicono la stessa cosa su tutta la rosa.</p>') +
+      '</section>';
+  }
+
   function renderStatiSospetti() {
     var host = document.getElementById("statiHost");
-    if (host) host.innerHTML = indisponibiliRosaHtml() + statiSospettiHtml();
+    if (host) host.innerHTML = probabiliRosaHtml() + indisponibiliRosaHtml() + statiSospettiHtml();
+    // Il pannello si ridisegna, quindi il bottone e' nuovo ogni volta: il
+    // listener va riattaccato qui e non una volta all'avvio.
+    var tg = document.getElementById("probabiliToggle");
+    if (tg) tg.addEventListener("click", function () {
+      probabiliSetOff(!probabiliSpente());
+      renderStatiSospetti();
+      renderSections();
+      renderConsigliati();
+    });
     // In Schiera basta la riga d'avviso: e' il posto dove si preme Calcola,
     // e un avviso lungo li' verrebbe scavalcato.
     var av = document.getElementById("statiAvvisoHost");
@@ -8434,6 +8764,13 @@ async function refreshLivePlayerNews() {
       // riserva scarsa. Non è più una probabilità di scendere in campo.
       var prob = TITOLARITA_PESO[tit] != null ? TITOLARITA_PESO[tit] : 0.93;
       if (ind) prob = prob * IND_DUBBIO_PESO;   // resta 'dubbio': gli 'out' sono gia' usciti sopra
+      // Anche qui l'undici probabile vince sulla titolarita' di luglio. Vale
+      // per l'avversario esattamente come per me: le probabili sono pubbliche,
+      // quindi usarle su entrambi i lati non e' barare sul confronto — al
+      // contrario, non usarle sul suo lato gli regalerebbe una rosa di
+      // fantasmi sempre disponibili.
+      var ppAvv = probabiliProb(rp.n, team, g, !!ind);
+      if (ppAvv != null) prob = ppAvv;
       // mv arriva già con il fallback e con i voti veri applicati da
       // mediaVotoEffettivaListone; qui resta solo l'ultima rete di sicurezza.
       pool[rp.r].push({ nome: rp.n, raw: raw, prob: prob, ev: raw * prob, mv: (mv != null ? mv : exp - 0.2) });
@@ -9414,6 +9751,458 @@ async function refreshLivePlayerNews() {
       });
     });
     return html;
+  }
+
+  /* ===================================================================
+     SCHEDA NUMERI (09/09/2026)
+
+     Cosa c'e' dentro e perche' e' diviso in due.
+
+     Sopra sta la giornata: chi gioca, contro chi, e i due o tre numeri
+     che aiutano davvero a schierare. Sotto stanno le letture e la
+     ricerca: servono per gli scambi e per capire, non per il venerdi'.
+     Tenerli separati e' voluto — una tabella da esplorare in cima alla
+     pagina del venerdi' e' rumore, e i numeri di giornata in fondo a un
+     cruscotto non li guarda nessuno.
+
+     NESSUNA DI QUESTE RIGHE ENTRA NEL CALCOLO. La formazione continua a
+     uscire da fantamedia, stato, avversario e undici probabili. Questa
+     scheda e' materiale di lettura, e va detto perche' altrimenti si
+     finisce per credere che il tool "usi l'xG" — non lo usa.
+
+     TRE GIORNATE SONO POCHE, e la scheda lo ripete dove serve. Le
+     correlazioni misurate su questi stessi dati: la media voto di tre
+     giornate riproduce quella di carriera a livello di reparto, ma sul
+     singolo giocatore un attaccante e' rumore puro. Le letture qui
+     sotto sono spunti, non verdetti.
+     =================================================================== */
+  var NUM_F = { testo: "", ruolo: "", squadra: "", famiglia: "attacco", soloMiei: false };
+
+  // I giocatori che possiedo, in TUTTE le leghe. Serve per il punto verde
+  // nelle tabelle di ricerca: la' la domanda e' "questo e' mio da qualche
+  // parte?", e la lega selezionata non c'entra.
+  function nomiMiei() {
+    var set = {};
+    (state.players || []).forEach(function (p) { if (p.name) set[String(p.name).trim()] = true; });
+    Object.keys(RIF_LEGHE).forEach(function (lid) {
+      var sq = RIF_LEGHE[lid].squadre || {};
+      Object.keys(sq).forEach(function (nome) {
+        if (!sq[nome].eMia) return;
+        (sq[nome].rosa || []).forEach(function (g) { if (g && g.n) set[String(g.n).trim()] = true; });
+      });
+    });
+    return set;
+  }
+
+  // La rosa della squadra mia nella lega SELEZIONATA. Diverso da nomiMiei():
+  // in "La tua giornata" la domanda e' "chi devo schierare stasera", e i
+  // giocatori delle altre leghe li' sono rumore — hanno un'altra formazione,
+  // un altro avversario e un'altra decisione.
+  function nomiMieiLegaAttiva() {
+    var set = {};
+    var L = RIF_LEGHE[legaAttivaId()];
+    var mia = L && L.miaSquadra;
+    var sq = (L && L.squadre) || {};
+    // Prima la squadra dichiarata mia dalla lega, poi il ripiego su e_mia:
+    // se un giorno la lega non dichiarasse nulla, meglio la rosa giusta di
+    // nessuna rosa.
+    var scelte = [];
+    if (mia && sq[mia]) scelte.push(sq[mia]);
+    else Object.keys(sq).forEach(function (n) { if (sq[n].eMia) scelte.push(sq[n]); });
+    scelte.forEach(function (t) {
+      (t.rosa || []).forEach(function (g) { if (g && g.n) set[String(g.n).trim()] = true; });
+    });
+    // Ultima rete: se la lega non ha ancora le rose caricate, restano i
+    // venticinque che hai messo a mano in Rosa.
+    if (!Object.keys(set).length) (state.players || []).forEach(function (p) { if (p.name) set[String(p.name).trim()] = true; });
+    return set;
+  }
+
+  function num(v, d) {
+    if (v == null || v === "") return "—";
+    var n = Number(v);
+    if (!isFinite(n)) return "—";
+    return d === 0 ? String(Math.round(n)) : n.toFixed(d == null ? 2 : d);
+  }
+  function perc(v) { return v == null ? "—" : Math.round(Number(v)) + "%"; }
+
+  // Avversario e forza della sua difesa per la giornata impostata.
+  function avversarioDi(code, g) {
+    var gn = parseInt(g, 10);
+    var round = FIXTURES[gn - 1] || [];
+    for (var i = 0; i < round.length; i++) {
+      if (round[i][0] === code) return { code: round[i][1], casa: true };
+      if (round[i][1] === code) return { code: round[i][0], casa: false };
+    }
+    return null;
+  }
+
+  function numeriAvvisoHtml() {
+    if (STATS.length) return "";
+    return '<section class="sez"><h4>Statistiche non caricate</h4>' +
+      '<p class="lega-note" data-tone="warn">Le statistiche avanzate si leggono <b>solo da collegati</b>: non sono dati nostri (vengono da Fantalab) e il tool &egrave; pubblico, quindi restano dietro l\'accesso come i voti. Premi <b>Accedi</b> in alto e ricarica.</p>' +
+      '<p class="sez-nota">Il resto del tool funziona lo stesso: la formazione non usa questi numeri.</p></section>';
+  }
+
+  // ---- parte 1: la giornata ----
+  function numeriGiornataHtml() {
+    if (!STATS.length) return "";
+    var g = state.meta.giornata || "";
+    var miei = nomiMieiLegaAttiva();
+    var righe = Object.keys(miei).map(function (nome) {
+      var s = statsDi(nome);
+      var l = listoneGet(nome);
+      if (!l) return null;
+      var code = l[2];
+      var avv = avversarioDi(code, g);
+      var fz = avv ? forzaDi(avv.code) : null;
+      var gg = String(parseInt(g, 10));
+      var pubblicato = !!(PROBABILI_SQUADRE[gg] && PROBABILI_SQUADRE[gg][code]);
+      var dentro = !!(PROBABILI[gg] && PROBABILI[gg][nome]);
+      var ind = indisponibile(nome);
+      return {
+        nome: nome, ruolo: l[1], code: code, s: s,
+        avv: avv ? avv.code : null, casa: avv ? avv.casa : null,
+        dif: fz ? Number(fz.difesa_corretta) : null,
+        att: fz ? Number(fz.attacco_corretto) : null,
+        stato: pubblicato ? (dentro ? "gioca" : "fuori") : "?",
+        ind: ind ? ind.grado : null
+      };
+    }).filter(Boolean);
+    if (!righe.length) return "";
+    var ordine = { P: 0, D: 1, C: 2, A: 3 };
+    righe.sort(function (a, b) {
+      if (ordine[a.ruolo] !== ordine[b.ruolo]) return ordine[a.ruolo] - ordine[b.ruolo];
+      return (b.s && b.s.fmv ? Number(b.s.fmv) : 0) - (a.s && a.s.fmv ? Number(a.s.fmv) : 0);
+    });
+    function cella(r) {
+      var s = r.s;
+      var portiere = r.ruolo === "P";
+      // Per il portiere e il difensore conta l'attacco che affrontano, per gli
+      // altri la difesa: e' la stessa asimmetria del modificatore.
+      var forza = portiere ? r.att : r.dif;
+      var etichetta = portiere ? "att. avv." : "dif. avv.";
+      var tonoForza = forza == null ? "" : (portiere ? (forza < 0.9 ? "ok" : forza > 1.15 ? "danger" : "warn")
+                                                     : (forza > 1.1 ? "ok" : forza < 0.85 ? "danger" : "warn"));
+      return '<tr>' +
+        '<td>' + (r.stato === "gioca" ? '<span class="pt-ok">&bull;</span> ' : r.stato === "fuori" ? '<span class="pt-ko">&bull;</span> ' : '') + escapeHtml(r.nome) + '</td>' +
+        '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(r.ruolo) + '">' + escapeHtml(r.ruolo) + '</span></td>' +
+        '<td>' + escapeHtml(r.code || "") + (r.avv ? ' <span class="mini">' + (r.casa ? "vs" : "a") + ' ' + escapeHtml(r.avv) + '</span>' : '') + '</td>' +
+        '<td data-tone="' + tonoForza + '">' + (forza == null ? "—" : num(forza, 2)) + ' <span class="mini">' + etichetta + '</span></td>' +
+        '<td data-tone="' + (r.ind === "out" ? "danger" : r.ind === "dubbio" ? "warn" : (r.stato === "gioca" ? "ok" : r.stato === "fuori" ? "danger" : "")) + '">' +
+          (r.ind === "out" ? "infortunato" : r.stato === "gioca" ? "probabile" : r.stato === "fuori" ? "fuori dagli 11" : "—") +
+          (r.ind === "dubbio" ? " (dubbio)" : "") + '</td>' +
+        '<td>' + (s ? num(s.minuti_per_partita, 0) : "—") + '</td>' +
+        '<td>' + (s ? perc(s.perc_da_titolare) : "—") + '</td>' +
+        '<td>' + (s ? perc(s.perc_voto_65) : "—") + '</td>' +
+        '<td>' + (s && s.presenze ? num((Number(s.xg || 0) + Number(s.xa || 0)) / Number(s.presenze), 2) : "—") + '</td>' +
+        '<td data-tone="' + (s && s.trend_forma > 0.15 ? "ok" : s && s.trend_forma < -0.15 ? "danger" : "") + '">' + (s ? num(s.trend_forma, 2) : "—") + '</td>' +
+        '</tr>';
+    }
+    var nomeLega = (RIF_LEGHE[legaAttivaId()] && RIF_LEGHE[legaAttivaId()].nome) || legaAttivaId();
+    var nomeMia = (RIF_LEGHE[legaAttivaId()] && RIF_LEGHE[legaAttivaId()].miaSquadra) || LEGA_MIA;
+    return '<section class="sez"><h4>La tua giornata <span class="count-badge">' + righe.length + '</span></h4>' +
+      '<p class="lega-note">Giornata <b>' + escapeHtml(String(g)) + '</b> &middot; <b>' + escapeHtml(nomeMia) + '</b> in ' + escapeHtml(nomeLega) + ' (cambia lega dalle impostazioni). <b>dif. avv.</b> &egrave; la difesa dell\'avversario corretta per il calendario che ha gi&agrave; affrontato: sopra 1 concede pi&ugrave; della media, sotto 1 concede meno (per i portieri &egrave; l\'attacco che affrontano). <b>xG+xA a partita</b> &egrave; quanto produce lui, <b>trend</b> &egrave; media voto delle ultime cinque meno quella di stagione.</p>' +
+      '<div class="f1-wrap"><table class="f1-table"><thead><tr>' +
+      '<th>Giocatore</th><th>R</th><th>Partita</th><th>Forza avv.</th><th>Notizia</th><th>Min</th><th>Tit.</th><th>&ge;6,5</th><th>xG+xA</th><th>Trend</th>' +
+      '</tr></thead><tbody>' + righe.map(cella).join("") + '</tbody></table></div>' +
+      '<p class="sez-nota">Nessuno di questi numeri entra nel calcolo della formazione: quello usa fantamedia, stato, avversario e undici probabili. Qui c\'&egrave; il perch&eacute;, non il quanto.</p>' +
+      '</section>';
+  }
+
+  /* -------------------------------------------------------------------
+     CHI PUO' FARE LA GIORNATA GROSSA (09/09/2026, su richiesta)
+
+     Il valore atteso e la probabilita' di una gran giornata sono due
+     domande diverse, e la seconda non si ricava dalla prima. Un
+     difensore da 6,2 attesi non fara' mai 10; un attaccante da 6,2
+     attesi lo fa una volta su otto. A parita' di media, conta quanto
+     larga e' la distribuzione — e la larghezza dipende dal ruolo.
+
+     Le deviazioni standard sono MISURATE sui nostri voti, non scelte:
+       attaccanti 2,13 · portieri 1,94 · centrocampisti 1,39 · difensori 1,06
+     Sono le stesse che dicono perche' una giornata singola non si
+     prevede: su un attaccante il rumore e' quattro volte il vantaggio
+     che pensiamo di avere.
+
+     Il conto e' P(fantavoto >= soglia) = p(gioca) x (1 - Fi((soglia - mu)/sigma)),
+     con mu il fantavoto atteso che il tool usa gia' per schierare. La
+     normale e' un'approssimazione: la distribuzione vera del fantavoto
+     e' a gradini (i bonus valgono 3 e 1) e asimmetrica a destra, quindi
+     questi numeri vanno letti come ordine di grandezza e soprattutto
+     come ORDINE fra i giocatori, che e' la cosa che serve.
+
+     A cosa serve davvero: quando sei sfavorito di giornata non ti serve
+     il valore atteso piu' alto, ti serve la coda piu' grossa. E' la
+     stessa logica della strategia "Batti l'avversario".
+     ------------------------------------------------------------------- */
+  var SD_RUOLO = { A: 2.13, P: 1.94, C: 1.39, D: 1.06 };
+  var NUM_SOGLIA = 8;
+
+  function probOltre(mu, ruolo, pGioca, soglia) {
+    var sd = SD_RUOLO[ruolo] || 1.5;
+    if (mu == null || !isFinite(mu)) return null;
+    var z = (soglia - mu) / sd;
+    return Math.max(0, Math.min(1, (pGioca == null ? 1 : pGioca) * (1 - normCdf(z))));
+  }
+
+  function numeriProbabilitaHtml() {
+    var players = (state.players || []).filter(function (p) { return !!p.name; });
+    if (!players.length) return "";
+    var g = state.meta.giornata || "";
+    // L'avversario NON si prende dal campo della scheda Rosa: quello lo
+    // riempie "Applica calendario" e resta fermo alla giornata in cui l'hai
+    // premuto. Qui si legge il calendario vero della giornata impostata,
+    // e se i due non coincidono si dice — perche' in quel caso e' sbagliato
+    // anche il fantavoto atteso, che quel campo lo usa per davvero.
+    var disallineati = [];
+    var righe = players.map(function (p) {
+      var s = scorePlayer(p);
+      var l = listoneGet(p.name);
+      var mioCode = l ? l[2] : null;
+      var calAvv = mioCode ? avversarioDi(mioCode, g) : null;
+      var calNome = calAvv ? (teamByCode(calAvv.code) || {}).name || calAvv.code : null;
+      var manuale = p.avversario || "";
+      if (calNome && manuale && String(manuale).trim().toLowerCase() !== String(calNome).trim().toLowerCase()) {
+        disallineati.push({ nome: p.name, manuale: manuale, vero: calNome });
+      }
+      return {
+        nome: p.name, ruolo: p.role,
+        avversario: calNome || manuale, casa: calAvv ? calAvv.casa : p.casa,
+        mu: s.raw, p: s.prob, fonte: s.fonteProb,
+        p8: probOltre(s.raw, p.role, s.prob, 8),
+        p9: probOltre(s.raw, p.role, s.prob, 9),
+        p10: probOltre(s.raw, p.role, s.prob, 10),
+        sel: probOltre(s.raw, p.role, s.prob, NUM_SOGLIA)
+      };
+    }).sort(function (a, b) { return (b.sel || 0) - (a.sel || 0); });
+    var bottoni = [8, 9, 10].map(function (v) {
+      return '<button type="button" class="btn btn-small' + (NUM_SOGLIA === v ? " btn-primary" : "") + '" data-soglia="' + v + '">&ge; ' + v + '</button>';
+    }).join(" ");
+    // Uno su quanti: e' il modo in cui una probabilita' si legge davvero.
+    function unoSu(x) { return (!x || x < 0.005) ? "—" : "1 su " + Math.round(1 / x); }
+    // L'avviso va prima della tabella: se i campi sono fermi a un'altra
+    // giornata, i numeri sotto sono calcolati contro l'avversario sbagliato,
+    // e non e' un dettaglio da mettere in fondo.
+    var avviso = "";
+    if (disallineati.length) {
+      var esempi = disallineati.slice(0, 4).map(function (d) {
+        return '<b>' + escapeHtml(d.nome) + '</b> (in rosa: ' + escapeHtml(d.manuale) + ', in calendario: ' + escapeHtml(d.vero) + ')';
+      }).join(" &middot; ");
+      avviso = '<div class="ris-feedback" data-tone="danger"><b>' + disallineati.length +
+        (disallineati.length === 1 ? ' giocatore ha' : ' giocatori hanno') + ' l\'avversario fermo a un\'altra giornata.</b> ' +
+        'La colonna Partita qui sotto mostra il calendario vero della ' + escapeHtml(String(g)) + '&ordf;, ma il <b>fantavoto atteso</b> e la formazione ' +
+        'in <b>Schiera</b> usano il campo della scheda Rosa, che &egrave; rimasto indietro. ' +
+        'Apri le impostazioni (&#9881;) e premi <b>Applica calendario</b>. ' + esempi + '</div>';
+    }
+    return '<section class="sez"><h4>Chi pu&ograve; fare la giornata grossa</h4>' +
+      avviso +
+      '<p class="lega-note">Giornata <b>' + escapeHtml(String(g)) + '</b>. Non il fantavoto atteso: la <b>probabilit&agrave; della coda</b>. Serve quando sei sfavorito di giornata e non ti basta la partita media. Soglia: ' + bottoni + '</p>' +
+      '<div class="f1-wrap"><table class="f1-table"><thead><tr>' +
+      '<th>Giocatore</th><th>R</th><th>Partita</th><th>Atteso</th><th>p gioca</th><th>P(&ge;8)</th><th>P(&ge;9)</th><th>P(&ge;10)</th><th>Una volta su</th>' +
+      '</tr></thead><tbody>' + righe.map(function (r) {
+        return '<tr><td>' + escapeHtml(r.nome) + (r.fonte === "probabili" ? ' <span class="mini">probabile</span>' : '') + '</td>' +
+          '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(r.ruolo) + '">' + escapeHtml(r.ruolo) + '</span></td>' +
+          '<td>' + escapeHtml(r.avversario || "—") + (r.avversario ? ' <span class="mini">' + (r.casa ? "casa" : "fuori") + '</span>' : '') + '</td>' +
+          '<td>' + num(r.mu, 2) + '</td>' +
+          '<td data-tone="' + (r.p >= 0.9 ? "ok" : r.p <= 0.25 ? "danger" : "warn") + '">' + num(r.p, 2) + '</td>' +
+          '<td data-tone="' + (NUM_SOGLIA === 8 ? "ok" : "") + '">' + perc((r.p8 || 0) * 100) + '</td>' +
+          '<td data-tone="' + (NUM_SOGLIA === 9 ? "ok" : "") + '">' + perc((r.p9 || 0) * 100) + '</td>' +
+          '<td data-tone="' + (NUM_SOGLIA === 10 ? "ok" : "") + '">' + perc((r.p10 || 0) * 100) + '</td>' +
+          '<td>' + unoSu(r.sel) + '</td></tr>';
+      }).join("") + '</tbody></table></div>' +
+      '<p class="sez-nota">Le larghezze non sono scelte, sono misurate sui nostri voti: <b>attaccante 2,13 &middot; portiere 1,94 &middot; centrocampista 1,39 &middot; difensore 1,06</b>. &Egrave; il motivo per cui un difensore da 6,2 attesi non far&agrave; mai 10 e un attaccante da 6,2 lo fa una volta su otto — a parit&agrave; di media, cambia tutto la coda.</p>' +
+      '<p class="sez-nota">Due avvertenze. Il conto usa la normale, ma il fantavoto vero &egrave; a gradini (i bonus valgono 3 e 1) e sbilanciato a destra: leggi l\'<b>ordine</b> fra i giocatori, non il decimale. E la tabella riguarda la rosa della lega attiva, quella caricata in <b>Rosa</b> — &egrave; l\'unica su cui il tool calcola il fantavoto atteso.</p>' +
+      '</section>';
+  }
+
+  // ---- parte 2: le letture ----
+  // Poche, scelte, e ognuna con il suo limite scritto accanto. Una lista di
+  // venti "insight" e' un modo elegante di non dire niente.
+  function numeriLettureHtml() {
+    if (!STATS.length) return "";
+    var miei = nomiMiei();
+    function conMinuti(min) {
+      return STATS.filter(function (s) { return Number(s.minuti_totali || 0) >= min; });
+    }
+    var pool = conMinuti(120);
+    // 1. tira tanto e non raccoglie
+    // Niente portieri nelle letture d'attacco: un portiere con dei tiri e'
+    // un calcio d'angolo, non un profilo offensivo.
+    var attaccanti = pool.filter(function (s) { return s.ruolo !== "P"; });
+    var sprecano = attaccanti.filter(function (s) { return Number(s.tiri || 0) >= 5 && Number(s.xg || 0) >= 0.5 && Number(s.gol_fatti || 0) === 0; })
+      .sort(function (a, b) { return Number(b.xg) - Number(a.xg); }).slice(0, 6);
+    // 2. segna piu' di quanto crea (rientrera')
+    var sopra = attaccanti.filter(function (s) { return Number(s.gol_fatti || 0) >= 2 && Number(s.gol_fatti) - Number(s.xg || 0) >= 1; })
+      .sort(function (a, b) { return (Number(b.gol_fatti) - Number(b.xg || 0)) - (Number(a.gol_fatti) - Number(a.xg || 0)); }).slice(0, 6);
+    // 3. difensori da modificatore
+    var dif = pool.filter(function (s) { return s.ruolo === "D" && Number(s.presenze || 0) >= 2; })
+      .sort(function (a, b) { return Number(b.perc_voto_65 || 0) - Number(a.perc_voto_65 || 0) || Number(b.mv || 0) - Number(a.mv || 0); }).slice(0, 8);
+    // 4. la trappola del minutaggio: fantamedia alta su pochi minuti
+    var pochiMinuti = STATS.filter(function (s) { return Number(s.fmv || 0) >= 6.8 && Number(s.minuti_per_partita || 99) <= 55 && Number(s.presenze || 0) >= 2; })
+      .sort(function (a, b) { return Number(a.minuti_per_partita) - Number(b.minuti_per_partita); }).slice(0, 6);
+    function lista(arr, valore, etichetta) {
+      if (!arr.length) return '<p class="sez-nota">Nessuno con i minuti richiesti.</p>';
+      return '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giocatore</th><th>R</th><th>Sq</th><th>' + etichetta + '</th></tr></thead><tbody>' +
+        arr.map(function (s) {
+          return '<tr><td>' + (miei[String(s.giocatore).trim()] ? '<span class="pt-ok">&bull;</span> ' : '') + escapeHtml(s.giocatore) + '</td>' +
+            '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(s.ruolo || "") + '">' + escapeHtml(s.ruolo || "") + '</span></td>' +
+            '<td>' + escapeHtml(s.squadra || "") + '</td><td>' + valore(s) + '</td></tr>';
+        }).join("") + '</tbody></table></div>';
+    }
+    return '<section class="sez"><h4>Cosa dicono i numeri</h4>' +
+      '<p class="lega-note">Quattro letture, non venti. Ognuna con il suo limite scritto sotto, perch&eacute; con <b>tre giornate</b> quasi tutto quello che sembra un segnale &egrave; ancora rumore.</p>' +
+
+      '<h5>Tirano e non raccolgono</h5>' +
+      lista(sprecano, function (s) { return num(s.xg, 2) + ' xG in ' + num(s.tiri, 0) + ' tiri, <b>0 gol</b>'; }, "Prodotto") +
+      '<p class="sez-nota">Il gol arriva se continuano a tirare: l\'xG &egrave; la parte pi&ugrave; ripetibile del bonus. Ma volume alto e xG basso (tanti tiri da fuori) non converge — guarda il rapporto, non il totale.</p>' +
+
+      '<h5>Segnano pi&ugrave; di quanto creano</h5>' +
+      lista(sopra, function (s) { return '<b>' + num(s.gol_fatti, 0) + ' gol</b> con ' + num(s.xg, 2) + ' xG'; }, "Scarto") +
+      '<p class="sez-nota">Storicamente questo scarto rientra. Non vuol dire che siano scarsi — vuol dire che il ritmo attuale non &egrave; il loro ritmo.</p>' +
+
+      '<h5>Difensori per il modificatore</h5>' +
+      lista(dif, function (s) { return perc(s.perc_voto_65) + ' di partite <b>&ge; 6,5</b> · MV ' + num(s.mv, 2); }, "Fascia") +
+      '<p class="sez-nota">&Egrave; la valuta del modificatore: un difensore prende <b>+0,09</b> di bonus a partita, misurato su 190 giocatori. Tutto il suo valore sta nella pagella. Con due o tre partite un 100% &egrave; tre partite su tre: leggilo per quello che &egrave;.</p>' +
+
+      '<h5>La trappola del minutaggio</h5>' +
+      lista(pochiMinuti, function (s) { return 'fantamedia <b>' + num(s.fmv, 2) + '</b> in ' + num(s.minuti_per_partita, 0) + ' minuti a partita'; }, "Attenzione") +
+      '<p class="sez-nota">Fantamedia alta <b>perch&eacute;</b> giocano poco: entrano a partita aperta, prendono il bonus e la media si alza su pochi minuti. La fantamedia &egrave; per presenza, non per minuto, e non pu&ograve; vederlo.</p>' +
+      '</section>';
+  }
+
+  // ---- parte 3: le squadre ----
+  function numeriSquadreHtml() {
+    if (!PROFILI_SQ.length && !FORZA_SQ.length) return "";
+    var righe = PROFILI_SQ.map(function (p) {
+      var f = forzaDi(p.squadra) || {};
+      return {
+        code: p.squadra, xg: Number(p.xg_per_partita || 0), tiri: Number(p.tiri_per_partita || 0),
+        occ: Number(p.occasioni_create || 0), gf: Number(p.gf || 0), gs: Number(p.gs || 0),
+        att: f.attacco_corretto != null ? Number(f.attacco_corretto) : null,
+        dif: f.difesa_corretta != null ? Number(f.difesa_corretta) : null,
+        difGrezza: f.difesa_grezza != null ? Number(f.difesa_grezza) : null
+      };
+    }).sort(function (a, b) { return b.xg - a.xg; });
+    return '<section class="sez"><h4>Le venti squadre</h4>' +
+      '<p class="lega-note"><b>Crea</b> &egrave; quanto produce, <b>converte</b> &egrave; gol meno gol attesi: sopra zero sta segnando pi&ugrave; di quanto crea e prima o poi rientra. <b>Attacco</b> e <b>difesa</b> sono corretti per gli avversari gi&agrave; affrontati (1,00 = media del campionato); la colonna <b>&Delta;</b> dice quanto cambia il giudizio sulla difesa una volta tolto il calendario.</p>' +
+      '<div class="f1-wrap"><table class="f1-table"><thead><tr>' +
+      '<th>Sq</th><th>xG/pt</th><th>Tiri/pt</th><th>GF</th><th>Converte</th><th>Attacco</th><th>Difesa</th><th>&Delta;</th>' +
+      '</tr></thead><tbody>' + righe.map(function (r) {
+        var conv = r.gf - r.xg * 3;
+        var d = (r.dif != null && r.difGrezza != null) ? (r.dif - r.difGrezza) : null;
+        return '<tr><td><b>' + escapeHtml(r.code) + '</b></td>' +
+          '<td>' + num(r.xg, 2) + '</td><td>' + num(r.tiri, 1) + '</td><td>' + num(r.gf, 0) + '</td>' +
+          '<td data-tone="' + (conv > 1.5 ? "warn" : conv < -1.5 ? "ok" : "") + '">' + (conv > 0 ? "+" : "") + num(conv, 2) + '</td>' +
+          '<td data-tone="' + (r.att != null && r.att > 1.2 ? "ok" : r.att != null && r.att < 0.8 ? "danger" : "") + '">' + num(r.att, 2) + '</td>' +
+          '<td data-tone="' + (r.dif != null && r.dif < 0.85 ? "ok" : r.dif != null && r.dif > 1.15 ? "danger" : "") + '">' + num(r.dif, 2) + '</td>' +
+          '<td>' + (d == null ? "—" : (d > 0 ? "+" : "") + num(d, 2)) + '</td></tr>';
+      }).join("") + '</tbody></table></div>' +
+      '<p class="sez-nota">Un &Delta; negativo vuol dire che la difesa &egrave; migliore di come sembra: ha gi&agrave; affrontato attacchi forti. Positivo il contrario — ha incontrato attacchi deboli e il giudizio va abbassato.</p>' +
+      '</section>';
+  }
+
+  // ---- parte 4: esplora tutta la Serie A ----
+  var FAMIGLIE = {
+    attacco: { label: "Attacco", col: [["xg","xG",2],["xa","xA",2],["tiri","Tiri",0],["tiri_in_porta","In porta",0],["passaggi_chiave","Pass. chiave",0],["occasioni_create","Occ. create",0],["gol_fatti","Gol",0],["assist","Assist",0]] },
+    difesa:  { label: "Difesa",  col: [["contrasti","Contr.",0],["intercetti","Interc.",0],["spazzate","Spazz.",0],["duelli_vinti","Duelli",0],["duelli_aerei_vinti","Aerei",0],["tiri_bloccati","Bloccati",0],["falli","Falli",0],["errori_da_gol","Err. gol",0]] },
+    fanta:   { label: "Fanta",   col: [["mv","MV",2],["fmv","FMV",2],["perc_voto_6","≥6",0],["perc_voto_65","≥6,5",0],["perc_con_bonus","Con bonus",0],["perc_senza_cartellini","Senza cart.",0],["bonus_malus","B/M",1],["trend_forma","Trend",2]] },
+    generali:{ label: "Generali",col: [["presenze","PV",0],["minuti_per_partita","Min/pt",0],["perc_da_titolare","% tit.",0],["minuti_totali","Minuti",0],["rating_sm","Rating",2],["perc_passaggi","% pass.",0],["perc_dribbling","% dribb.",0],["perc_cross_riusciti","% cross",0]] },
+    portieri:{ label: "Portieri",col: [["parate","Parate",0],["parate_per_partita","Parate/pt",1],["clean_sheet","Clean sheet",0],["gol_subiti","Gol subiti",0],["mv","MV",2],["fmv","FMV",2],["presenze","PV",0]] }
+  };
+  var NUM_PERCENTUALI = { perc_voto_6:1, perc_voto_65:1, perc_con_bonus:1, perc_senza_cartellini:1, perc_da_titolare:1, perc_passaggi:1, perc_dribbling:1, perc_cross_riusciti:1 };
+
+  function numeriEsploraHtml() {
+    if (!STATS.length) return "";
+    var miei = nomiMiei();
+    var fam = FAMIGLIE[NUM_F.famiglia] || FAMIGLIE.attacco;
+    var q = NUM_F.testo.trim().toLowerCase();
+    var righe = STATS.filter(function (s) {
+      if (NUM_F.soloMiei && !miei[String(s.giocatore).trim()]) return false;
+      if (NUM_F.ruolo && s.ruolo !== NUM_F.ruolo) return false;
+      if (NUM_F.squadra && s.squadra !== NUM_F.squadra) return false;
+      if (q && String(s.giocatore || "").toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    // ordinato sulla prima colonna della famiglia scelta: e' la metrica che
+    // quella famiglia mette al centro, e cosi' il cambio di famiglia riordina
+    // la tabella invece di lasciarla ferma.
+    var chiave = fam.col[0][0];
+    righe.sort(function (a, b) { return Number(b[chiave] || 0) - Number(a[chiave] || 0); });
+    var totale = righe.length;
+    righe = righe.slice(0, 120);
+    var squadre = {};
+    STATS.forEach(function (s) { if (s.squadra) squadre[s.squadra] = true; });
+    var opzSq = ['<option value="">Tutte</option>'].concat(Object.keys(squadre).sort().map(function (c) {
+      return '<option value="' + escapeAttr(c) + '"' + (NUM_F.squadra === c ? " selected" : "") + '>' + escapeHtml(c) + '</option>';
+    })).join("");
+    var bottoniFam = Object.keys(FAMIGLIE).map(function (k) {
+      return '<button type="button" class="btn btn-small' + (NUM_F.famiglia === k ? " btn-primary" : "") + '" data-fam="' + k + '">' + FAMIGLIE[k].label + '</button>';
+    }).join(" ");
+    return '<section class="sez"><h4>Cerca in tutta la Serie A <span class="count-badge">' + totale + '</span></h4>' +
+      '<p class="lega-note">' + (totale === STATS.length ? 'Tutti i <b>' + STATS.length + '</b> giocatori che hanno messo piede in campo.' : '<b>' + totale + '</b> su ' + STATS.length + ' con i filtri attivi.') + ' I tuoi hanno il punto davanti.</p>' +
+      '<div class="num-filtri">' +
+      '<input type="search" id="numCerca" placeholder="Cerca un nome…" value="' + escapeAttr(NUM_F.testo) + '" />' +
+      '<select id="numRuolo"><option value="">Tutti i ruoli</option>' +
+        ["P","D","C","A"].map(function (r) { return '<option value="' + r + '"' + (NUM_F.ruolo === r ? " selected" : "") + '>' + r + '</option>'; }).join("") +
+      '</select>' +
+      '<select id="numSquadra">' + opzSq + '</select>' +
+      '<label class="num-solomiei"><input type="checkbox" id="numSoloMiei"' + (NUM_F.soloMiei ? " checked" : "") + ' /> Solo i miei</label>' +
+      '</div>' +
+      '<div class="num-fam">' + bottoniFam + '</div>' +
+      '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giocatore</th><th>R</th><th>Sq</th>' +
+      fam.col.map(function (c) { return '<th>' + c[1] + '</th>'; }).join("") + '</tr></thead><tbody>' +
+      righe.map(function (s) {
+        return '<tr><td>' + (miei[String(s.giocatore).trim()] ? '<span class="pt-ok">&bull;</span> ' : '') + escapeHtml(s.giocatore) + '</td>' +
+          '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(s.ruolo || "") + '">' + escapeHtml(s.ruolo || "") + '</span></td>' +
+          '<td>' + escapeHtml(s.squadra || "") + '</td>' +
+          fam.col.map(function (c) {
+            var v = s[c[0]];
+            return '<td>' + (NUM_PERCENTUALI[c[0]] ? perc(v) : num(v, c[2])) + '</td>';
+          }).join("") + '</tr>';
+      }).join("") + '</tbody></table></div>' +
+      (totale > righe.length ? '<p class="sez-nota">Mostrate le prime ' + righe.length + ' di ' + totale + '. Restringi con la ricerca o i filtri.</p>' : '') +
+      '<p class="sez-nota">Fonte: Fantalab, stagione in corso. Le righe di altri campionati (prestiti) sono gi&agrave; escluse, e chi si &egrave; trasferito a mercato aperto tiene le statistiche fatte nella squadra precedente.</p>' +
+      '</section>';
+  }
+
+  function renderNumeri() {
+    var a = document.getElementById("numeriAvvisoHost");
+    if (a) a.innerHTML = numeriAvvisoHtml();
+    var g = document.getElementById("numeriGiornataHost");
+    if (g) g.innerHTML = numeriGiornataHtml();
+    var pb = document.getElementById("numeriProbHost");
+    if (pb) pb.innerHTML = numeriProbabilitaHtml();
+    var l = document.getElementById("numeriLettureHost");
+    if (l) l.innerHTML = numeriLettureHtml();
+    var s = document.getElementById("numeriSquadreHost");
+    if (s) s.innerHTML = numeriSquadreHtml();
+    var e = document.getElementById("numeriEsploraHost");
+    if (e) e.innerHTML = numeriEsploraHtml();
+    // I controlli si ricreano a ogni disegno: i listener vanno riattaccati.
+    var cerca = document.getElementById("numCerca");
+    if (cerca) cerca.addEventListener("input", function (ev) {
+      NUM_F.testo = ev.target.value;
+      var el = document.getElementById("numeriEsploraHost");
+      if (el) { el.innerHTML = numeriEsploraHtml(); riattaccaNumeri(); }
+      var c2 = document.getElementById("numCerca");
+      if (c2) { c2.focus(); try { c2.setSelectionRange(c2.value.length, c2.value.length); } catch (err) {} }
+    });
+    riattaccaNumeri();
+  }
+  function riattaccaNumeri() {
+    var r = document.getElementById("numRuolo");
+    if (r) r.addEventListener("change", function (ev) { NUM_F.ruolo = ev.target.value; renderNumeri(); });
+    var sq = document.getElementById("numSquadra");
+    if (sq) sq.addEventListener("change", function (ev) { NUM_F.squadra = ev.target.value; renderNumeri(); });
+    var sm = document.getElementById("numSoloMiei");
+    if (sm) sm.addEventListener("change", function (ev) { NUM_F.soloMiei = ev.target.checked; renderNumeri(); });
+    document.querySelectorAll("[data-fam]").forEach(function (b) {
+      b.addEventListener("click", function () { NUM_F.famiglia = b.dataset.fam; renderNumeri(); });
+    });
+    document.querySelectorAll("[data-soglia]").forEach(function (b) {
+      b.addEventListener("click", function () { NUM_SOGLIA = parseInt(b.dataset.soglia, 10) || 8; renderNumeri(); });
+    });
   }
 
   function renderAvversariTab() {
@@ -10994,7 +11783,7 @@ async function refreshLivePlayerNews() {
     });
   }
 
-  var TABS = ["home", "schiera", "rosa", "lega", "avversari", "dati", "seriea", "listone", "guida"];
+  var TABS = ["home", "schiera", "numeri", "rosa", "lega", "avversari", "dati", "seriea", "listone", "guida"];
 
   function apriTab(nome) {
     if (TABS.indexOf(nome) === -1) nome = "home";
@@ -11019,12 +11808,414 @@ async function refreshLivePlayerNews() {
     if (nome === "avversari") renderAvversariTab();
     if (nome === "seriea") renderSerieA();
     if (nome === "listone") renderListone();
+    if (nome === "numeri") renderNumeri();
     if (nome === "home") renderHome();
   }
 
   function aggiornaContatoreRosa() {
     var el = document.getElementById("tabCountRosa");
     if (el) el.textContent = state.players ? state.players.length : 0;
+  }
+
+  /* ===================================================================
+     ORDINAMENTO E APRI/CHIUDI, GENERICI (09/09/2026, su richiesta)
+
+     Il tool ha una trentina di funzioni che disegnano tabelle. Aggiungere
+     ordinamento e accordion dentro ognuna vorrebbe dire trenta modifiche
+     e trenta occasioni di sbagliare, con il rischio che la prossima
+     tabella nasca senza. Quindi qui non si tocca nessun render: si
+     lavora sul DOM dopo che e' stato disegnato.
+
+     Due meccanismi, entrambi delegati sul documento:
+
+     1. ORDINAMENTO. Un clic sull'intestazione ordina. Il tipo di dato lo
+        si deduce dai valori, non si dichiara: se la colonna letta senza
+        simboli (%, +, virgola decimale) e' numerica per la maggioranza
+        delle righe, si ordina come numero, altrimenti come testo. I
+        trattini e le celle vuote vanno sempre in fondo, in entrambe le
+        direzioni: sono "dato assente", non "valore minimo", e mandarli
+        in cima quando ordini al contrario e' il modo piu' rapido di
+        rendere una tabella inutile.
+
+     2. APRI/CHIUDI. Ogni sezione con un titolo diventa richiudibile, e
+        lo stato viene ricordato per titolo. Non per posizione: le
+        sezioni si ridisegnano e cambiano ordine, il titolo no.
+
+     PERCHE' SERVE UN OBSERVER. Ogni ridisegno butta via le righe e le
+     ricrea: senza riapplicare, l'ordinamento salterebbe a ogni filtro
+     cambiato e le sezioni si riaprirebbero da sole. L'observer guarda
+     le modifiche, aspetta un attimo che il ridisegno finisca, e
+     riapplica quello che l'utente aveva scelto.
+     =================================================================== */
+  /* -------------------------------------------------------------------
+     GLOSSARIO DELLE COLONNE (09/09/2026, su richiesta)
+
+     Ferma il mouse su un'intestazione e ti dice cos'e'. Serve perche'
+     metа' di queste sigle non le sa nessuno a memoria — xA, B/M, Δ — e
+     una tabella che non si spiega da sola si guarda una volta e poi si
+     salta.
+
+     Dove la metrica ha un limite noto, il limite sta nella descrizione:
+     e' l'unico posto dove verra' letto davvero. "% partite >= 6,5" senza
+     "su tre giornate un 100% e' tre partite su tre" e' un numero che
+     invita a sbagliare.
+
+     La chiave e' l'etichetta della colonna, normalizzata. Vale su tutte
+     le tabelle del tool, non solo su quelle della scheda Numeri.
+     ------------------------------------------------------------------- */
+  var GLOSSARIO = {
+    // attacco
+    "xg": "Gol attesi: la somma della qualita' delle occasioni che ha avuto. 0,50 vuol dire mezza occasione da gol, non mezzo gol segnato. E' la parte piu' ripetibile del bonus.",
+    "xa": "Assist attesi: quanto valevano i passaggi che ha fatto, indipendentemente da come sono finiti. Un assist mancato per un errore del compagno resta contato qui.",
+    "xg+xa": "Gol e assist attesi sommati, divisi per le partite giocate: quanto produce a partita al netto della fortuna.",
+    "tiri": "Tiri tentati, da qualsiasi posizione.",
+    "in porta": "Tiri finiti nello specchio della porta.",
+    "tiri/pt": "Tiri della squadra a partita.",
+    "pass. chiave": "Passaggi che hanno messo un compagno in condizione di tirare.",
+    "occ. create": "Occasioni da gol vere create per un compagno: piu' selettivo dei passaggi chiave.",
+    "occ. mancate": "Occasioni da gol nitide che ha sbagliato. Un numero alto su un attaccante forte e' spesso un gol che sta per arrivare.",
+    "gol": "Gol segnati in campionato.",
+    "assist": "Assist secondo la fonte dei voti.",
+    "prodotto": "Quanto ha prodotto in gol attesi, e quanti gol ne ha ricavato.",
+    "scarto": "Differenza fra i gol segnati e quelli attesi. Storicamente rientra.",
+    // difesa
+    "contr.": "Contrasti: quante volte ha attaccato il portatore di palla.",
+    "interc.": "Intercetti: palloni letti e rubati in anticipo. E' la voce che le pagelle premiano di piu' in un difensore.",
+    "spazz.": "Spazzate: palloni allontanati dall'area. Numero alto = difesa sotto pressione, non necessariamente merito.",
+    "duelli": "Duelli vinti, a terra e in aria.",
+    "aerei": "Duelli aerei vinti: conta per i difensori centrali e per chi attacca i cross.",
+    "bloccati": "Tiri avversari bloccati col corpo.",
+    "falli": "Falli commessi. Non e' un malus diretto, ma e' la strada che porta all'ammonizione.",
+    "err. gol": "Errori che hanno portato direttamente a un gol. Zero e' la norma, uno pesa.",
+    // fanta
+    "mv": "Media voto: il voto della pagella, senza bonus ne' malus. E' la valuta del modificatore difesa.",
+    "fmv": "Fantamedia: il voto con bonus e malus dentro. Attenzione: e' una media per presenza, non per minuto — chi entra a partita aperta e segna la gonfia.",
+    "fantamedia": "Il voto con bonus e malus dentro, mediato sulle presenze.",
+    "≥6": "Percentuale di partite chiuse con almeno 6 in pagella.",
+    "≥6,5": "Percentuale di partite con almeno 6,5. E' esattamente la fascia del modificatore. Con tre giornate un 100% sono tre partite su tre: leggilo per quello che e'.",
+    "con bonus": "Percentuale di partite in cui ha fatto gol o assist.",
+    "senza cart.": "Percentuale di partite chiuse senza cartellini. Basso vuol dire mezzo punto che se ne va spesso.",
+    "b/m": "Bonus meno malus accumulati: quanto ha aggiunto o togliato al netto del voto.",
+    "trend": "Media voto delle ultime cinque meno quella di stagione. Positivo sta salendo, negativo sta scendendo. Su tre giornate e' quasi tutto rumore.",
+    "fascia": "Quanto spesso arriva nella fascia del modificatore.",
+    // generali
+    "pv": "Partite in cui ha preso un voto.",
+    "min": "Minuti giocati a partita, in media.",
+    "min/pt": "Minuti giocati a partita, in media. Sotto i 60 e' un subentrante, e la fantamedia va guardata con sospetto.",
+    "minuti": "Minuti totali giocati.",
+    "tit.": "Percentuale di partite iniziate da titolare.",
+    "% tit.": "Percentuale di partite iniziate da titolare. Insieme ai minuti dice se e' davvero un titolare o un cambio.",
+    "rating": "Voto Sportmonks, calcolato su tutte le azioni: indipendente dalla pagella italiana, utile come secondo parere.",
+    "% pass.": "Percentuale di passaggi riusciti.",
+    "% dribb.": "Percentuale di dribbling riusciti.",
+    "% cross": "Percentuale di cross riusciti. E' la precisione, non il volume: Fantalab il volume non lo pubblica.",
+    "attenzione": "Perche' quel numero e' meno buono di come sembra.",
+    // portieri
+    "parate": "Parate effettuate.",
+    "parate/pt": "Parate a partita. Alto vuol dire che lavora molto, che per un portiere e' spesso un bene (le parate fanno voto) e per la difesa un male.",
+    "clean sheet": "Partite chiuse senza prendere gol.",
+    "gol subiti": "Gol presi. Per il portiere e' malus diretto.",
+    // giornata
+    "partita": "La partita di Serie A che gioca in questa giornata.",
+    "forza avv.": "Quanto concede l'avversario, corretto per il calendario che ha gia' affrontato. 1,00 e' la media del campionato: sopra concede piu' della media, sotto meno. Per i portieri e i difensori e' l'attacco che affrontano.",
+    "notizia": "Cosa dice l'undici probabile piu' recente, e l'eventuale infortunio.",
+    // probabilita'
+    "atteso": "Il fantavoto che il tool si aspetta da lui in questa partita: e' lo stesso numero che usa per schierare.",
+    "p gioca": "Probabilita' che scenda in campo. Viene dall'undici probabile quando c'e' ed e' fresco, altrimenti dallo Stato.",
+    "p(≥8)": "Probabilita' di chiudere con almeno 8 di fantavoto, tenuto conto che potrebbe non giocare.",
+    "p(≥9)": "Probabilita' di chiudere con almeno 9.",
+    "p(≥10)": "Probabilita' di chiudere con almeno 10: la giornata che vince la partita da sola.",
+    "una volta su": "Ogni quante partite ci si aspetta una giornata sopra la soglia scelta.",
+    // squadre
+    "sq": "Squadra di Serie A.",
+    "club": "Squadra di Serie A.",
+    "xg/pt": "Gol attesi prodotti dalla squadra a partita: quanto crea.",
+    "gf": "Gol fatti.",
+    "gs": "Gol subiti.",
+    "dr": "Differenza reti.",
+    "punti": "Punti in classifica.",
+    "converte": "Gol fatti meno gol attesi. Sopra zero sta segnando piu' di quanto crea, e prima o poi rientra; sotto zero il contrario.",
+    "attacco": "Forza d'attacco corretta per gli avversari affrontati. 1,00 = media del campionato.",
+    "difesa": "Forza difensiva corretta per gli avversari affrontati. 1,00 = media; sotto 1 concede meno della media.",
+    "δ": "Quanto cambia il giudizio sulla difesa una volta tolto il calendario. Negativo = e' migliore di come sembra, ha affrontato attacchi forti.",
+    "giocatore": "Nome come sta nel listone. Il punto verde davanti vuol dire che e' tuo.",
+    "r": "Ruolo: portiere, difensore, centrocampista, attaccante.",
+    // le altre schede
+    "#": "Posizione in classifica.",
+    "giornata": "La giornata di Serie A a cui si riferisce la riga.",
+    "modulo": "Lo schieramento usato: portiere, difensori, centrocampisti, attaccanti.",
+    "reparti": "Come si dividono gli undici fra difesa, centrocampo e attacco.",
+    "con bonus/malus": "Punti attesi con gol, assist, ammonizioni e modificatore dentro.",
+    "senza bonus/malus": "Solo la somma dei voti in pagella, senza bonus ne' malus. E' il numero che comanda il modificatore difesa.",
+    "reale": "Quello che ha fatto davvero, a giornata chiusa.",
+    "fantapunti": "Punti di fantacalcio totali della formazione.",
+    "buttati": "Punti lasciati in panchina: quanto avrebbe reso di piu' schierando i migliori disponibili.",
+    "stato": "Come hai segnato il giocatore in Rosa: titolare, ballottaggio, panchina, assente. E' il campo che decide la probabilita' quando non ci sono undici probabili freschi.",
+    "cosa stona": "Perche' quello Stato sembra sbagliato guardando i voti che sono arrivati.",
+    "probabile": "Cosa dice l'ultimo undici probabile pubblicato.",
+    "probabilita": "Probabilita' che scenda in campo.",
+    "probabilità": "Probabilita' che scenda in campo.",
+    "media": "Il valore medio della colonna.",
+    "p": "Probabilita' che scenda in campo, da 0 a 1."
+  };
+  function glossaDi(etichetta) {
+    var k = String(etichetta || "").replace(/\s+/g, " ").trim().toLowerCase();
+    if (GLOSSARIO[k]) return GLOSSARIO[k];
+    // ">= 6,5" e "≥6,5" sono la stessa cosa scritta in due modi
+    var k2 = k.replace(/\s*>=\s*/g, "≥").replace(/\s*≥\s*/g, "≥").replace(/\s/g, "");
+    return GLOSSARIO[k2] || null;
+  }
+
+  var ORD_STATO = {};                     // chiave tabella -> { col, dir }
+  var ACC_KEY = "moduloSezioniChiuse";
+  var ACC_CHIUSE = {};
+  try { ACC_CHIUSE = JSON.parse(localStorage.getItem(ACC_KEY) || "{}") || {}; } catch (e) { ACC_CHIUSE = {}; }
+  function accSalva() { try { localStorage.setItem(ACC_KEY, JSON.stringify(ACC_CHIUSE)); } catch (e) {} }
+
+  // Identita' stabile di una tabella: il titolo della sezione che la
+  // contiene piu' la sua posizione dentro quella sezione. Sopravvive al
+  // ridisegno, che e' l'unica cosa che serve.
+  function chiaveTabella(tab) {
+    var sez = tab.closest ? tab.closest("section, .card, .sez") : null;
+    var tit = sez ? sez.querySelector("h3, h4, h5") : null;
+    var base = tit ? tit.textContent.trim().slice(0, 60) : "senza-titolo";
+    var pari = sez ? sez.querySelectorAll("table") : [tab];
+    var idx = 0;
+    for (var i = 0; i < pari.length; i++) if (pari[i] === tab) { idx = i; break; }
+    return base + "#" + idx;
+  }
+
+  // "6,5" e "72%" e "+1.5" sono numeri; "1 su 8" e "ATA vs CAG" no.
+  function valNumerico(txt) {
+    var t = String(txt || "").trim();
+    if (!t || t === "—" || t === "-" || t === "–") return null;
+    var pulito = t.replace(/\s/g, "").replace(/%$/, "").replace(/^\+/, "").replace(",", ".");
+    if (!/^-?\d*\.?\d+$/.test(pulito)) return null;
+    var n = parseFloat(pulito);
+    return isFinite(n) ? n : null;
+  }
+  function colonnaENumerica(tab, col) {
+    var righe = tab.tBodies[0] ? tab.tBodies[0].rows : [];
+    var num = 0, testo = 0;
+    for (var i = 0; i < righe.length && i < 30; i++) {
+      var c = righe[i].cells[col];
+      if (!c) continue;
+      var t = c.textContent.trim();
+      if (!t || t === "—") continue;
+      if (valNumerico(t) != null) num++; else testo++;
+    }
+    return num >= testo && num > 0;
+  }
+
+  function ordinaTabella(tab, col, dir) {
+    var body = tab.tBodies[0];
+    if (!body) return;
+    var righe = Array.prototype.slice.call(body.rows);
+    if (righe.length < 2) return;
+    var numerica = colonnaENumerica(tab, col);
+    righe.sort(function (a, b) {
+      var ca = a.cells[col], cb = b.cells[col];
+      var ta = ca ? ca.textContent.trim() : "", tb = cb ? cb.textContent.trim() : "";
+      if (numerica) {
+        var na = valNumerico(ta), nb = valNumerico(tb);
+        // Dato assente sempre in fondo, in entrambe le direzioni.
+        if (na == null && nb == null) return 0;
+        if (na == null) return 1;
+        if (nb == null) return -1;
+        return dir === "asc" ? na - nb : nb - na;
+      }
+      if (!ta && !tb) return 0;
+      if (!ta) return 1;
+      if (!tb) return -1;
+      return dir === "asc" ? ta.localeCompare(tb, "it") : tb.localeCompare(ta, "it");
+    });
+    righe.forEach(function (r) { body.appendChild(r); });
+    var teste = tab.tHead ? tab.tHead.rows[0] : null;
+    if (teste) Array.prototype.forEach.call(teste.cells, function (th, i) {
+      th.classList.remove("ord-asc", "ord-desc");
+      if (i === col) th.classList.add(dir === "asc" ? "ord-asc" : "ord-desc");
+    });
+  }
+
+  // Prepara una tabella: intestazioni cliccabili e ordinamento ripristinato.
+  function preparaTabella(tab) {
+    if (!tab.tHead || !tab.tBodies[0]) return;
+    // Alcune tabelle ordinano gia' per conto loro, con un bottone
+    // nell'intestazione (la scheda Avversari). Quelle si lasciano stare:
+    // il loro ordinamento agisce sui dati completi, il mio solo sulle righe
+    // disegnate — il loro e' migliore, e due meccanismi sulla stessa colonna
+    // si darebbero battaglia a ogni clic.
+    if (tab.tHead.querySelector("button[data-col], [data-sort]")) { tab.dataset.ordEsterno = "1"; return; }
+    var chiave = chiaveTabella(tab);
+    tab.dataset.ordKey = chiave;
+    if (!tab.dataset.ordPronta) {
+      tab.dataset.ordPronta = "1";
+      tab.classList.add("ordinabile");
+      Array.prototype.forEach.call(tab.tHead.rows[0].cells, function (th, i) {
+        th.tabIndex = 0;
+        th.setAttribute("role", "button");
+        // La descrizione della metrica viene prima: e' il motivo per cui uno
+        // si ferma col mouse sopra. Il suggerimento sull'ordinamento va in
+        // coda, e non sostituisce mai un title scritto a mano dal render.
+        if (!th.dataset.titOrig) th.dataset.titOrig = th.title || "";
+        var g = th.dataset.titOrig || glossaDi(th.textContent);
+        if (g) {
+          // Il riquadro se lo disegna il tool: il title del browser arriva
+          // dopo un secondo, non si puo' formattare e sul telefono non esiste.
+          // Il title nativo lo togliamo, altrimenti escono due bolle.
+          th.dataset.glossa = g;
+          th.removeAttribute("title");
+          th.classList.add("ha-glossa");
+        } else {
+          th.title = "Clicca per ordinare";
+        }
+        th.dataset.ordCol = String(i);
+      });
+    }
+    var st = ORD_STATO[chiave];
+    if (st) ordinaTabella(tab, st.col, st.dir);
+  }
+
+  function preparaSezione(sez) {
+    var tit = sez.querySelector(":scope > h3, :scope > h4, :scope > h5");
+    if (!tit) return;
+    var chiave = tit.textContent.trim().slice(0, 60);
+    sez.dataset.accKey = chiave;
+    if (!tit.dataset.accPronto) {
+      tit.dataset.accPronto = "1";
+      tit.classList.add("acc-tit");
+      tit.tabIndex = 0;
+      tit.setAttribute("role", "button");
+      if (!tit.title) tit.title = "Clicca per chiudere o riaprire";
+    }
+    if (ACC_CHIUSE[chiave]) sez.classList.add("sez-chiusa");
+    else sez.classList.remove("sez-chiusa");
+  }
+
+  var _potenziaTimer = null;
+  var _observer = null;
+  // Riordinare le righe MODIFICA il DOM, e chi ci sta guardando e' l'observer
+  // che ci ha appena chiamato: senza staccarlo si entra in un giro infinito
+  // (misurato: cinquanta risvegli in tre secondi con la pagina ferma).
+  // Quindi si stacca, si lavora, si buttano le modifiche accumulate nel
+  // frattempo — sono le nostre — e si riattacca.
+  function potenziaTabelle() {
+    var attivo = !!_observer;
+    if (attivo) _observer.disconnect();
+    try {
+      document.querySelectorAll("table.f1-table, table.history-table, table.compare-table").forEach(preparaTabella);
+      document.querySelectorAll("section.sez").forEach(preparaSezione);
+    } finally {
+      if (attivo) {
+        _observer.takeRecords();
+        _observer.observe(document.body, { childList: true, subtree: true });
+      }
+    }
+  }
+  function potenziaPresto() {
+    if (_potenziaTimer) clearTimeout(_potenziaTimer);
+    _potenziaTimer = setTimeout(potenziaTabelle, 60);
+  }
+
+  /* Il riquadro del glossario. Uno solo, riusato: crearne uno per colonna
+     vorrebbe dire quattrocento nodi inutili in una tabella lunga. */
+  var _glossaBox = null, _glossaTimer = null;
+  function glossaMostra(el) {
+    var testo = el.dataset.glossa;
+    if (!testo) return;
+    if (!_glossaBox) {
+      _glossaBox = document.createElement("div");
+      _glossaBox.className = "glossa-box";
+      _glossaBox.setAttribute("role", "tooltip");
+      document.body.appendChild(_glossaBox);
+    }
+    _glossaBox.innerHTML = '<b>' + escapeHtml(el.textContent.replace(/\s+/g, " ").trim()) + '</b>' +
+      escapeHtml(testo) + '<i>Clicca per ordinare</i>';
+    _glossaBox.classList.add("visibile");
+    // Posizione: sotto l'intestazione, e rientrata se sborda a destra. Su
+    // schermo stretto la colonna e' quasi sempre vicina a un bordo.
+    var r = el.getBoundingClientRect();
+    var box = _glossaBox.getBoundingClientRect();
+    var left = Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth - box.width - 8));
+    var top = r.bottom + 6;
+    if (top + box.height > window.innerHeight - 8 && r.top - box.height - 6 > 0) top = r.top - box.height - 6;
+    _glossaBox.style.left = Math.round(left) + "px";
+    _glossaBox.style.top = Math.round(top + window.scrollY) + "px";
+  }
+  function glossaNascondi() {
+    if (_glossaTimer) { clearTimeout(_glossaTimer); _glossaTimer = null; }
+    if (_glossaBox) _glossaBox.classList.remove("visibile");
+  }
+  function wireGlossario() {
+    document.addEventListener("mouseover", function (ev) {
+      var el = ev.target.closest ? ev.target.closest("[data-glossa]") : null;
+      if (!el) return;
+      if (_glossaTimer) clearTimeout(_glossaTimer);
+      // Trecento millisecondi: abbastanza per non lampeggiare mentre si passa
+      // sopra la riga di intestazioni, poco per non far aspettare chi si ferma.
+      _glossaTimer = setTimeout(function () { glossaMostra(el); }, 300);
+    });
+    document.addEventListener("mouseout", function (ev) {
+      var el = ev.target.closest ? ev.target.closest("[data-glossa]") : null;
+      if (el) glossaNascondi();
+    });
+    document.addEventListener("focusin", function (ev) {
+      var el = ev.target.closest ? ev.target.closest("[data-glossa]") : null;
+      if (el) glossaMostra(el); else glossaNascondi();
+    });
+    window.addEventListener("scroll", glossaNascondi, { passive: true });
+    window.addEventListener("resize", glossaNascondi);
+  }
+
+  function wireGenerici() {
+    wireGlossario();
+    document.addEventListener("click", function (ev) {
+      glossaNascondi();
+      var th = ev.target.closest ? ev.target.closest("th[data-ord-col]") : null;
+      // Se il clic e' finito su un controllo suo, e' roba di quella tabella.
+      if (th && ev.target.closest("button, a, input, select, label")) th = null;
+      if (th) {
+        var tab = th.closest("table");
+        if (!tab) return;
+        var col = parseInt(th.dataset.ordCol, 10);
+        var chiave = tab.dataset.ordKey || chiaveTabella(tab);
+        var st = ORD_STATO[chiave];
+        // Primo clic: crescente sul testo, decrescente sui numeri — perche'
+        // su una colonna di numeri quello che si cerca e' il piu' alto.
+        var dir = (st && st.col === col) ? (st.dir === "asc" ? "desc" : "asc")
+                                        : (colonnaENumerica(tab, col) ? "desc" : "asc");
+        ORD_STATO[chiave] = { col: col, dir: dir };
+        ordinaTabella(tab, col, dir);
+        return;
+      }
+      var tit = ev.target.closest ? ev.target.closest(".acc-tit") : null;
+      if (tit) {
+        // Un clic su qualcosa di interattivo dentro il titolo (un bottone, un
+        // contatore cliccabile) non deve chiudere la sezione.
+        if (ev.target.closest("button, a, input, select, label")) return;
+        var sez = tit.closest("section.sez");
+        if (!sez) return;
+        var k = sez.dataset.accKey || tit.textContent.trim().slice(0, 60);
+        var chiusa = sez.classList.toggle("sez-chiusa");
+        if (chiusa) ACC_CHIUSE[k] = true; else delete ACC_CHIUSE[k];
+        accSalva();
+      }
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key !== "Enter" && ev.key !== " ") return;
+      var t = ev.target;
+      if (t && t.matches && (t.matches("th[data-ord-col]") || t.matches(".acc-tit"))) {
+        ev.preventDefault();
+        t.click();
+      }
+    });
+    // Ogni ridisegno ricrea le righe: senza questo l'ordinamento scelto
+    // durerebbe fino al prossimo filtro.
+    try {
+      _observer = new MutationObserver(potenziaPresto);
+      _observer.observe(document.body, { childList: true, subtree: true });
+    } catch (e) { _observer = null; }
+    potenziaTabelle();
   }
 
   function wireTabs() {
@@ -11114,6 +12305,9 @@ async function refreshLivePlayerNews() {
       invalidaCentrocampoAvversario(); invalidaAvversarioAtteso(); invalidaAndamento(); invalidaProprietari();
       renderLegaCard(); renderAutopsiaCard(); renderAvversariTab(); renderFormAvvCard();
       renderRisultatiCard();
+      // Gli undici probabili sono per giornata: cambiando giornata cambia anche
+      // quale informazione entra nel calcolo, e il pannello deve dirlo.
+      renderStatiSospetti();
       renderHome();
       scheduleSave();
     });
@@ -11178,6 +12372,7 @@ async function refreshLivePlayerNews() {
       e.stopPropagation();
     });
     wireTabs();
+    wireGenerici();
     wireListone();
     document.getElementById("computeBtn").addEventListener("click", function () {
       renderResult(true);   // l'unico punto in cui si scrive nello storico
