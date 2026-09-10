@@ -2991,6 +2991,7 @@
     <div data-cs="giocate"></div>
     <div data-cs="registro"></div>
     <p class="cs-avviso" data-cs="avviso"></p>
+    <div data-cs="bonus-regole"></div>
   </div>
 
   <div class="cs-pannello" data-pannello="regge" role="tabpanel" hidden>
@@ -3162,7 +3163,7 @@
 .cs-pips{display:flex;gap:3px;margin:.6rem 0 .75rem}
 .cs-pips i{flex:1;height:6px;border-radius:2px;background:var(--cs-band)}
 .cs-pips i.on{background:var(--accent)}
-.cs-gioca{display:grid;grid-template-columns:1fr 1fr auto;gap:.5rem;align-items:end}
+.cs-gioca{display:grid;grid-template-columns:1fr 1.3fr auto;gap:.5rem;align-items:end}
 .cs-gioca label{font-size:.78rem;color:var(--cs-muted);display:grid;gap:.2rem}
 .cs-gioca input{font:inherit;width:100%;padding:.4rem .5rem;border:1px solid var(--cs-rule);border-radius:6px;background:var(--cs-paper);color:var(--cs-ink)}
 .cs-gioca button{padding:.5rem .9rem;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-weight:600}
@@ -3248,6 +3249,25 @@
 .cs-bozza .cs-bg-piede{border-top-style:dashed}
 
 [data-cs="salvate"] h3,[data-cs="giocate"] h3{margin-top:1.75rem}
+
+/* bonus multipla */
+.cs-costo{font-size:.85rem;color:var(--cs-muted);margin:0 0 .6rem!important}
+.cs-avv-bonus{font-size:.82rem;background:var(--warn-soft);color:var(--cs-ink);border-radius:6px;padding:.4rem .6rem;margin:0 0 .6rem!important}
+.cs-regole{margin-top:1.25rem;max-width:640px;border-top:1px solid var(--cs-rule);padding-top:.75rem}
+.cs-regole summary{cursor:pointer;font-weight:600}
+.cs-regole p{font-size:.85rem;color:var(--cs-muted);margin:.5rem 0 .75rem!important}
+.cs-regole-griglia{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem .75rem;margin:0 0 .75rem}
+.cs-regole-griglia label{display:grid;grid-template-columns:1fr 4.2rem auto;align-items:center;gap:.35rem;font-size:.82rem;color:var(--cs-muted)}
+.cs-regole-griglia input{font:inherit;width:100%;padding:.3rem .4rem;border:1px solid var(--cs-rule);border-radius:6px;background:var(--cs-paper);color:var(--cs-ink)}
+
+/* quote per evento */
+.cs-qleg{font:inherit;width:4.2rem;padding:.3rem .4rem;border:1px solid var(--cs-rule);border-radius:6px;background:var(--cs-paper);color:var(--cs-ink);text-align:right;font-variant-numeric:tabular-nums}
+.cs-qleg::placeholder{color:var(--cs-muted);opacity:.7}
+.cs-qleg.cs-salvato{border-color:var(--cs-ok)}
+.cs-noi{margin-left:.35rem}
+.cs-riep{font-size:.85rem;margin:.6rem 0 0!important;line-height:1.5}
+.cs-avv-in{color:var(--warn)}
+.cs-gambe li{grid-template-columns:1.4rem 1fr auto auto}
 .cs [data-cs="righello"],.cs .cs-assi{max-width:900px}
 .cs [data-cs="curva"]{max-width:760px}
 
@@ -3307,16 +3327,17 @@
         return;
       }
     } catch(e) {}
-    const stato = {tab:'gioca', mercato:'1X2', versione:'v2-prior', giornata:null, rischio:0, proposte:{}};
+    const stato = {tab:'gioca', mercato:'1X2', versione:'v2-prior', giornata:null, rischio:0, proposte:{}, bozze:{}};
+    const num=v=>{ const x=parseFloat(String(v==null?'':v).replace(/\s|€/g,'').replace(',','.')); return isFinite(x)?x:NaN; };
     const leggi = async (t,cols,opz) => { const r = await sb.from(t).select(cols||'*'); if(r.error){ if(opz) return []; throw r.error; } return r.data||[]; };
     let D;
     try {
-      const [sintesi,storico,pron,valutazione,quote,schedine,orari,squadre] = await Promise.all([
+      const [sintesi,storico,pron,valutazione,quote,schedine,orari,squadre,bonus] = await Promise.all([
         leggi('storico_schedine_sintesi'), leggi('storico_schedine'), leggi('pron_partite'), leggi('valutazione_schedine'),
         leggi('quote_partite','giornata,casa,trasferta,gol_casa,gol_trasf'), leggi('schedine_stato'),
-        leggi('serie_a_orari','giornata,inizio',true), leggi('serie_a_squadre','codice,nome',true)
+        leggi('serie_a_orari','giornata,inizio',true), leggi('serie_a_squadre','codice,nome',true), leggi('bonus_multipla','*',true)
       ]);
-      D = {sintesi,storico,pron,valutazione,quote,schedine,orari,squadre};
+      D = {sintesi,storico,pron,valutazione,quote,schedine,orari,squadre,bonus};
       if (ctrl.signal.aborted) return;
     } catch(e){
       $('biglietti').innerHTML = '<p class="cs-err">Non riesco a leggere i dati: '+(e.message||e)+'. Le tabelle si leggono solo con una sessione attiva.</p>';
@@ -3349,14 +3370,27 @@
     }
     // Un evento per partita: quello piu' vicino al bersaglio del livello.
     // Poi le n partite il cui evento ci sta piu' vicino.
+    // Bonus multipla (tabella bonus_multipla): percentuale sulla quota totale per
+    // numero di eventi; vale solo se ogni evento ha almeno la quota minima.
+    const quotaStimata = g => 1/(g.p*(1+MARGINE[g.mercato]));
+    function regoleBonus(){ const r=(D.bonus||[]).filter(x=>x.bookmaker==='bet365'); return { righe:r.sort((a,b)=>a.n_eventi-b.n_eventi), qmin: r.length? Math.max(...r.map(x=>+x.quota_minima)) : 1.25 }; }
+    function bonusPer(n){ const r=regoleBonus().righe.filter(x=>x.n_eventi<=n); return r.length ? +r[r.length-1].percentuale : 0; }
+    function conBonus(s){
+      const b=bonusPer(s.gambe.length), qmin=regoleBonus().qmin;
+      const sotto = s.gambe.filter(g=>quotaStimata(g)<qmin+0.10);  // vicini alla soglia: da controllare sul sito
+      const costo = (1+b/100)*s.gambe.reduce((a,g)=>a/(1+MARGINE[g.mercato]),1)-1;
+      return {b, qmin, qBonus:s.qStimata*(1+b/100), sotto, costo};
+    }
     function componi(giornata, n, livello){
-      const t = LIVELLI[livello-1].target;
+      const t = LIVELLI[livello-1].target, qmin = regoleBonus().qmin;
       const scelte = D.pron.filter(p=>p.versione==='v2-prior' && p.giornata===giornata).map(p=>{
-        const c = candidati(p).map(x=>Object.assign(x,{d:Math.abs(x.p-t)}));
+        const c = candidati(p).filter(x=>quotaStimata(x)>=qmin).map(x=>Object.assign(x,{d:Math.abs(x.p-t)}));
+        if(!c.length) return null;
         c.sort((a,b)=>a.d-b.d || b.p-a.p); return c[0];
       });
-      scelte.sort((a,b)=>a.d-b.d || b.p-a.p);
-      const gambe = scelte.slice(0,n).sort((a,b)=>b.p-a.p);
+      const valide = scelte.filter(Boolean);
+      valide.sort((a,b)=>a.d-b.d || b.p-a.p);
+      const gambe = valide.slice(0,n).sort((a,b)=>b.p-a.p);
       if (gambe.length<n) return null;
       return { n, gambe, livello,
         p: gambe.reduce((a,g)=>a*g.p,1),
@@ -3366,8 +3400,8 @@
       const m=new Map();
       D.schedine.forEach(r=>{
         if(!m.has(r.id)) m.set(r.id,{id:r.id,giornata:r.giornata,nome:r.nome,rischio:r.rischio,p:+r.p_modello,
-          quota:r.quota==null?null:+r.quota,puntata:r.puntata==null?null:+r.puntata,giocata:!!r.giocata,giocataIl:r.giocata_il,gambe:[]});
-        m.get(r.id).gambe.push({casa:r.casa,trasferta:r.trasferta,mercato:r.mercato,scelta:r.scelta,p:+r.p_evento,preso:r.preso,gol:r.gol_casa==null?'':r.gol_casa+'–'+r.gol_trasferta});
+          quota:r.quota==null?null:+r.quota,puntata:r.puntata==null?null:+r.puntata,bonus:r.bonus_pct==null?0:+r.bonus_pct,giocata:!!r.giocata,giocataIl:r.giocata_il,gambe:[]});
+        m.get(r.id).gambe.push({casa:r.casa,trasferta:r.trasferta,mercato:r.mercato,scelta:r.scelta,p:+r.p_evento,q:r.quota_evento==null?null:+r.quota_evento,preso:r.preso,gol:r.gol_casa==null?'':r.gol_casa+'–'+r.gol_trasferta});
       });
       const arr=[...m.values()];
       arr.forEach(s=>{ s.gambe.sort((a,b)=>b.p-a.p);
@@ -3377,14 +3411,58 @@
     // La giornata e' cominciata? Da li' una schedina non giocata non si puo' piu' giocare.
     function iniziata(g){ const o=D.orari.find(x=>x.giornata===g); return !!o && Date.now()>=new Date(o.inizio).getTime(); }
     const firma = gambe => gambe.map(x=>x.casa+x.scelta).sort().join('|');
-    function righeGambe(gambe){
+    // modo 'salvata': accanto a ogni partita la casella per la quota Bet365.
+    function righeGambe(gambe, modo, idSch){
       return gambe.map(x=>{
         const cls = x.preso===true?'preso':(x.preso===false?'perso':'');
         const sg = x.preso===true?'✓':(x.preso===false?'✕':'');
+        let coda = '<span class="cs-p">'+pct(x.p)+'%</span>';
+        if(modo==='salvata'){
+          const v = (stato.bozze[idSch] && stato.bozze[idSch].q[x.casa]!=null) ? stato.bozze[idSch].q[x.casa] : (x.q!=null?fmt(x.q,2):'');
+          coda = '<input class="cs-qleg" inputmode="decimal" aria-label="Quota Bet365 di '+nome(x.casa)+'–'+nome(x.trasferta)+'" data-qleg="'+idSch+'" data-casa="'+x.casa+'" value="'+v+'" placeholder="'+fmt(quotaStimata(x),2)+'">';
+        } else if(modo==='giocata' && x.q){
+          coda = '<span class="cs-p">'+fmt(x.q,2)+'</span>';
+        }
+        const sotto = x.gol ? 'finita '+x.gol : x.mercato + (modo==='salvata' ? ' <span class="cs-noi" data-confronto="'+idSch+'-'+x.casa+'">noi '+pct(x.p)+'%</span>' : '');
         return '<li class="'+cls+'"><span class="cs-seg" aria-hidden="true">'+sg+'</span>'+
-          '<span class="cs-part">'+nome(x.casa)+'–'+nome(x.trasferta)+'<small>'+(x.gol?'finita '+x.gol:x.mercato)+'</small></span>'+
-          '<span class="cs-scelta">'+SCELTA[x.scelta]+'</span><span class="cs-p">'+pct(x.p)+'%</span></li>';
+          '<span class="cs-part">'+nome(x.casa)+'–'+nome(x.trasferta)+'<small>'+sotto+'</small></span>'+
+          '<span class="cs-scelta">'+SCELTA[x.scelta]+'</span>'+coda+'</li>';
       }).join('');
+    }
+    // Riepilogo della bozza mentre scrivi: quota dalla vincita, prodotto delle quote, bonus ricavato.
+    function calcolaBozza(s){
+      const b = stato.bozze[s.id] || {q:{}};
+      const quote = s.gambe.map(g=>{ const v = b.q[g.casa]!=null ? num(b.q[g.casa]) : g.q; return (v>1)?v:null; });
+      const tutte = quote.every(q=>q!=null);
+      const prodotto = tutte ? quote.reduce((a,q)=>a*q,1) : null;
+      const pt = num(b.puntata), vi = num(b.vincita);
+      const qEff = (pt>0 && vi>pt) ? vi/pt : null;
+      const bonus = (qEff && prodotto) ? (qEff/prodotto-1)*100 : null;
+      const qmin = regoleBonus().qmin;
+      const sottoMin = s.gambe.filter((g,i)=>quote[i]!=null && quote[i]<qmin);
+      return {quote, tutte, prodotto, pt, vi, qEff, bonus, sottoMin, atteso: bonusPer(s.gambe.length)};
+    }
+    function testoRiepilogo(s){
+      const c = calcolaBozza(s), r=[];
+      if(c.prodotto) r.push('Prodotto delle quote <b>'+fmt(c.prodotto,2)+'</b>');
+      if(c.qEff){
+        r.push('quota della schedina <b>'+fmt(c.qEff,2)+'</b> ('+fmt(c.vi,2)+' € / '+fmt(c.pt,2)+' €)');
+        if(c.bonus!=null){
+          if(c.bonus>0.5) r.push('bonus applicato <b>≈ '+fmt(c.bonus,1)+'%</b>');
+          else if(c.atteso) r.push('<span class="cs-avv-in">Bet365 non ha applicato il bonus del '+fmt(c.atteso,c.atteso%1?1:0)+'%</span>');
+        }
+      } else if(c.prodotto && c.pt>0){
+        r.push('con '+euro(c.pt)+' la vincita dovrebbe essere circa <b>'+euro(c.pt*c.prodotto*(1+(c.sottoMin.length?0:c.atteso)/100))+'</b>');
+      }
+      if(c.sottoMin.length) r.push('<span class="cs-avv-in">'+c.sottoMin.map(g=>nome(g.casa)).join(', ')+' sotto quota '+fmt(regoleBonus().qmin,2)+': niente bonus</span>');
+      if(!r.length) return 'Scrivi le quote accanto alle partite, poi puntata e vincita potenziale come le vedi su Bet365.';
+      return r.join(', ')+'.';
+    }
+    function aggiornaBozza(id){
+      const s = schedineSalvate().find(x=>x.id===id); if(!s) return;
+      const box = el.querySelector('[data-riep="'+id+'"]'); if(box) box.innerHTML = testoRiepilogo(s);
+      const c = calcolaBozza(s);
+      s.gambe.forEach((g,i)=>{ const t=el.querySelector('[data-confronto="'+id+'-'+g.casa+'"]'); if(t) t.textContent = c.quote[i] ? 'Bet365 '+pct(1/c.quote[i])+'%, noi '+pct(g.p)+'%' : 'noi '+pct(g.p)+'%'; });
     }
     const suN = p => fmt(Math.max(1,Math.round(1/p)),0);
     const pips = p => Array.from({length:10},(_,i)=>'<i class="'+(i<Math.round(p*10)?'on':'')+'"></i>').join('');
@@ -3412,7 +3490,11 @@
       if(modo==='proposta'){
         intesta='Proposta'; cls='attesa';
         const gia = schedineSalvate().some(x=>x.giornata===s.giornata && firma(x.gambe)===firma(s.gambe));
-        sotto='<p class="cs-stima">Quota stimata <b>≈ '+fmt(s.qStimata,s.qStimata<10?2:1)+'</b> con il margine medio di Bet365.</p>'+
+        const bo = conBonus(s);
+        sotto='<p class="cs-stima">Quota stimata <b>≈ '+fmt(s.qStimata,s.qStimata<10?2:1)+'</b>'+
+            (bo.b ? ', con il bonus multipla <b>+'+fmt(bo.b,bo.b%1?1:0)+'%</b> diventa <b>≈ '+fmt(bo.qBonus,bo.qBonus<10?2:1)+'</b>.' : '. Con '+s.gambe.length+' eventi il bonus multipla non c\'è.')+'</p>'+
+            '<p class="cs-costo">Costo atteso '+(bo.b?'con il bonus':'')+': circa <b>'+fmt(bo.costo*100,0)+'%</b> di quello che punti, se le quote di Bet365 sono giuste.</p>'+
+            (bo.b && bo.sotto.length ? '<p class="cs-avv-bonus">Controlla che su Bet365 '+bo.sotto.map(g=>nome(g.casa)+'–'+nome(g.trasferta)).join(' e ')+' abbia'+(bo.sotto.length>1?'no':'')+' quota almeno '+fmt(bo.qmin,2)+': sotto, il bonus salta.</p>' : '')+
           (gia ? '<p class="cs-giocata">Già salvata: la trovi sotto, in <b>Salvate</b>.</p>'
                : '<button type="button" class="cs-btn" data-salva="'+s.n+'">Salva schedina</button>')+
           '<p class="cs-equa">Quota equa secondo il modello: '+fmt(1/s.p,2)+'. Sotto questa, anche per il modello ci perdi.</p>';
@@ -3422,22 +3504,24 @@
         sotto = scaduta
           ? '<p class="cs-giocata">La giornata è cominciata e questa schedina non è stata segnata come giocata. Non conta nel registro.</p>'+
             '<div class="cs-azioni"><button type="button" class="cs-btn cs-btn-ghost" data-elimina="'+s.id+'">Elimina</button></div>'
-          : '<div class="cs-gioca"><label>Quota<input inputmode="decimal" data-quota="'+s.id+'" placeholder="es. '+fmt(s.gambe.reduce((a,g)=>a/(g.p*(1+MARGINE[g.mercato])),1),2)+'"></label>'+
-            '<label>Puntata €<input inputmode="decimal" data-puntata="'+s.id+'" placeholder="es. 2"></label>'+
+          : '<div class="cs-gioca"><label>Puntata €<input inputmode="decimal" data-puntata="'+s.id+'" value="'+((stato.bozze[s.id]||{}).puntata||'')+'" placeholder="es. 2"></label>'+
+            '<label>Vincita potenziale €<input inputmode="decimal" data-vincita="'+s.id+'" value="'+((stato.bozze[s.id]||{}).vincita||'')+'" placeholder="come su Bet365"></label>'+
             '<button type="button" data-gioca="'+s.id+'">Segna giocata</button></div>'+
+            '<p class="cs-riep" data-riep="'+s.id+'">'+testoRiepilogo(s)+'</p>'+
             '<div class="cs-azioni"><button type="button" class="cs-btn cs-btn-ghost" data-elimina="'+s.id+'">Elimina</button>'+
             '<span>Si può cancellare finché non la segni giocata.</span></div>';
       } else {
         intesta = {vinta:'Vinta',persa:'Persa',attesa:(s.gambe.some(x=>x.preso!=null)?'In corso':'Giocata')}[s.esito]; cls = s.esito;
-        sotto = '<p class="cs-giocata">'+euro(s.puntata)+' a quota <b>'+fmt(s.quota,2)+'</b>. '+
-          (s.esito==='vinta'?'Incasso <b>'+euro(s.puntata*s.quota)+'</b>.':s.esito==='persa'?'Persi <b>'+euro(s.puntata)+'</b>.':'Se esce: <b>'+euro(s.puntata*s.quota)+'</b>.')+'</p>'+
+        const inc = s.puntata*s.quota;
+        sotto = '<p class="cs-giocata">'+euro(s.puntata)+' giocati, quota <b>'+fmt(s.quota,2)+'</b>'+(s.bonus!=null&&s.bonus>0.5?' (bonus compreso, <b>'+fmt(s.bonus,1)+'%</b>)':'')+'. '+
+          (s.esito==='vinta'?'Incasso <b>'+euro(inc)+'</b>.':s.esito==='persa'?'Persi <b>'+euro(s.puntata)+'</b>.':'Se esce: <b>'+euro(inc)+'</b>.')+'</p>'+
           '<p class="cs-equa cs-bloccata">Giocata'+(s.giocataIl?' il '+dataIt(s.giocataIl):'')+', rischio '+(s.rischio?LIVELLI[s.rischio-1].nome.toLowerCase():'—')+'. Non si può più cancellare né modificare.</p>';
       }
       const titolo = modo==='proposta' ? nomeSch(s.n) : s.nome;
       return '<article class="cs-bg'+(modo==='salvata'?' cs-bozza':'')+'"><div class="cs-bg-corpo">'+
         '<div class="cs-bg-testa"><strong>'+titolo+' <span style="font-weight:400;font-size:.9rem">'+s.gambe.length+' eventi</span></strong>'+
         '<span class="cs-stato '+cls+'">'+intesta+'</span></div>'+
-        '<ul class="cs-gambe">'+righeGambe(s.gambe)+'</ul></div>'+
+        '<ul class="cs-gambe">'+righeGambe(s.gambe, modo, s.id)+'</ul></div>'+
         '<div class="cs-bg-piede"><div class="cs-prob"><b>'+fmt(s.p*100,s.p<0.01?2:1)+'%</b><span>che esca tutto, circa 1 volta su '+suN(s.p)+'</span></div>'+
         '<div class="cs-pips" aria-hidden="true">'+pips(s.p)+'</div>'+sotto+'</div></article>';
     }
@@ -3458,7 +3542,7 @@
       const tutte = schedineSalvate();
       const salvate = tutte.filter(s=>!s.giocata), giocate = tutte.filter(s=>s.giocata);
       $('salvate').innerHTML = salvate.length
-        ? '<h3>Salvate, da giocare</h3><p class="cs-nota" style="margin:0 0 .75rem!important">Quando l\'hai giocata su Bet365 scrivi quota e puntata e premi Segna giocata. Fino ad allora puoi eliminarla.</p><div class="cs-biglietti">'+salvate.map(s=>biglietto(s,'salvata')).join('')+'</div>' : '';
+        ? '<h3>Salvate, da giocare</h3><p class="cs-nota" style="margin:0 0 .75rem!important">Quando la giochi su Bet365 scrivi la quota accanto a ogni partita, poi la puntata e la vincita potenziale: la quota della schedina e il bonus li calcolo io. Finché non premi Segna giocata puoi eliminarla.</p><div class="cs-biglietti">'+salvate.map(s=>biglietto(s,'salvata')).join('')+'</div>' : '';
       $('giocate').innerHTML = giocate.length
         ? '<h3>Giocate</h3><div class="cs-biglietti">'+giocate.map(s=>biglietto(s,'giocata')).join('')+'</div>' : '';
       if(giocate.length){
@@ -3470,7 +3554,13 @@
           '<div><b>'+euro(puntato)+'</b>puntati</div><div><b>'+euro(incasso)+'</b>incassati</div>'+
           '<div><b style="color:'+(chiuse.length?(saldo>=0?'var(--cs-ok)':'var(--cs-ko)'):'var(--cs-ink)')+'">'+(chiuse.length?(saldo>=0?'+':'')+euro(saldo):'—')+'</b>saldo sulle chiuse</div></div>';
       } else $('registro').innerHTML='';
-      $('avviso').textContent = 'Il rischio cambia quanto spesso vinci e quanto incassi, non quanto perdi in media: il margine di Bet365, circa 5–6% a evento, si moltiplica per ogni evento (tripla circa −15%, cinquina circa −25%), e sulle quote alte di solito è anche più alto. Il modello non batte il mercato (vedi "Il modello regge?"). È gioco, non investimento.';
+      const rb = regoleBonus();
+      $('avviso').textContent = 'Il rischio cambia quanto spesso vinci e quanto incassi, non quanto perdi in media. Il margine di Bet365, circa 5–6% a evento, si moltiplica per ogni evento; il bonus multipla ne restituisce una parte ma non tutto (tripla circa −11%, cinquina circa −16%), e sulle quote alte il margine di solito è più alto. Il modello non batte il mercato (vedi "Il modello regge?"). È gioco, non investimento.';
+      $('bonus-regole').innerHTML = '<details class="cs-regole"><summary>Regole del bonus multipla Bet365</summary>'+
+        '<p>Percentuale aggiunta alla quota totale se la multipla vince. Vale con almeno 3 eventi, uno per partita, ognuno con quota almeno '+fmt(rb.qmin,2)+'; niente Bet Builder e niente cash out. Le condizioni cambiano: se sul sito vedi numeri diversi, correggili qui.</p>'+
+        '<div class="cs-regole-griglia">'+rb.righe.map(r=>'<label>'+r.n_eventi+(r.n_eventi===14?'+':'')+' eventi<input inputmode="decimal" data-bn="'+r.n_eventi+'" value="'+fmt(+r.percentuale,+r.percentuale%1?1:0)+'"><span>%</span></label>').join('')+
+        '<label>Quota minima<input inputmode="decimal" data-bqmin value="'+fmt(rb.qmin,2)+'"></label></div>'+
+        '<button type="button" class="cs-btn" data-bsalva>Salva regole</button></details>';
     }
 
     async function salvaBozza(b){
@@ -3486,14 +3576,34 @@
       disegnaSchedine();
     }
     async function segnaGiocata(b){
-      const id=+b.dataset.gioca, num=v=>parseFloat(String(v).replace(',','.'));
-      const q=num(el.querySelector('[data-quota="'+id+'"]').value), pt=num(el.querySelector('[data-puntata="'+id+'"]').value);
-      if(!(q>1)||!(pt>0)){ b.textContent='Quota e puntata?'; return; }
-      if(!confirm('Segno la schedina come giocata: '+euro(pt)+' a quota '+fmt(q,2)+'.\nDa questo momento non si potrà più cancellare né modificare.')) return;
+      const id=+b.dataset.gioca, s=schedineSalvate().find(x=>x.id===id); if(!s) return;
+      const c=calcolaBozza(s);
+      if(!(c.pt>0) || !(c.vi>c.pt)){ b.textContent='Puntata e vincita?'; return; }
+      if(c.quote.some((q,i)=>{ const v=(stato.bozze[id]||{q:{}}).q[s.gambe[i].casa]; return v!=null && v!=='' && !(num(v)>1); })){ b.textContent='Controlla le quote'; return; }
+      const msg='Segno la schedina come giocata: '+euro(c.pt)+' per vincerne '+euro(c.vi)+' (quota '+fmt(c.qEff,2)+(c.bonus!=null&&c.bonus>0.5?', bonus '+fmt(c.bonus,1)+'%':'')+').\nDa questo momento non si potrà più cancellare né modificare.';
+      if(!confirm(msg)) return;
       b.disabled=true; b.textContent='Salvo…';
-      const r=await sb.from('schedine').update({quota:q,puntata:pt,giocata:true}).eq('id',id).eq('giocata',false);
+      for(let i=0;i<s.gambe.length;i++){
+        if(c.quote[i]==null || c.quote[i]===s.gambe[i].q) continue;
+        const x=await sb.from('schedine_eventi').update({quota:+c.quote[i].toFixed(3)}).eq('schedina_id',id).eq('casa',s.gambe[i].casa);
+        if(x.error){ b.disabled=false; b.textContent='Errore, riprova'; alert('Non ho salvato la quota di '+nome(s.gambe[i].casa)+': '+x.error.message); return; }
+      }
+      const r=await sb.from('schedine').update({quota:+c.qEff.toFixed(4),puntata:c.pt,bonus_pct:c.bonus==null?null:+c.bonus.toFixed(1),giocata:true}).eq('id',id).eq('giocata',false);
       if(r.error){ b.disabled=false; b.textContent='Errore, riprova'; alert('Non sono riuscito a salvarla: '+r.error.message); return; }
+      delete stato.bozze[id];
       D.schedine = await leggi('schedine_stato');
+      disegnaSchedine();
+    }
+    async function salvaRegole(b){
+      const qmin=num(el.querySelector('[data-bqmin]').value);
+      const righe=[...el.querySelectorAll('[data-bn]')].map(i=>({n:+i.dataset.bn,pc:num(i.value)}));
+      if(!(qmin>=1) || righe.some(r=>!(r.pc>=0))){ b.textContent='Controlla i numeri'; return; }
+      b.disabled=true; b.textContent='Salvo…';
+      for(const r of righe){
+        const x=await sb.from('bonus_multipla').update({percentuale:r.pc,quota_minima:qmin,fonte:'corretto dalla scheda Schedine',aggiornato_il:new Date().toISOString()}).eq('bookmaker','bet365').eq('n_eventi',r.n);
+        if(x.error){ b.disabled=false; b.textContent='Errore, riprova'; return; }
+      }
+      D.bonus = await leggi('bonus_multipla','*',true);
       disegnaSchedine();
     }
     async function elimina(b){
@@ -3626,6 +3736,7 @@
       if(b.dataset.tab){ stato.tab=b.dataset.tab; return disegna(); }
       if(b.dataset.salva) return salvaBozza(b);
       if(b.dataset.gioca) return segnaGiocata(b);
+      if(b.dataset.bsalva!==undefined) return salvaRegole(b);
       if(b.dataset.elimina) return elimina(b);
       if(b.dataset.r || b.dataset.livello){
         stato.rischio = b.dataset.livello ? +b.dataset.livello : Math.min(5,Math.max(1,stato.rischio+(+b.dataset.r)));
@@ -3638,6 +3749,22 @@
       else if(grp==='giornate') stato.giornata=+b.dataset.g;
       else return;
       disegna();
+    }, {signal: ctrl.signal});
+    el.addEventListener('input', ev=>{
+      const t=ev.target, id=+(t.dataset.qleg||t.dataset.puntata||t.dataset.vincita); if(!id) return;
+      const bz = stato.bozze[id] || (stato.bozze[id]={q:{}});
+      if(t.dataset.qleg) bz.q[t.dataset.casa]=t.value;
+      if(t.dataset.puntata) bz.puntata=t.value;
+      if(t.dataset.vincita) bz.vincita=t.value;
+      aggiornaBozza(id);
+    }, {signal: ctrl.signal});
+    // La quota di un evento si salva appena lasci la casella: resta anche se chiudi la pagina.
+    el.addEventListener('change', async ev=>{
+      const t=ev.target; if(!t.dataset.qleg) return;
+      const v=num(t.value); if(!(v>1)) return;
+      const r=await sb.from('schedine_eventi').update({quota:+v.toFixed(3)}).eq('schedina_id',+t.dataset.qleg).eq('casa',t.dataset.casa);
+      t.classList.toggle('cs-salvato', !r.error);
+      if(!r.error){ const row=D.schedine.find(x=>x.id===+t.dataset.qleg && x.casa===t.dataset.casa); if(row) row.quota_evento=v; }
     }, {signal: ctrl.signal});
     disegna();
   };
