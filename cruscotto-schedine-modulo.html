@@ -1,0 +1,425 @@
+<!-- ===== Cruscotto schedine: inizio modulo ===== -->
+<style>
+.cs{--ink:#1e2a36;--muted:#5b6870;--rule:#d5dcd8;--band:#e8ece9;--paper:#fff;--ok:#2f7a4f;--ko:#b04632;--noise:#8a958f;
+  color:var(--ink);max-width:920px;font-variant-numeric:tabular-nums;line-height:1.45}
+.cs *{box-sizing:border-box}
+.cs h3{font-size:1rem;font-weight:600;margin:0 0 .5rem}
+.cs p{margin:0}
+.cs button{font:inherit;cursor:pointer}
+.cs button:focus-visible,.cs input:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+
+/* testata e schede */
+.cs-testa{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.5rem 1rem;margin:0 0 1rem}
+.cs-testa h2{font-size:1.35rem;margin:0}
+.cs-testa p{color:var(--muted);font-size:.9rem}
+.cs-schede{display:flex;gap:.25rem;border-bottom:1px solid var(--rule);margin:0 0 1.5rem;overflow-x:auto}
+.cs-schede button{border:0;background:none;padding:.6rem .9rem;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.cs-schede button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--ink)}
+.cs-pannello[hidden]{display:none}
+
+/* schedine come biglietti */
+.cs-biglietti{display:grid;align-items:start;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.25rem;margin:0 0 1rem}
+.cs-bg{display:flex;flex-direction:column}
+.cs-bg-corpo,.cs-bg-piede{background:var(--paper);border:1.5px solid var(--ink)}
+.cs-bg-corpo{border-bottom:0;border-radius:10px 10px 0 0;padding-bottom:.4rem;
+  -webkit-mask:radial-gradient(circle 10px at 0 100%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 10px at 100% 100%,#0000 97%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 10px at 0 100%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 10px at 100% 100%,#0000 97%,#000) right/51% 100% no-repeat}
+.cs-bg-piede{border-top:1.5px dashed var(--ink);border-radius:0 0 10px 10px;
+  -webkit-mask:radial-gradient(circle 10px at 0 0,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 10px at 100% 0,#0000 97%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 10px at 0 0,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 10px at 100% 0,#0000 97%,#000) right/51% 100% no-repeat}
+.cs-bg-corpo,.cs-bg-piede{position:relative}
+.cs-bg-corpo::before,.cs-bg-corpo::after,.cs-bg-piede::before,.cs-bg-piede::after{content:"";position:absolute;width:23px;height:23px;border:1.5px solid var(--ink);border-radius:50%;box-sizing:border-box}
+.cs-bg-corpo::before{left:-11.5px;bottom:-11.5px}.cs-bg-corpo::after{right:-11.5px;bottom:-11.5px}
+.cs-bg-piede::before{left:-11.5px;top:-11.5px}.cs-bg-piede::after{right:-11.5px;top:-11.5px}
+.cs-bg-testa{display:flex;justify-content:space-between;align-items:baseline;padding:.9rem 1.1rem .6rem}
+.cs-bg-testa strong{font-size:1.15rem}
+.cs-stato{font-size:.8rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;border:1px solid currentColor}
+.cs-stato.vinta{color:var(--ok)} .cs-stato.persa{color:var(--ko)} .cs-stato.attesa{color:var(--muted)}
+.cs-gambe{list-style:none;margin:0;padding:0 1.1rem}
+.cs-gambe li{display:grid;grid-template-columns:1.4rem 1fr auto 3rem;gap:.5rem;align-items:center;padding:.5rem 0;border-top:1px solid var(--rule)}
+.cs-gambe .cs-seg{width:1.1rem;height:1.1rem;border-radius:50%;border:1.5px solid var(--rule);display:grid;place-items:center;font-size:.7rem;font-weight:700;color:#fff}
+.cs-gambe .preso .cs-seg{background:var(--ok);border-color:var(--ok)}
+.cs-gambe .perso .cs-seg{background:var(--ko);border-color:var(--ko)}
+.cs-gambe .perso .cs-part{text-decoration:line-through;color:var(--muted)}
+.cs-part small{display:block;color:var(--muted);font-size:.78rem}
+.cs-scelta{font-weight:700;border:1px solid var(--ink);border-radius:5px;padding:.05rem .45rem;font-size:.85rem}
+.cs-gambe .cs-p{text-align:right;color:var(--muted);font-size:.85rem}
+.cs-bg-piede{padding:1rem 1.1rem 1rem}
+.cs-prob{display:flex;align-items:baseline;gap:.6rem}
+.cs-prob b{font-size:2.1rem;line-height:1}
+.cs-prob span{color:var(--muted);font-size:.85rem}
+.cs-pips{display:flex;gap:3px;margin:.6rem 0 .75rem}
+.cs-pips i{flex:1;height:6px;border-radius:2px;background:var(--band)}
+.cs-pips i.on{background:var(--ink)}
+.cs-gioca{display:grid;grid-template-columns:1fr 1fr auto;gap:.5rem;align-items:end}
+.cs-gioca label{font-size:.78rem;color:var(--muted);display:grid;gap:.2rem}
+.cs-gioca input{font:inherit;width:100%;padding:.4rem .5rem;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink)}
+.cs-gioca button{padding:.45rem .8rem;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:#fff}
+.cs-giocata{font-size:.9rem}
+.cs-giocata b{font-size:1rem}
+.cs-equa{font-size:.8rem;color:var(--muted);margin-top:.5rem}
+.cs-registro{display:flex;flex-wrap:wrap;gap:1.5rem;padding:.9rem 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:1.5rem 0 1rem}
+.cs-registro div{font-size:.8rem;color:var(--muted)}
+.cs-registro b{display:block;font-size:1.2rem;color:var(--ink)}
+.cs-avviso{font-size:.85rem;color:var(--muted);max-width:70ch}
+
+/* verdetto */
+.cs-verdetto{font-size:clamp(1.3rem,3vw,1.8rem);font-weight:700;line-height:1.2;margin:0 0 .5rem;max-width:34ch}
+.cs-sotto{color:var(--muted);max-width:70ch;margin:0 0 1.25rem!important}
+.cs-ctrl{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;margin:0 0 1.25rem}
+.cs-seggr{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.cs-seggr button{font-size:.9rem;padding:.4rem .8rem;border:0;background:transparent;color:var(--ink)}
+.cs-seggr button+button{border-left:1px solid var(--rule)}
+.cs-seggr button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.cs-riga{display:grid;grid-template-columns:minmax(9rem,12rem) 1fr;gap:.25rem 1rem;align-items:center;padding:.55rem 0;border-top:1px solid var(--rule)}
+.cs-riga:last-child{border-bottom:1px solid var(--rule)}
+.cs-nome{font-weight:600}
+.cs-nome small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.cs-num{grid-column:2;font-size:.82rem;color:var(--muted)}
+.cs svg{display:block;width:100%;height:auto;overflow:visible}
+.cs-assi{display:flex;justify-content:space-between;font-size:.8rem;margin:.3rem 0 .75rem;padding-left:calc(min(12rem,40%) + 1rem)}
+.cs-assi span:first-child{color:var(--ok)} .cs-assi span:last-child{color:var(--ko)}
+.cs-blocco{margin:0 0 2rem}
+.cs-nota{font-size:.85rem;color:var(--muted);max-width:70ch;margin:.5rem 0 0!important}
+.cs-barra{height:6px;background:var(--band);border-radius:3px;overflow:hidden;margin:.4rem 0 .3rem;max-width:420px}
+.cs-barra i{display:block;height:100%;background:var(--ink)}
+.cs-regola{border-left:3px solid var(--ink);padding:.2rem 0 .2rem .9rem;max-width:70ch;font-size:.9rem}
+
+/* partite */
+.cs-giornate{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 .75rem}
+.cs-giornate button{font-size:.85rem;min-width:2.6rem;padding:.3rem .5rem;border:1px solid var(--rule);border-radius:6px;background:transparent;color:var(--ink)}
+.cs-giornate button[aria-pressed="true"]{border-color:var(--ink);font-weight:700}
+.cs-giornate button.cs-retro{border-style:dashed}
+.cs-tab{overflow-x:auto}
+.cs table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:660px}
+.cs th{font-weight:600;text-align:right;white-space:nowrap;color:var(--muted);padding:.35rem .5rem;border-bottom:1px solid var(--ink)}
+.cs th:first-child,.cs td:first-child{text-align:left}
+.cs td{text-align:right;padding:.45rem .5rem;border-bottom:1px solid var(--rule);white-space:nowrap}
+.cs td.cs-ok{font-weight:700}
+.cs .cs-pos{color:var(--ko)} .cs .cs-neg{color:var(--ok)}
+.cs th.cs-gruppo{text-align:center;border-bottom:1px solid var(--rule)}
+.cs-err{color:var(--ko)}
+@media (max-width:560px){.cs-riga{grid-template-columns:1fr}.cs-num{grid-column:1}.cs-assi{padding-left:0}.cs-gioca{grid-template-columns:1fr 1fr}.cs-gioca button{grid-column:1/-1}}
+@media (prefers-reduced-motion:no-preference){.cs-gambe li{transition:background .2s}}
+</style>
+
+<section class="cs" id="cruscotto-schedine" aria-live="polite">
+  <div class="cs-testa">
+    <h2>Schedine</h2>
+    <p data-cs="scadenza"></p>
+  </div>
+  <div class="cs-schede" role="tablist" aria-label="Sezioni">
+    <button type="button" role="tab" aria-selected="true" data-tab="gioca">Da giocare</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="regge">Il modello regge?</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="partite">Partite</button>
+  </div>
+
+  <div class="cs-pannello" data-pannello="gioca" role="tabpanel">
+    <div class="cs-biglietti" data-cs="biglietti"><p>Carico le schedine…</p></div>
+    <div data-cs="registro"></div>
+    <p class="cs-avviso" data-cs="avviso"></p>
+  </div>
+
+  <div class="cs-pannello" data-pannello="regge" role="tabpanel" hidden>
+    <p class="cs-verdetto" data-cs="verdetto"></p>
+    <p class="cs-sotto" data-cs="sotto"></p>
+    <div class="cs-ctrl">
+      <div class="cs-seggr" role="group" aria-label="Mercato" data-cs="mercato">
+        <button type="button" data-v="1X2" aria-pressed="true">1X2</button>
+        <button type="button" data-v="O/U 2,5" aria-pressed="false">Over/under 2,5</button>
+      </div>
+      <div class="cs-seggr" role="group" aria-label="Versione del modello" data-cs="versione">
+        <button type="button" data-v="v2-prior" aria-pressed="true">Con lo storico</button>
+        <button type="button" data-v="v1-forza3g" aria-pressed="false">Solo questa stagione</button>
+      </div>
+    </div>
+    <div class="cs-blocco">
+      <div data-cs="righello"></div>
+      <div class="cs-assi"><span>← sbaglia meno il modello</span><span>sbaglia meno il mercato →</span></div>
+      <p class="cs-nota">Ogni barra è lo scarto medio di log-loss tra modello e mercato, con l'intervallo a ±2 errori standard. Se la barra tocca lo zero, la differenza può essere caso.</p>
+    </div>
+    <div class="cs-blocco">
+      <h3>Quanto serve aspettare</h3>
+      <div data-cs="progresso"></div>
+      <div data-cs="curva"></div>
+      <p class="cs-nota" data-cs="curva-nota"></p>
+    </div>
+    <div class="cs-regola">
+      <p style="margin:0 0 .4rem"><strong>Regola fissata il 10 settembre 2026, prima della 4ª giornata.</strong></p>
+      <p>Contano solo le previsioni salvate prima del calcio d'inizio. Il vantaggio esiste solo se la barra "dal vivo" sta tutta a sinistra dello zero. Se non ci arriva entro le partite indicate, la risposta è no.</p>
+    </div>
+  </div>
+
+  <div class="cs-pannello" data-pannello="partite" role="tabpanel" hidden>
+    <div class="cs-giornate" role="group" aria-label="Giornata" data-cs="giornate"></div>
+    <div class="cs-tab" data-cs="tabella"></div>
+    <p class="cs-nota" data-cs="tab-nota"></p>
+  </div>
+</section>
+
+<script>
+(function(){
+  const K_VANTAGGIO = 0.01;
+  const fmt = (x,d) => (x==null||isNaN(x)) ? '—' : Number(x).toLocaleString('it-IT',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const pct = x => (x==null||isNaN(x)) ? '—' : Math.round(x*100);
+  const segno = (x,d) => (x>0?'+':'') + fmt(x,d);
+  const euro = x => fmt(x,2)+' €';
+  const llEsito = (a,b,c,e) => -Math.log(Math.max(e==='1'?a:(e==='X'?b:c),1e-6));
+  const llOU = (p,o) => -Math.log(Math.max(o?p:1-p,1e-6));
+  function statistiche(d){
+    const n=d.length; if(!n) return {n:0};
+    const m=d.reduce((s,x)=>s+x,0)/n, v=n>1?d.reduce((s,x)=>s+(x-m)**2,0)/(n-1):0;
+    return {n, media:m, sd:Math.sqrt(v), se:n>1?Math.sqrt(v/n):Infinity};
+  }
+  function scarto(r,mk){
+    if(mk==='1X2') return r.m1==null ? null : llEsito(r.p1,r.px,r.p2,r.esito)-llEsito(r.m1,r.mx,r.m2,r.esito);
+    return (r.mo==null||r.po==null) ? null : llOU(r.po,r.over)-llOU(r.mo,r.over);
+  }
+  function rendimento(righe,mk){
+    const b=[];
+    righe.forEach(r=>{
+      const c = mk==='1X2' ? [['1',r.p1,r.q1],['X',r.px,r.qx],['2',r.p2,r.q2]]
+                           : [['O',r.po,r.qo],['U',1-r.po,r.qu]];
+      c.forEach(([k,p,q])=>{
+        if(!q||p==null||p*q-1<=0.05) return;
+        const vinto = mk==='1X2' ? r.esito===k : (k==='O')===!!r.over;
+        b.push(vinto ? q-1 : -1);
+      });
+    });
+    const s=statistiche(b); return s.n ? {n:s.n, roi:s.media, se:s.se} : null;
+  }
+  function giudizio(s){
+    if(!s||!s.n) return {cls:'vuoto',txt:'nessuna partita ancora'};
+    const lo=s.media-2*s.se, hi=s.media+2*s.se;
+    if(s.n<20) return {cls:'rumore',txt:'troppo poche partite'};
+    if(lo>0) return {cls:'mercato',txt:'il mercato sbaglia meno, non è un caso'};
+    if(hi<0) return {cls:'modello',txt:'il modello sbaglia meno del mercato'};
+    return {cls:'rumore',txt:'non si distingue dal caso'};
+  }
+  const SCELTA = {'1':'1','X':'X','2':'2','Over':'Over 2,5','Under':'Under 2,5','GG':'Gol','NG':'No gol'};
+
+  window.montaCruscottoSchedine = async function(el, sb){
+    const $ = k => el.querySelector('[data-cs="'+k+'"]');
+    const stato = {tab:'gioca', mercato:'1X2', versione:'v2-prior', giornata:null};
+    const leggi = async (t,cols,opz) => { const r = await sb.from(t).select(cols||'*'); if(r.error){ if(opz) return []; throw r.error; } return r.data||[]; };
+    let D;
+    try {
+      const [sintesi,storico,pron,valutazione,quote,schedine,orari,squadre] = await Promise.all([
+        leggi('storico_schedine_sintesi'), leggi('storico_schedine'), leggi('pron_partite'), leggi('valutazione_schedine'),
+        leggi('quote_partite','giornata,casa,trasferta,gol_casa,gol_trasf'), leggi('schedine_stato'),
+        leggi('serie_a_orari','giornata,inizio',true), leggi('serie_a_squadre','codice,nome',true)
+      ]);
+      D = {sintesi,storico,pron,valutazione,quote,schedine,orari,squadre};
+    } catch(e){
+      $('biglietti').innerHTML = '<p class="cs-err">Non riesco a leggere i dati: '+(e.message||e)+'. Le tabelle si leggono solo con una sessione attiva.</p>';
+      return;
+    }
+    const NOME = {}; D.squadre.forEach(s=>NOME[s.codice]=s.nome);
+    const nome = c => NOME[c]||c;
+
+    /* ---------- schedine ---------- */
+    function schedineRaggruppate(){
+      const m=new Map();
+      D.schedine.forEach(r=>{
+        if(!m.has(r.id)) m.set(r.id,{id:r.id,giornata:r.giornata,nome:r.nome,criterio:r.criterio,p:+r.p_modello,quota:r.quota==null?null:+r.quota,
+          puntata:r.puntata==null?null:+r.puntata,giocata:r.giocata,gambe:[]});
+        m.get(r.id).gambe.push({casa:r.casa,trasferta:r.trasferta,mercato:r.mercato,scelta:r.scelta,p:+r.p_evento,
+          preso:r.preso, gol:r.gol_casa==null?'':r.gol_casa+'–'+r.gol_trasferta});
+      });
+      const arr=[...m.values()];
+      arr.forEach(s=>{
+        s.gambe.sort((a,b)=>b.p-a.p);
+        s.esito = s.gambe.some(g=>g.preso===false) ? 'persa' : (s.gambe.every(g=>g.preso===true) ? 'vinta' : 'attesa');
+      });
+      return arr;
+    }
+    function disegnaSchedine(){
+      const tutte = schedineRaggruppate();
+      if(!tutte.length){ $('biglietti').innerHTML='<p>Nessuna schedina salvata. Chiedi le schedine della prossima giornata.</p>'; return; }
+      const g = Math.max(...tutte.map(s=>s.giornata));
+      const correnti = tutte.filter(s=>s.giornata===g).sort((a,b)=>a.gambe.length-b.gambe.length);
+      const inizio = D.orari.find(o=>o.giornata===g);
+      if(inizio){
+        const t = new Date(inizio.inizio);
+        const quando = t.toLocaleString('it-IT',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'});
+        $('scadenza').textContent = g+'ª giornata. Da giocare entro '+quando.replace(' alle ore ',' alle ')+', quando comincia la prima partita.';
+      } else $('scadenza').textContent = g+'ª giornata';
+      $('biglietti').innerHTML = correnti.map(s=>{
+        const n=s.gambe.length, su = Math.max(1,Math.round(1/s.p));
+        const pips = Array.from({length:10},(_,i)=>'<i class="'+(i<Math.round(s.p*10)?'on':'')+'"></i>').join('');
+        const etichetta = {vinta:'Vinta',persa:'Persa',attesa:(s.gambe.some(x=>x.preso!=null)?'In corso':'Da giocare')}[s.esito];
+        const gambe = s.gambe.map(x=>{
+          const cls = x.preso===true?'preso':(x.preso===false?'perso':'');
+          const segno = x.preso===true?'✓':(x.preso===false?'✕':'');
+          return '<li class="'+cls+'"><span class="cs-seg" aria-hidden="true">'+segno+'</span>'+
+            '<span class="cs-part">'+nome(x.casa)+'–'+nome(x.trasferta)+'<small>'+(x.gol?'finita '+x.gol:x.mercato)+'</small></span>'+
+            '<span class="cs-scelta">'+SCELTA[x.scelta]+'</span><span class="cs-p">'+pct(x.p)+'%</span></li>';
+        }).join('');
+        const giocata = s.giocata && s.quota && s.puntata
+          ? '<p class="cs-giocata">Giocata: <b>'+euro(s.puntata)+'</b> a quota <b>'+fmt(s.quota,2)+'</b>. '+
+              (s.esito==='vinta'?'Incasso <b>'+euro(s.puntata*s.quota)+'</b>.':s.esito==='persa'?'Persi <b>'+euro(s.puntata)+'</b>.':'Se esce: <b>'+euro(s.puntata*s.quota)+'</b>.')+'</p>'
+          : '<div class="cs-gioca"><label>Quota<input inputmode="decimal" data-quota="'+s.id+'" placeholder="es. 3,40"></label>'+
+            '<label>Puntata €<input inputmode="decimal" data-puntata="'+s.id+'" placeholder="es. 2"></label>'+
+            '<button type="button" data-salva="'+s.id+'">Segna giocata</button></div>';
+        return '<article class="cs-bg"><div class="cs-bg-corpo">'+
+          '<div class="cs-bg-testa"><strong>'+s.nome+' <span style="font-weight:400;color:var(--muted);font-size:.9rem">'+n+' eventi</span></strong>'+
+          '<span class="cs-stato '+s.esito+'">'+etichetta+'</span></div>'+
+          '<ul class="cs-gambe">'+gambe+'</ul></div>'+
+          '<div class="cs-bg-piede"><div class="cs-prob"><b>'+fmt(s.p*100,1)+'%</b><span>che esca tutto, circa 1 volta su '+su+'</span></div>'+
+          '<div class="cs-pips" aria-hidden="true">'+pips+'</div>'+giocata+
+          '<p class="cs-equa">Quota equa secondo il modello: '+fmt(1/s.p,2)+'. Sotto questa, anche per il modello ci perdi.</p></div></article>';
+      }).join('');
+
+      const giocate = tutte.filter(s=>s.giocata && s.puntata);
+      if(giocate.length){
+        const chiuse = giocate.filter(s=>s.esito!=='attesa'), vinte = chiuse.filter(s=>s.esito==='vinta');
+        const puntato = giocate.reduce((a,s)=>a+s.puntata,0), spesoChiuse = chiuse.reduce((a,s)=>a+s.puntata,0), incasso = vinte.reduce((a,s)=>a+s.puntata*s.quota,0);
+        const saldo = incasso-spesoChiuse;
+        $('registro').innerHTML = '<div class="cs-registro"><div><b>'+giocate.length+'</b>schedine giocate</div>'+
+          '<div><b>'+(chiuse.length?vinte.length+' su '+chiuse.length:'—')+'</b>'+(chiuse.length?'vinte tra le chiuse':'nessuna ancora chiusa')+'</div>'+
+          '<div><b>'+euro(puntato)+'</b>puntati</div><div><b>'+euro(incasso)+'</b>incassati</div>'+
+          '<div><b style="color:'+(chiuse.length?(saldo>=0?'var(--ok)':'var(--ko)'):'var(--ink)')+'">'+(chiuse.length?(saldo>=0?'+':'')+euro(saldo):'—')+'</b>saldo sulle chiuse</div></div>';
+      } else $('registro').innerHTML='';
+      $('avviso').textContent = 'Gli eventi sono i più probabili secondo il modello, uno per partita. Le probabilità si moltiplicano perché le partite sono indipendenti. Il modello non batte il mercato (vedi "Il modello regge?"), e il margine di Bet365, circa 5–6% a evento, si moltiplica anche lui: su una tripla vale circa −15%, su una cinquina circa −25%. È gioco, non investimento.';
+    }
+
+    /* ---------- verdetto ---------- */
+    const qIdx={}; D.quote.forEach(q=>qIdx[q.casa+'-'+q.trasferta]=q);
+    function righe(ver){
+      const out=[];
+      D.storico.filter(s=>s.versione===ver).forEach(s=>{
+        const q=qIdx[s.casa+'-'+s.trasferta]||{};
+        out.push({fonte:'retro',giornata:q.giornata,casa:s.casa,trasferta:s.trasferta,gol:q.gol_casa!=null?q.gol_casa+'–'+q.gol_trasf:'',esito:s.esito,over:s.over25,
+          p1:+s.p1,px:+s.px,p2:+s.p2,po:+s.p_over25,pgg:null,m1:s.m1==null?null:+s.m1,mx:+s.mx,m2:+s.m2,mo:s.m_over25==null?null:+s.m_over25,
+          q1:+s.q1,qx:+s.qx,q2:+s.q2,qo:s.q_over==null?null:+s.q_over,qu:s.q_under==null?null:+s.q_under});
+      });
+      const giocate={};
+      D.valutazione.filter(v=>v.versione===ver).forEach(v=>{
+        giocate[v.giornata+'-'+v.casa]=1;
+        out.push({fonte:v.congelata_prima?'vivo':'tardi',giornata:v.giornata,casa:v.casa,trasferta:v.trasferta,gol:v.gol_casa+'–'+v.gol_trasf,esito:v.esito,over:v.over25,
+          p1:+v.p1,px:+v.px,p2:+v.p2,po:+v.p_over25,pgg:+v.p_gg,m1:+v.m1,mx:+v.mx,m2:+v.m2,mo:v.m_over25==null?null:+v.m_over25,
+          q1:+v.q1,qx:+v.qx,q2:+v.q2,qo:v.q_over==null?null:+v.q_over,qu:v.q_under==null?null:+v.q_under});
+      });
+      D.pron.filter(p=>p.versione===ver && !giocate[p.giornata+'-'+p.casa]).forEach(p=>{
+        out.push({fonte:'attesa',giornata:p.giornata,casa:p.casa,trasferta:p.trasferta,gol:'',p1:+p.p1,px:+p.px,p2:+p.p2,po:+p.p_over25,pgg:+p.p_gg,m1:null,mo:null});
+      });
+      return out;
+    }
+    function righello(file){
+      const W=640,H=34,min=-0.08,max=0.08, x=v=>Math.max(0,Math.min(W,(v-min)/(max-min)*W));
+      return file.map(f=>{
+        const s=f.s, g=giudizio(s), col=g.cls==='mercato'?'var(--ko)':(g.cls==='modello'?'var(--ok)':'var(--noise)');
+        let svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+f.nome+': '+g.txt+'"><line x1="'+x(0)+'" y1="2" x2="'+x(0)+'" y2="'+(H-2)+'" stroke="var(--ink)" stroke-width="1.5"/><line x1="0" y1="'+H/2+'" x2="'+W+'" y2="'+H/2+'" stroke="var(--rule)"/>';
+        if(s&&s.n>1){
+          const lo=s.media-2*s.se, hi=s.media+2*s.se;
+          svg+='<rect x="'+x(lo)+'" y="'+(H/2-5)+'" width="'+Math.max(2,x(hi)-x(lo))+'" height="10" rx="5" fill="'+col+'" opacity=".28"/><circle cx="'+x(s.media)+'" cy="'+H/2+'" r="6" fill="'+col+'"/>';
+          if(hi>max) svg+='<text x="'+(W-4)+'" y="'+(H/2-9)+'" font-size="11" text-anchor="end" fill="var(--muted)">oltre</text>';
+          if(lo<min) svg+='<text x="4" y="'+(H/2-9)+'" font-size="11" fill="var(--muted)">oltre</text>';
+        }
+        svg+='</svg>';
+        let num=(s&&s.n)?(fmt(s.n,0)+' partite, scarto '+segno(s.media,3)+' ± '+fmt(2*s.se,3)+': '+g.txt+'.'):f.vuoto;
+        if(f.roi) num+=' Puntate simulate con EV sopra il 5% alle quote Bet365: '+segno(f.roi.roi*100,0)+'% ± '+fmt(2*f.roi.se*100,0)+'% su '+fmt(f.roi.n,0)+'.';
+        return '<div class="cs-riga"><div class="cs-nome">'+f.nome+'<small>'+f.sotto+'</small></div>'+svg+'<div class="cs-num">'+num+'</div></div>';
+      }).join('');
+    }
+    function curva(sint,vivo){
+      if(!sint){ $('curva').innerHTML=''; $('curva-nota').textContent='Per questa versione non c\'è uno storico: usa solo le partite della stagione in corso.'; return; }
+      const pts=sint.curva, W=640,H=200,P=36, nMax=Math.max(740,vivo.n||0), yMin=-0.08,yMax=0.08;
+      const X=n=>P+(n/nMax)*(W-P-8), Y=v=>8+(yMax-Math.max(yMin,Math.min(yMax,v)))/(yMax-yMin)*(H-P-8);
+      let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Intervallo dello scarto al crescere delle partite">';
+      [-0.06,-0.03,0,0.03,0.06].forEach(v=>{ s+='<line x1="'+P+'" x2="'+W+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="'+(v===0?'var(--ink)':'var(--rule)')+'" stroke-width="'+(v===0?1.5:1)+'"/><text x="'+(P-6)+'" y="'+(Y(v)+4)+'" font-size="11" text-anchor="end" fill="var(--muted)">'+segno(v,2)+'</text>'; });
+      [0,200,400,600].forEach(n=>{ s+='<text x="'+X(n)+'" y="'+(H-P+18)+'" font-size="11" text-anchor="middle" fill="var(--muted)">'+n+'</text>'; });
+      s+='<text x="'+W+'" y="'+(H-4)+'" font-size="11" text-anchor="end" fill="var(--muted)">partite</text>';
+      s+='<polygon points="'+pts.map(p=>X(p.n)+','+Y(p.media+2*p.se)).join(' ')+' '+pts.slice().reverse().map(p=>X(p.n)+','+Y(p.media-2*p.se)).join(' ')+'" fill="var(--noise)" opacity=".22"/>';
+      s+='<polyline points="'+pts.map(p=>X(p.n)+','+Y(p.media)).join(' ')+'" fill="none" stroke="var(--ink)" stroke-width="1.5"/>';
+      if(vivo.serie&&vivo.serie.length>1) s+='<polyline points="'+vivo.serie.map(p=>X(p.n)+','+Y(p.media)).join(' ')+'" fill="none" stroke="var(--ok)" stroke-width="2"/>';
+      const p40=pts.find(p=>p.n===40);
+      if(p40) s+='<line x1="'+X(40)+'" x2="'+X(40)+'" y1="'+Y(p40.media+2*p40.se)+'" y2="'+Y(p40.media-2*p40.se)+'" stroke="var(--ink)" stroke-dasharray="3 3"/><text x="'+(X(40)+6)+'" y="'+(Y(p40.media+2*p40.se)-4)+'" font-size="11" fill="var(--ink)">4 giornate</text>';
+      s+='</svg>';
+      $('curva').innerHTML=s;
+      $('curva-nota').textContent='La fascia grigia è l\'intervallo sullo storico mentre le partite si accumulano.'+(p40?' Dopo 4 giornate andava da '+segno(p40.media-2*p40.se,3)+' a '+segno(p40.media+2*p40.se,3)+': dentro c\'era sia "vince il modello" sia "vince il mercato".':'')+(vivo.serie&&vivo.serie.length>1?' La linea verde è il test dal vivo.':'');
+    }
+    function disegnaVerdetto(){
+      el.querySelectorAll('[data-cs="mercato"] button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===stato.mercato));
+      el.querySelectorAll('[data-cs="versione"] button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===stato.versione));
+      const tutte=righe(stato.versione), mk=stato.mercato;
+      const sint=D.sintesi.find(s=>s.versione===stato.versione&&s.mercato===mk);
+      const sS=sint?{n:sint.n,media:+sint.diff_media,sd:+sint.diff_sd,se:sint.diff_sd/Math.sqrt(sint.n)}:null;
+      const retro=tutte.filter(r=>r.fonte==='retro'), vivo=tutte.filter(r=>r.fonte==='vivo').sort((a,b)=>a.giornata-b.giornata);
+      const dr=retro.map(r=>scarto(r,mk)).filter(x=>x!=null), dv=vivo.map(r=>scarto(r,mk)).filter(x=>x!=null);
+      const sR=statistiche(dr), sV=statistiche(dv);
+      sV.serie=dv.map((_,i)=>({n:i+1,media:statistiche(dv.slice(0,i+1)).media}));
+      const file=[];
+      if(sS) file.push({nome:'Storico',sotto:sint.periodo,s:sS,roi:{n:sint.segnali,roi:+sint.roi,se:+sint.roi_se}});
+      file.push({nome:'Giornate 1–3',sotto:'ricostruite dopo',s:sR,roi:rendimento(retro,mk),vuoto:'nessuna partita ricostruita'});
+      file.push({nome:'Dal vivo',sotto:'previsioni salvate prima',s:sV,roi:rendimento(vivo,mk),vuoto:'Si riempie dopo la 4ª giornata, quando arrivano le quote di chiusura.'});
+      $('righello').innerHTML=righello(file);
+      const sd=sS?sS.sd:(sR.sd||0.16), serve=Math.ceil((2*sd/K_VANTAGGIO)**2/10)*10;
+      $('progresso').innerHTML='<p>Dal vivo: <strong>'+fmt(sV.n||0,0)+'</strong> partite su circa <strong>'+fmt(serve,0)+'</strong> per vedere un vantaggio di '+fmt(K_VANTAGGIO,2)+' a partita, circa '+fmt(serve/380,1)+' stagioni.</p>'+
+        '<div class="cs-barra" role="progressbar" aria-valuemin="0" aria-valuemax="'+serve+'" aria-valuenow="'+(sV.n||0)+'"><i style="width:'+Math.min(100,100*(sV.n||0)/serve)+'%"></i></div>';
+      curva(sint,sV);
+      const base=(sV.n>=serve)?{s:sV,dove:'dal vivo'}:(sS?{s:sS,dove:'sullo storico'}:{s:sR,dove:'sulle giornate ricostruite'});
+      const g=giudizio(base.s);
+      $('verdetto').textContent = g.cls==='mercato' ? 'No. Su '+fmt(base.s.n,0)+' partite '+base.dove+' il mercato sbaglia meno, e non è un caso.' :
+        g.cls==='modello' ? 'Sì, '+base.dove+': il modello sbaglia meno del mercato.' :
+        g.cls==='rumore' ? 'Non dimostrato: su '+fmt(base.s.n,0)+' partite '+base.dove+' la differenza sta dentro il caso.' : 'Nessun dato.';
+      $('sotto').textContent='Mercato '+(mk==='1X2'?'1X2':'over/under 2,5')+', modello '+(stato.versione==='v2-prior'?'con lo storico delle stagioni passate':'con le sole partite di questa stagione')+
+        '. Il riferimento sono le quote di chiusura di Betfair Exchange, margine 0,5%. Il rendimento è calcolato alle quote Bet365.';
+    }
+
+    /* ---------- partite ---------- */
+    function disegnaPartite(){
+      const tutte=righe(stato.versione);
+      const gs=[...new Set(tutte.map(r=>r.giornata).filter(g=>g!=null))].sort((a,b)=>a-b);
+      if(stato.giornata==null||!gs.includes(stato.giornata)) stato.giornata=gs[gs.length-1];
+      $('giornate').innerHTML=gs.map(g=>{ const retro=tutte.some(r=>r.giornata===g&&r.fonte==='retro');
+        return '<button type="button" class="'+(retro?'cs-retro':'')+'" data-g="'+g+'" aria-pressed="'+(g===stato.giornata)+'"'+(retro?' title="Ricostruita dopo, non conta nel test"':'')+'>'+g+'ª</button>'; }).join('');
+      const rs=tutte.filter(r=>r.giornata===stato.giornata), ou=stato.mercato!=='1X2';
+      let h='<table><thead><tr><th></th><th colspan="3" class="cs-gruppo">Noi</th><th colspan="3" class="cs-gruppo">Mercato</th><th colspan="2" class="cs-gruppo">Over 2,5</th><th></th><th></th><th></th></tr>'+
+        '<tr><th>Partita</th><th>1</th><th>X</th><th>2</th><th>1</th><th>X</th><th>2</th><th>noi</th><th>mercato</th><th>Gol noi</th><th>Risultato</th><th>Scarto '+(ou?'O/U':'1X2')+'</th></tr></thead><tbody>';
+      rs.forEach(r=>{
+        const d=scarto(r,stato.mercato), c=(k,v)=>'<td class="'+(r.esito===k?'cs-ok':'')+'">'+pct(v)+'</td>';
+        h+='<tr><td>'+nome(r.casa)+'–'+nome(r.trasferta)+'</td>'+c('1',r.p1)+c('X',r.px)+c('2',r.p2)+
+          (r.m1!=null?c('1',r.m1)+c('X',r.mx)+c('2',r.m2):'<td>—</td><td>—</td><td>—</td>')+
+          '<td class="'+(r.over===true?'cs-ok':'')+'">'+pct(r.po)+'</td><td>'+pct(r.mo)+'</td><td>'+pct(r.pgg)+'</td><td>'+(r.gol||'da giocare')+'</td>'+
+          '<td class="'+(d==null?'':(d>0?'cs-pos':'cs-neg'))+'">'+(d==null?'—':segno(d,3))+'</td></tr>';
+      });
+      $('tabella').innerHTML=h+'</tbody></table>';
+      const f=rs.length?rs[0].fonte:'';
+      $('tab-nota').textContent=(f==='retro'?'Giornata ricostruita a posteriori senza usare dati successivi: utile per capire, ma non conta nel test. ':f==='attesa'?'Previsioni salvate prima del calcio d\'inizio. Le quote di chiusura arrivano dopo la giornata. ':'')+
+        'In grassetto l\'esito vero. Scarto positivo: su quella partita il mercato ha sbagliato meno. Mercato = Betfair Exchange senza margine. Il mirror non ha quote gol/nogol.';
+    }
+
+    function disegna(){
+      el.querySelectorAll('[role="tab"]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===stato.tab));
+      el.querySelectorAll('[data-pannello]').forEach(p=>p.hidden=p.dataset.pannello!==stato.tab);
+      if(stato.tab==='gioca') disegnaSchedine();
+      if(stato.tab==='regge') disegnaVerdetto();
+      if(stato.tab==='partite') disegnaPartite();
+    }
+
+    el.addEventListener('click', async ev=>{
+      const b=ev.target.closest('button'); if(!b) return;
+      if(b.dataset.tab){ stato.tab=b.dataset.tab; return disegna(); }
+      if(b.dataset.salva){
+        const id=+b.dataset.salva, num=s=>parseFloat(String(s).replace(',','.'));
+        const q=num(el.querySelector('[data-quota="'+id+'"]').value), p=num(el.querySelector('[data-puntata="'+id+'"]').value);
+        if(!(q>1)||!(p>0)){ b.textContent='Quota e puntata?'; return; }
+        b.disabled=true; b.textContent='Salvo…';
+        const r=await sb.from('schedine').update({quota:q,puntata:p,giocata:true}).eq('id',id);
+        if(r.error){ b.disabled=false; b.textContent='Errore, riprova'; return; }
+        D.schedine.filter(s=>s.id===id).forEach(s=>{s.quota=q;s.puntata=p;s.giocata=true;});
+        return disegna();
+      }
+      const grp=b.parentElement.dataset.cs;
+      if(grp==='mercato') stato.mercato=b.dataset.v;
+      else if(grp==='versione') stato.versione=b.dataset.v;
+      else if(grp==='giornate') stato.giornata=+b.dataset.g;
+      else return;
+      disegna();
+    });
+    disegna();
+  };
+})();
+</script>
+<!-- ===== Cruscotto schedine: fine modulo ===== -->
