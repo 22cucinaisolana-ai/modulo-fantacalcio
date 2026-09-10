@@ -2985,7 +2985,9 @@
   </div>
 
   <div class="cs-pannello" data-pannello="gioca" role="tabpanel">
+    <div class="cs-rischio" data-cs="rischio"></div>
     <div class="cs-biglietti" data-cs="biglietti"><p>Carico le schedine…</p></div>
+    <div data-cs="giocate"></div>
     <div data-cs="registro"></div>
     <p class="cs-avviso" data-cs="avviso"></p>
   </div>
@@ -3123,7 +3125,7 @@
 .cs-pannello[hidden]{display:none}
 
 /* schedine come biglietti */
-.cs-biglietti{display:grid;align-items:start;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.25rem;margin:0 0 1rem}
+.cs-biglietti{display:grid;align-items:start;grid-template-columns:repeat(auto-fill,minmax(290px,430px));gap:1.25rem;margin:0 0 1rem}
 .cs-bg{display:flex;flex-direction:column}
 .cs-bg-corpo,.cs-bg-piede{background:var(--cs-paper);border:1.5px solid var(--cs-ink)}
 .cs-bg-corpo{border-bottom:0;border-radius:10px 10px 0 0;padding-bottom:.4rem;
@@ -3212,6 +3214,25 @@
 @media (prefers-reduced-motion:no-preference){.cs-gambe li{transition:background .2s}}
 
 .cs-biglietti{max-width:980px}
+
+/* rischio */
+.cs-rischio{max-width:620px;margin:0 0 1.5rem}
+.cs-r-testa{display:flex;align-items:baseline;gap:.75rem;margin:0 0 .5rem}
+.cs-r-testa span{font-size:.9rem;color:var(--cs-muted)}
+.cs-r-testa strong{font-family:var(--font-display);font-size:1.7rem;line-height:1;letter-spacing:.01em}
+.cs-r-ctrl{display:flex;align-items:center;gap:.6rem}
+.cs-r-ctrl>button{flex:none;width:2.6rem;height:2.6rem;border-radius:50%;border:1.5px solid var(--cs-ink);background:var(--cs-paper);color:var(--cs-ink);font-size:1.4rem;line-height:1;display:grid;place-items:center}
+.cs-r-ctrl>button:disabled{opacity:.3;cursor:default}
+.cs-r-scala{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.cs-r-scala button{height:2.6rem;border:0;border-radius:6px;background:var(--cs-band);color:var(--cs-muted);font-size:.72rem;padding:0 .2rem;position:relative;overflow:hidden}
+.cs-r-scala button span{position:relative}
+.cs-r-scala button.pieno{background:var(--c);color:var(--on-accent)}
+.cs-r-scala button[aria-pressed="true"]{outline:2px solid var(--cs-ink);outline-offset:2px;font-weight:700}
+.cs-r-desc{font-size:.88rem;color:var(--cs-muted);margin:.6rem 0 0!important;max-width:62ch}
+.cs-stima{font-size:.88rem;margin:0 0 .6rem!important}
+.cs-link{border:0;background:none;padding:0;color:var(--cs-ko);text-decoration:underline;font-size:inherit}
+.cs [data-cs="giocate"] h3{margin-top:1.5rem}
+@media (max-width:560px){.cs-r-scala button span{display:none}.cs-r-scala button{height:2rem}.cs-r-ctrl>button{width:2.3rem;height:2.3rem}}
 .cs [data-cs="righello"],.cs .cs-assi{max-width:900px}
 .cs [data-cs="curva"]{max-width:760px}
 
@@ -3271,7 +3292,7 @@
         return;
       }
     } catch(e) {}
-    const stato = {tab:'gioca', mercato:'1X2', versione:'v2-prior', giornata:null};
+    const stato = {tab:'gioca', mercato:'1X2', versione:'v2-prior', giornata:null, rischio:0, proposte:{}};
     const leggi = async (t,cols,opz) => { const r = await sb.from(t).select(cols||'*'); if(r.error){ if(opz) return []; throw r.error; } return r.data||[]; };
     let D;
     try {
@@ -3290,59 +3311,119 @@
     const nome = c => NOME[c]||c;
 
     /* ---------- schedine ---------- */
-    function schedineRaggruppate(){
+    // Rischio: il livello sceglie la probabilita' a cui puntare per ogni evento.
+    // Prudente prende gli eventi piu' probabili che ci sono; salendo si va verso
+    // eventi meno probabili, che pagano di piu' e escono meno spesso.
+    const LIVELLI = [
+      {nome:'Prudente', target:1.00, colore:'var(--good)',   desc:'Gli eventi più probabili della giornata.'},
+      {nome:'Cauto',    target:0.55, colore:'var(--good)',   desc:'Eventi intorno al 55%: un po\' meno sicuri, pagano di più.'},
+      {nome:'Medio',    target:0.45, colore:'var(--gold)',   desc:'Eventi intorno al 45%: più o meno una moneta per evento.'},
+      {nome:'Audace',   target:0.36, colore:'var(--warn)',   desc:'Eventi intorno al 36%: sfavoriti e over/under contro corrente.'},
+      {nome:'Azzardo',  target:0.28, colore:'var(--danger)', desc:'Eventi intorno al 28%: soprattutto pareggi.'}
+    ];
+    const MARGINE = {'1X2':0.056,'O/U 2,5':0.05,'GG/NG':0.06}; // medie Bet365 misurate sul mirror (GG/NG stimato)
+    try { const r = +localStorage.getItem('cs-rischio'); if (r>=1 && r<=5) stato.rischio = r; } catch(e) {}
+    if (!stato.rischio) stato.rischio = 1;
+
+    function candidati(p){
+      return [
+        {mercato:'1X2',scelta:'1',p:+p.p1},{mercato:'1X2',scelta:'X',p:+p.px},{mercato:'1X2',scelta:'2',p:+p.p2},
+        {mercato:'O/U 2,5',scelta:'Over',p:+p.p_over25},{mercato:'O/U 2,5',scelta:'Under',p:1-p.p_over25},
+        {mercato:'GG/NG',scelta:'GG',p:+p.p_gg},{mercato:'GG/NG',scelta:'NG',p:1-p.p_gg}
+      ].map(c=>Object.assign(c,{casa:p.casa,trasferta:p.trasferta}));
+    }
+    // Un evento per partita: quello piu' vicino al bersaglio del livello.
+    // Poi le n partite il cui evento ci sta piu' vicino.
+    function componi(giornata, n, livello){
+      const t = LIVELLI[livello-1].target;
+      const scelte = D.pron.filter(p=>p.versione==='v2-prior' && p.giornata===giornata).map(p=>{
+        const c = candidati(p).map(x=>Object.assign(x,{d:Math.abs(x.p-t)}));
+        c.sort((a,b)=>a.d-b.d || b.p-a.p); return c[0];
+      });
+      scelte.sort((a,b)=>a.d-b.d || b.p-a.p);
+      const gambe = scelte.slice(0,n).sort((a,b)=>b.p-a.p);
+      if (gambe.length<n) return null;
+      return { n, gambe, livello,
+        p: gambe.reduce((a,g)=>a*g.p,1),
+        qStimata: gambe.reduce((a,g)=>a/(g.p*(1+MARGINE[g.mercato])),1) };
+    }
+    function schedineGiocate(){
       const m=new Map();
       D.schedine.forEach(r=>{
-        if(!m.has(r.id)) m.set(r.id,{id:r.id,giornata:r.giornata,nome:r.nome,criterio:r.criterio,p:+r.p_modello,quota:r.quota==null?null:+r.quota,
-          puntata:r.puntata==null?null:+r.puntata,giocata:r.giocata,gambe:[]});
-        m.get(r.id).gambe.push({casa:r.casa,trasferta:r.trasferta,mercato:r.mercato,scelta:r.scelta,p:+r.p_evento,
-          preso:r.preso, gol:r.gol_casa==null?'':r.gol_casa+'–'+r.gol_trasferta});
+        if(!m.has(r.id)) m.set(r.id,{id:r.id,giornata:r.giornata,nome:r.nome,rischio:r.rischio,p:+r.p_modello,quota:+r.quota,puntata:+r.puntata,gambe:[]});
+        m.get(r.id).gambe.push({casa:r.casa,trasferta:r.trasferta,mercato:r.mercato,scelta:r.scelta,p:+r.p_evento,preso:r.preso,gol:r.gol_casa==null?'':r.gol_casa+'–'+r.gol_trasferta});
       });
       const arr=[...m.values()];
-      arr.forEach(s=>{
-        s.gambe.sort((a,b)=>b.p-a.p);
-        s.esito = s.gambe.some(g=>g.preso===false) ? 'persa' : (s.gambe.every(g=>g.preso===true) ? 'vinta' : 'attesa');
-      });
-      return arr;
+      arr.forEach(s=>{ s.gambe.sort((a,b)=>b.p-a.p);
+        s.esito = s.gambe.some(g=>g.preso===false)?'persa':(s.gambe.every(g=>g.preso===true)?'vinta':'attesa'); });
+      return arr.sort((a,b)=>b.id-a.id);
     }
+    function righeGambe(gambe){
+      return gambe.map(x=>{
+        const cls = x.preso===true?'preso':(x.preso===false?'perso':'');
+        const sg = x.preso===true?'✓':(x.preso===false?'✕':'');
+        return '<li class="'+cls+'"><span class="cs-seg" aria-hidden="true">'+sg+'</span>'+
+          '<span class="cs-part">'+nome(x.casa)+'–'+nome(x.trasferta)+'<small>'+(x.gol?'finita '+x.gol:x.mercato)+'</small></span>'+
+          '<span class="cs-scelta">'+SCELTA[x.scelta]+'</span><span class="cs-p">'+pct(x.p)+'%</span></li>';
+      }).join('');
+    }
+    const suN = p => fmt(Math.max(1,Math.round(1/p)),0);
+    const pips = p => Array.from({length:10},(_,i)=>'<i class="'+(i<Math.round(p*10)?'on':'')+'"></i>').join('');
+    const nomeSch = n => n===3?'Tripla':(n===5?'Cinquina':n+' eventi');
+
+    function disegnaRischio(g){
+      const L = LIVELLI[stato.rischio-1];
+      const t3 = componi(g,3,stato.rischio), t5 = componi(g,5,stato.rischio);
+      $('rischio').innerHTML =
+        '<div class="cs-r-testa"><span>Rischio</span><strong style="color:'+L.colore+'">'+L.nome+'</strong></div>'+
+        '<div class="cs-r-ctrl">'+
+          '<button type="button" data-r="-1" aria-label="Meno rischio"'+(stato.rischio===1?' disabled':'')+'>−</button>'+
+          '<div class="cs-r-scala" role="group" aria-label="Livello di rischio">'+LIVELLI.map((l,i)=>
+            '<button type="button" data-livello="'+(i+1)+'" aria-pressed="'+(i+1===stato.rischio)+'" title="'+l.nome+'" style="--c:'+l.colore+'" class="'+(i<stato.rischio?'pieno':'')+'"><span>'+l.nome+'</span></button>').join('')+'</div>'+
+          '<button type="button" data-r="1" aria-label="Più rischio"'+(stato.rischio===5?' disabled':'')+'>+</button>'+
+        '</div>'+
+        '<p class="cs-r-desc">'+L.desc+(t3&&t5?' La tripla esce circa 1 volta su '+suN(t3.p)+', la cinquina 1 su '+suN(t5.p)+'.':'')+'</p>';
+      return [t3,t5];
+    }
+
+    function biglietto(s, giocata){
+      const intesta = giocata
+        ? {vinta:'Vinta',persa:'Persa',attesa:(s.gambe.some(x=>x.preso!=null)?'In corso':'Giocata')}[s.esito]
+        : 'Da giocare';
+      const cls = giocata ? s.esito : 'attesa';
+      const sotto = giocata
+        ? '<p class="cs-giocata">'+euro(s.puntata)+' a quota <b>'+fmt(s.quota,2)+'</b>. '+
+            (s.esito==='vinta'?'Incasso <b>'+euro(s.puntata*s.quota)+'</b>.':s.esito==='persa'?'Persi <b>'+euro(s.puntata)+'</b>.':'Se esce: <b>'+euro(s.puntata*s.quota)+'</b>.')+'</p>'+
+            '<p class="cs-equa">Rischio '+(s.rischio?LIVELLI[s.rischio-1].nome.toLowerCase():'—')+'. <button type="button" class="cs-link" data-elimina="'+s.id+'">Elimina</button></p>'
+        : '<p class="cs-stima">Quota stimata <b>≈ '+fmt(s.qStimata,s.qStimata<10?2:1)+'</b> con il margine medio di Bet365. Quella vera la leggi quando la giochi.</p>'+
+          '<div class="cs-gioca"><label>Quota<input inputmode="decimal" data-quota="'+s.n+'" placeholder="es. '+fmt(s.qStimata,2)+'"></label>'+
+          '<label>Puntata €<input inputmode="decimal" data-puntata="'+s.n+'" placeholder="es. 2"></label>'+
+          '<button type="button" data-salva="'+s.n+'">Segna giocata</button></div>'+
+          '<p class="cs-equa">Quota equa secondo il modello: '+fmt(1/s.p,2)+'. Sotto questa, anche per il modello ci perdi.</p>';
+      return '<article class="cs-bg"><div class="cs-bg-corpo">'+
+        '<div class="cs-bg-testa"><strong>'+(giocata?s.nome:nomeSch(s.n))+' <span style="font-weight:400;font-size:.9rem">'+s.gambe.length+' eventi</span></strong>'+
+        '<span class="cs-stato '+cls+'">'+intesta+'</span></div>'+
+        '<ul class="cs-gambe">'+righeGambe(s.gambe)+'</ul></div>'+
+        '<div class="cs-bg-piede"><div class="cs-prob"><b>'+fmt(s.p*100,s.p<0.01?2:1)+'%</b><span>che esca tutto, circa 1 volta su '+suN(s.p)+'</span></div>'+
+        '<div class="cs-pips" aria-hidden="true">'+pips(s.p)+'</div>'+sotto+'</div></article>';
+    }
+
     function disegnaSchedine(){
-      const tutte = schedineRaggruppate();
-      if(!tutte.length){ $('biglietti').innerHTML='<p>Nessuna schedina salvata. Chiedi le schedine della prossima giornata.</p>'; return; }
-      const g = Math.max(...tutte.map(s=>s.giornata));
-      const correnti = tutte.filter(s=>s.giornata===g).sort((a,b)=>a.gambe.length-b.gambe.length);
+      const giornate = D.pron.filter(p=>p.versione==='v2-prior').map(p=>p.giornata);
+      if(!giornate.length){ $('biglietti').innerHTML='<p>Nessuna previsione salvata per la prossima giornata. Chiedi di aggiornare le probabilità.</p>'; $('rischio').innerHTML=''; return; }
+      const g = Math.max(...giornate);
       const inizio = D.orari.find(o=>o.giornata===g);
       if(inizio){
-        const t = new Date(inizio.inizio);
-        const quando = t.toLocaleString('it-IT',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'});
+        const quando = new Date(inizio.inizio).toLocaleString('it-IT',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'});
         $('scadenza').textContent = g+'ª giornata. Da giocare entro '+quando.replace(' alle ore ',' alle ')+', quando comincia la prima partita.';
       } else $('scadenza').textContent = g+'ª giornata';
-      $('biglietti').innerHTML = correnti.map(s=>{
-        const n=s.gambe.length, su = Math.max(1,Math.round(1/s.p));
-        const pips = Array.from({length:10},(_,i)=>'<i class="'+(i<Math.round(s.p*10)?'on':'')+'"></i>').join('');
-        const etichetta = {vinta:'Vinta',persa:'Persa',attesa:(s.gambe.some(x=>x.preso!=null)?'In corso':'Da giocare')}[s.esito];
-        const gambe = s.gambe.map(x=>{
-          const cls = x.preso===true?'preso':(x.preso===false?'perso':'');
-          const segno = x.preso===true?'✓':(x.preso===false?'✕':'');
-          return '<li class="'+cls+'"><span class="cs-seg" aria-hidden="true">'+segno+'</span>'+
-            '<span class="cs-part">'+nome(x.casa)+'–'+nome(x.trasferta)+'<small>'+(x.gol?'finita '+x.gol:x.mercato)+'</small></span>'+
-            '<span class="cs-scelta">'+SCELTA[x.scelta]+'</span><span class="cs-p">'+pct(x.p)+'%</span></li>';
-        }).join('');
-        const giocata = s.giocata && s.quota && s.puntata
-          ? '<p class="cs-giocata">Giocata: <b>'+euro(s.puntata)+'</b> a quota <b>'+fmt(s.quota,2)+'</b>. '+
-              (s.esito==='vinta'?'Incasso <b>'+euro(s.puntata*s.quota)+'</b>.':s.esito==='persa'?'Persi <b>'+euro(s.puntata)+'</b>.':'Se esce: <b>'+euro(s.puntata*s.quota)+'</b>.')+'</p>'
-          : '<div class="cs-gioca"><label>Quota<input inputmode="decimal" data-quota="'+s.id+'" placeholder="es. 3,40"></label>'+
-            '<label>Puntata €<input inputmode="decimal" data-puntata="'+s.id+'" placeholder="es. 2"></label>'+
-            '<button type="button" data-salva="'+s.id+'">Segna giocata</button></div>';
-        return '<article class="cs-bg"><div class="cs-bg-corpo">'+
-          '<div class="cs-bg-testa"><strong>'+s.nome+' <span style="font-weight:400;color:var(--cs-muted);font-size:.9rem">'+n+' eventi</span></strong>'+
-          '<span class="cs-stato '+s.esito+'">'+etichetta+'</span></div>'+
-          '<ul class="cs-gambe">'+gambe+'</ul></div>'+
-          '<div class="cs-bg-piede"><div class="cs-prob"><b>'+fmt(s.p*100,1)+'%</b><span>che esca tutto, circa 1 volta su '+su+'</span></div>'+
-          '<div class="cs-pips" aria-hidden="true">'+pips+'</div>'+giocata+
-          '<p class="cs-equa">Quota equa secondo il modello: '+fmt(1/s.p,2)+'. Sotto questa, anche per il modello ci perdi.</p></div></article>';
-      }).join('');
+      const proposte = disegnaRischio(g);
+      stato.proposte = {3:proposte[0], 5:proposte[1]};
+      $('biglietti').innerHTML = proposte.filter(Boolean).map(s=>biglietto(s,false)).join('');
 
-      const giocate = tutte.filter(s=>s.giocata && s.puntata);
+      const giocate = schedineGiocate();
+      $('giocate').innerHTML = giocate.length
+        ? '<h3>Giocate</h3><div class="cs-biglietti">'+giocate.map(s=>biglietto(s,true)).join('')+'</div>' : '';
       if(giocate.length){
         const chiuse = giocate.filter(s=>s.esito!=='attesa'), vinte = chiuse.filter(s=>s.esito==='vinta');
         const puntato = giocate.reduce((a,s)=>a+s.puntata,0), spesoChiuse = chiuse.reduce((a,s)=>a+s.puntata,0), incasso = vinte.reduce((a,s)=>a+s.puntata*s.quota,0);
@@ -3352,7 +3433,30 @@
           '<div><b>'+euro(puntato)+'</b>puntati</div><div><b>'+euro(incasso)+'</b>incassati</div>'+
           '<div><b style="color:'+(chiuse.length?(saldo>=0?'var(--cs-ok)':'var(--cs-ko)'):'var(--cs-ink)')+'">'+(chiuse.length?(saldo>=0?'+':'')+euro(saldo):'—')+'</b>saldo sulle chiuse</div></div>';
       } else $('registro').innerHTML='';
-      $('avviso').textContent = 'Gli eventi sono i più probabili secondo il modello, uno per partita. Le probabilità si moltiplicano perché le partite sono indipendenti. Il modello non batte il mercato (vedi "Il modello regge?"), e il margine di Bet365, circa 5–6% a evento, si moltiplica anche lui: su una tripla vale circa −15%, su una cinquina circa −25%. È gioco, non investimento.';
+      $('avviso').textContent = 'Il rischio cambia quanto spesso vinci e quanto incassi, non quanto perdi in media: il margine di Bet365, circa 5–6% a evento, si moltiplica per ogni evento (tripla circa −15%, cinquina circa −25%), e sulle quote alte di solito è anche più alto. Il modello non batte il mercato (vedi "Il modello regge?"). È gioco, non investimento.';
+    }
+
+    async function salvaGiocata(b){
+      const n=+b.dataset.salva, s=stato.proposte[n], num=v=>parseFloat(String(v).replace(',','.'));
+      const q=num(el.querySelector('[data-quota="'+n+'"]').value), pt=num(el.querySelector('[data-puntata="'+n+'"]').value);
+      if(!s || !(q>1) || !(pt>0)){ b.textContent='Quota e puntata?'; return; }
+      b.disabled=true; b.textContent='Salvo…';
+      const g=Math.max(...D.pron.filter(p=>p.versione==='v2-prior').map(p=>p.giornata));
+      const r=await sb.from('schedine').insert({giornata:g,nome:nomeSch(n),criterio:'rischio '+LIVELLI[s.livello-1].nome.toLowerCase()+': un evento per partita, il più vicino al '+(s.livello===1?'massimo':Math.round(LIVELLI[s.livello-1].target*100)+'%'),
+        rischio:s.livello,p_modello:+s.p.toFixed(4),quota:q,puntata:pt,giocata:true}).select('id').single();
+      if(r.error||!r.data){ b.disabled=false; b.textContent='Errore, riprova'; return; }
+      const e=await sb.from('schedine_eventi').insert(s.gambe.map(x=>({schedina_id:r.data.id,casa:x.casa,trasferta:x.trasferta,mercato:x.mercato,scelta:x.scelta,p_modello:+x.p.toFixed(4)})));
+      if(e.error){ await sb.from('schedine').delete().eq('id',r.data.id); b.disabled=false; b.textContent='Errore, riprova'; return; }
+      D.schedine = await leggi('schedine_stato');
+      disegnaSchedine();
+    }
+    async function elimina(b){
+      if(!confirm('Elimino questa schedina dal registro? Non si recupera.')) return;
+      b.disabled=true;
+      const r=await sb.from('schedine').delete().eq('id',+b.dataset.elimina);
+      if(r.error){ b.disabled=false; alert('Non sono riuscito a eliminarla: '+r.error.message); return; }
+      D.schedine = await leggi('schedine_stato');
+      disegnaSchedine();
     }
 
     /* ---------- verdetto ---------- */
@@ -3474,15 +3578,12 @@
       if (!ev.target.closest('.cs-schede, .cs-pannello')) return;
       const b=ev.target.closest('button'); if(!b) return;
       if(b.dataset.tab){ stato.tab=b.dataset.tab; return disegna(); }
-      if(b.dataset.salva){
-        const id=+b.dataset.salva, num=s=>parseFloat(String(s).replace(',','.'));
-        const q=num(el.querySelector('[data-quota="'+id+'"]').value), p=num(el.querySelector('[data-puntata="'+id+'"]').value);
-        if(!(q>1)||!(p>0)){ b.textContent='Quota e puntata?'; return; }
-        b.disabled=true; b.textContent='Salvo…';
-        const r=await sb.from('schedine').update({quota:q,puntata:p,giocata:true}).eq('id',id);
-        if(r.error){ b.disabled=false; b.textContent='Errore, riprova'; return; }
-        D.schedine.filter(s=>s.id===id).forEach(s=>{s.quota=q;s.puntata=p;s.giocata=true;});
-        return disegna();
+      if(b.dataset.salva) return salvaGiocata(b);
+      if(b.dataset.elimina) return elimina(b);
+      if(b.dataset.r || b.dataset.livello){
+        stato.rischio = b.dataset.livello ? +b.dataset.livello : Math.min(5,Math.max(1,stato.rischio+(+b.dataset.r)));
+        try { localStorage.setItem('cs-rischio', stato.rischio); } catch(e) {}
+        return disegnaSchedine();
       }
       const grp=b.parentElement.dataset.cs;
       if(grp==='mercato') stato.mercato=b.dataset.v;
