@@ -2987,6 +2987,7 @@
   <div class="cs-pannello" data-pannello="gioca" role="tabpanel">
     <div class="cs-rischio" data-cs="rischio"></div>
     <div class="cs-biglietti" data-cs="biglietti"><p>Carico le schedine…</p></div>
+    <div data-cs="salvate"></div>
     <div data-cs="giocate"></div>
     <div data-cs="registro"></div>
     <p class="cs-avviso" data-cs="avviso"></p>
@@ -3233,6 +3234,20 @@
 .cs-link{border:0;background:none;padding:0;color:var(--cs-ko);text-decoration:underline;font-size:inherit}
 .cs [data-cs="giocate"] h3{margin-top:1.5rem}
 @media (max-width:560px){.cs-r-scala button span{display:none}.cs-r-scala button{height:2rem}.cs-r-ctrl>button{width:2.3rem;height:2.3rem}}
+
+/* stati della schedina */
+.cs-btn{padding:.55rem .95rem;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-weight:600;margin:0 0 .5rem}
+.cs-btn:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+.cs-btn-ghost{background:transparent;color:var(--cs-ko);border-color:var(--cs-rule);margin:0}
+.cs-btn-ghost:hover{background:var(--danger-soft);border-color:var(--cs-ko)}
+.cs-azioni{display:flex;align-items:center;gap:.75rem;margin-top:.6rem;font-size:.8rem;color:var(--cs-muted)}
+.cs-bozza .cs-bg-testa{background:var(--surface-2);color:var(--cs-ink)}
+.cs-bozza .cs-bg-testa strong span{color:var(--cs-muted)!important}
+.cs-bozza .cs-stato.attesa{color:var(--cs-muted)}
+.cs-bozza .cs-bg-corpo,.cs-bozza .cs-bg-piede{border-style:dashed}
+.cs-bozza .cs-bg-piede{border-top-style:dashed}
+
+[data-cs="salvate"] h3,[data-cs="giocate"] h3{margin-top:1.75rem}
 .cs [data-cs="righello"],.cs .cs-assi{max-width:900px}
 .cs [data-cs="curva"]{max-width:760px}
 
@@ -3347,10 +3362,11 @@
         p: gambe.reduce((a,g)=>a*g.p,1),
         qStimata: gambe.reduce((a,g)=>a/(g.p*(1+MARGINE[g.mercato])),1) };
     }
-    function schedineGiocate(){
+    function schedineSalvate(){
       const m=new Map();
       D.schedine.forEach(r=>{
-        if(!m.has(r.id)) m.set(r.id,{id:r.id,giornata:r.giornata,nome:r.nome,rischio:r.rischio,p:+r.p_modello,quota:+r.quota,puntata:+r.puntata,gambe:[]});
+        if(!m.has(r.id)) m.set(r.id,{id:r.id,giornata:r.giornata,nome:r.nome,rischio:r.rischio,p:+r.p_modello,
+          quota:r.quota==null?null:+r.quota,puntata:r.puntata==null?null:+r.puntata,giocata:!!r.giocata,giocataIl:r.giocata_il,gambe:[]});
         m.get(r.id).gambe.push({casa:r.casa,trasferta:r.trasferta,mercato:r.mercato,scelta:r.scelta,p:+r.p_evento,preso:r.preso,gol:r.gol_casa==null?'':r.gol_casa+'–'+r.gol_trasferta});
       });
       const arr=[...m.values()];
@@ -3358,6 +3374,9 @@
         s.esito = s.gambe.some(g=>g.preso===false)?'persa':(s.gambe.every(g=>g.preso===true)?'vinta':'attesa'); });
       return arr.sort((a,b)=>b.id-a.id);
     }
+    // La giornata e' cominciata? Da li' una schedina non giocata non si puo' piu' giocare.
+    function iniziata(g){ const o=D.orari.find(x=>x.giornata===g); return !!o && Date.now()>=new Date(o.inizio).getTime(); }
+    const firma = gambe => gambe.map(x=>x.casa+x.scelta).sort().join('|');
     function righeGambe(gambe){
       return gambe.map(x=>{
         const cls = x.preso===true?'preso':(x.preso===false?'perso':'');
@@ -3386,22 +3405,37 @@
       return [t3,t5];
     }
 
-    function biglietto(s, giocata){
-      const intesta = giocata
-        ? {vinta:'Vinta',persa:'Persa',attesa:(s.gambe.some(x=>x.preso!=null)?'In corso':'Giocata')}[s.esito]
-        : 'Da giocare';
-      const cls = giocata ? s.esito : 'attesa';
-      const sotto = giocata
-        ? '<p class="cs-giocata">'+euro(s.puntata)+' a quota <b>'+fmt(s.quota,2)+'</b>. '+
-            (s.esito==='vinta'?'Incasso <b>'+euro(s.puntata*s.quota)+'</b>.':s.esito==='persa'?'Persi <b>'+euro(s.puntata)+'</b>.':'Se esce: <b>'+euro(s.puntata*s.quota)+'</b>.')+'</p>'+
-            '<p class="cs-equa">Rischio '+(s.rischio?LIVELLI[s.rischio-1].nome.toLowerCase():'—')+'. <button type="button" class="cs-link" data-elimina="'+s.id+'">Elimina</button></p>'
-        : '<p class="cs-stima">Quota stimata <b>≈ '+fmt(s.qStimata,s.qStimata<10?2:1)+'</b> con il margine medio di Bet365. Quella vera la leggi quando la giochi.</p>'+
-          '<div class="cs-gioca"><label>Quota<input inputmode="decimal" data-quota="'+s.n+'" placeholder="es. '+fmt(s.qStimata,2)+'"></label>'+
-          '<label>Puntata €<input inputmode="decimal" data-puntata="'+s.n+'" placeholder="es. 2"></label>'+
-          '<button type="button" data-salva="'+s.n+'">Segna giocata</button></div>'+
+    // modo: 'proposta' (composta dal rischio), 'salvata' (bozza, cancellabile), 'giocata' (bloccata)
+    function biglietto(s, modo){
+      let intesta, cls, sotto;
+      const dataIt = d => new Date(d).toLocaleString('it-IT',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'}).replace(' alle ore ',' alle ');
+      if(modo==='proposta'){
+        intesta='Proposta'; cls='attesa';
+        const gia = schedineSalvate().some(x=>x.giornata===s.giornata && firma(x.gambe)===firma(s.gambe));
+        sotto='<p class="cs-stima">Quota stimata <b>≈ '+fmt(s.qStimata,s.qStimata<10?2:1)+'</b> con il margine medio di Bet365.</p>'+
+          (gia ? '<p class="cs-giocata">Già salvata: la trovi sotto, in <b>Salvate</b>.</p>'
+               : '<button type="button" class="cs-btn" data-salva="'+s.n+'">Salva schedina</button>')+
           '<p class="cs-equa">Quota equa secondo il modello: '+fmt(1/s.p,2)+'. Sotto questa, anche per il modello ci perdi.</p>';
-      return '<article class="cs-bg"><div class="cs-bg-corpo">'+
-        '<div class="cs-bg-testa"><strong>'+(giocata?s.nome:nomeSch(s.n))+' <span style="font-weight:400;font-size:.9rem">'+s.gambe.length+' eventi</span></strong>'+
+      } else if(modo==='salvata'){
+        const scaduta = iniziata(s.giornata);
+        intesta = scaduta ? 'Non giocata' : 'Salvata'; cls = 'attesa';
+        sotto = scaduta
+          ? '<p class="cs-giocata">La giornata è cominciata e questa schedina non è stata segnata come giocata. Non conta nel registro.</p>'+
+            '<div class="cs-azioni"><button type="button" class="cs-btn cs-btn-ghost" data-elimina="'+s.id+'">Elimina</button></div>'
+          : '<div class="cs-gioca"><label>Quota<input inputmode="decimal" data-quota="'+s.id+'" placeholder="es. '+fmt(s.gambe.reduce((a,g)=>a/(g.p*(1+MARGINE[g.mercato])),1),2)+'"></label>'+
+            '<label>Puntata €<input inputmode="decimal" data-puntata="'+s.id+'" placeholder="es. 2"></label>'+
+            '<button type="button" data-gioca="'+s.id+'">Segna giocata</button></div>'+
+            '<div class="cs-azioni"><button type="button" class="cs-btn cs-btn-ghost" data-elimina="'+s.id+'">Elimina</button>'+
+            '<span>Si può cancellare finché non la segni giocata.</span></div>';
+      } else {
+        intesta = {vinta:'Vinta',persa:'Persa',attesa:(s.gambe.some(x=>x.preso!=null)?'In corso':'Giocata')}[s.esito]; cls = s.esito;
+        sotto = '<p class="cs-giocata">'+euro(s.puntata)+' a quota <b>'+fmt(s.quota,2)+'</b>. '+
+          (s.esito==='vinta'?'Incasso <b>'+euro(s.puntata*s.quota)+'</b>.':s.esito==='persa'?'Persi <b>'+euro(s.puntata)+'</b>.':'Se esce: <b>'+euro(s.puntata*s.quota)+'</b>.')+'</p>'+
+          '<p class="cs-equa cs-bloccata">Giocata'+(s.giocataIl?' il '+dataIt(s.giocataIl):'')+', rischio '+(s.rischio?LIVELLI[s.rischio-1].nome.toLowerCase():'—')+'. Non si può più cancellare né modificare.</p>';
+      }
+      const titolo = modo==='proposta' ? nomeSch(s.n) : s.nome;
+      return '<article class="cs-bg'+(modo==='salvata'?' cs-bozza':'')+'"><div class="cs-bg-corpo">'+
+        '<div class="cs-bg-testa"><strong>'+titolo+' <span style="font-weight:400;font-size:.9rem">'+s.gambe.length+' eventi</span></strong>'+
         '<span class="cs-stato '+cls+'">'+intesta+'</span></div>'+
         '<ul class="cs-gambe">'+righeGambe(s.gambe)+'</ul></div>'+
         '<div class="cs-bg-piede"><div class="cs-prob"><b>'+fmt(s.p*100,s.p<0.01?2:1)+'%</b><span>che esca tutto, circa 1 volta su '+suN(s.p)+'</span></div>'+
@@ -3417,13 +3451,16 @@
         const quando = new Date(inizio.inizio).toLocaleString('it-IT',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Rome'});
         $('scadenza').textContent = g+'ª giornata. Da giocare entro '+quando.replace(' alle ore ',' alle ')+', quando comincia la prima partita.';
       } else $('scadenza').textContent = g+'ª giornata';
-      const proposte = disegnaRischio(g);
-      stato.proposte = {3:proposte[0], 5:proposte[1]};
-      $('biglietti').innerHTML = proposte.filter(Boolean).map(s=>biglietto(s,false)).join('');
+      const proposte = disegnaRischio(g).filter(Boolean).map(x=>Object.assign(x,{giornata:g}));
+      stato.proposte = {}; proposte.forEach(x=>stato.proposte[x.n]=x);
+      $('biglietti').innerHTML = proposte.map(s=>biglietto(s,'proposta')).join('');
 
-      const giocate = schedineGiocate();
+      const tutte = schedineSalvate();
+      const salvate = tutte.filter(s=>!s.giocata), giocate = tutte.filter(s=>s.giocata);
+      $('salvate').innerHTML = salvate.length
+        ? '<h3>Salvate, da giocare</h3><p class="cs-nota" style="margin:0 0 .75rem!important">Quando l\'hai giocata su Bet365 scrivi quota e puntata e premi Segna giocata. Fino ad allora puoi eliminarla.</p><div class="cs-biglietti">'+salvate.map(s=>biglietto(s,'salvata')).join('')+'</div>' : '';
       $('giocate').innerHTML = giocate.length
-        ? '<h3>Giocate</h3><div class="cs-biglietti">'+giocate.map(s=>biglietto(s,true)).join('')+'</div>' : '';
+        ? '<h3>Giocate</h3><div class="cs-biglietti">'+giocate.map(s=>biglietto(s,'giocata')).join('')+'</div>' : '';
       if(giocate.length){
         const chiuse = giocate.filter(s=>s.esito!=='attesa'), vinte = chiuse.filter(s=>s.esito==='vinta');
         const puntato = giocate.reduce((a,s)=>a+s.puntata,0), spesoChiuse = chiuse.reduce((a,s)=>a+s.puntata,0), incasso = vinte.reduce((a,s)=>a+s.puntata*s.quota,0);
@@ -3436,24 +3473,33 @@
       $('avviso').textContent = 'Il rischio cambia quanto spesso vinci e quanto incassi, non quanto perdi in media: il margine di Bet365, circa 5–6% a evento, si moltiplica per ogni evento (tripla circa −15%, cinquina circa −25%), e sulle quote alte di solito è anche più alto. Il modello non batte il mercato (vedi "Il modello regge?"). È gioco, non investimento.';
     }
 
-    async function salvaGiocata(b){
-      const n=+b.dataset.salva, s=stato.proposte[n], num=v=>parseFloat(String(v).replace(',','.'));
-      const q=num(el.querySelector('[data-quota="'+n+'"]').value), pt=num(el.querySelector('[data-puntata="'+n+'"]').value);
-      if(!s || !(q>1) || !(pt>0)){ b.textContent='Quota e puntata?'; return; }
+    async function salvaBozza(b){
+      const s=stato.proposte[+b.dataset.salva]; if(!s) return;
       b.disabled=true; b.textContent='Salvo…';
-      const g=Math.max(...D.pron.filter(p=>p.versione==='v2-prior').map(p=>p.giornata));
-      const r=await sb.from('schedine').insert({giornata:g,nome:nomeSch(n),criterio:'rischio '+LIVELLI[s.livello-1].nome.toLowerCase()+': un evento per partita, il più vicino al '+(s.livello===1?'massimo':Math.round(LIVELLI[s.livello-1].target*100)+'%'),
-        rischio:s.livello,p_modello:+s.p.toFixed(4),quota:q,puntata:pt,giocata:true}).select('id').single();
+      const r=await sb.from('schedine').insert({giornata:s.giornata,nome:nomeSch(s.n),
+        criterio:'rischio '+LIVELLI[s.livello-1].nome.toLowerCase()+': un evento per partita, il più vicino al '+(s.livello===1?'massimo':Math.round(LIVELLI[s.livello-1].target*100)+'%'),
+        rischio:s.livello,p_modello:+s.p.toFixed(4),giocata:false}).select('id').single();
       if(r.error||!r.data){ b.disabled=false; b.textContent='Errore, riprova'; return; }
       const e=await sb.from('schedine_eventi').insert(s.gambe.map(x=>({schedina_id:r.data.id,casa:x.casa,trasferta:x.trasferta,mercato:x.mercato,scelta:x.scelta,p_modello:+x.p.toFixed(4)})));
       if(e.error){ await sb.from('schedine').delete().eq('id',r.data.id); b.disabled=false; b.textContent='Errore, riprova'; return; }
       D.schedine = await leggi('schedine_stato');
       disegnaSchedine();
     }
+    async function segnaGiocata(b){
+      const id=+b.dataset.gioca, num=v=>parseFloat(String(v).replace(',','.'));
+      const q=num(el.querySelector('[data-quota="'+id+'"]').value), pt=num(el.querySelector('[data-puntata="'+id+'"]').value);
+      if(!(q>1)||!(pt>0)){ b.textContent='Quota e puntata?'; return; }
+      if(!confirm('Segno la schedina come giocata: '+euro(pt)+' a quota '+fmt(q,2)+'.\nDa questo momento non si potrà più cancellare né modificare.')) return;
+      b.disabled=true; b.textContent='Salvo…';
+      const r=await sb.from('schedine').update({quota:q,puntata:pt,giocata:true}).eq('id',id).eq('giocata',false);
+      if(r.error){ b.disabled=false; b.textContent='Errore, riprova'; alert('Non sono riuscito a salvarla: '+r.error.message); return; }
+      D.schedine = await leggi('schedine_stato');
+      disegnaSchedine();
+    }
     async function elimina(b){
-      if(!confirm('Elimino questa schedina dal registro? Non si recupera.')) return;
+      if(!confirm('Elimino questa schedina? Non si recupera.')) return;
       b.disabled=true;
-      const r=await sb.from('schedine').delete().eq('id',+b.dataset.elimina);
+      const r=await sb.from('schedine').delete().eq('id',+b.dataset.elimina).eq('giocata',false);
       if(r.error){ b.disabled=false; alert('Non sono riuscito a eliminarla: '+r.error.message); return; }
       D.schedine = await leggi('schedine_stato');
       disegnaSchedine();
@@ -3578,7 +3624,8 @@
       if (!ev.target.closest('.cs-schede, .cs-pannello')) return;
       const b=ev.target.closest('button'); if(!b) return;
       if(b.dataset.tab){ stato.tab=b.dataset.tab; return disegna(); }
-      if(b.dataset.salva) return salvaGiocata(b);
+      if(b.dataset.salva) return salvaBozza(b);
+      if(b.dataset.gioca) return segnaGiocata(b);
       if(b.dataset.elimina) return elimina(b);
       if(b.dataset.r || b.dataset.livello){
         stato.rischio = b.dataset.livello ? +b.dataset.livello : Math.min(5,Math.max(1,stato.rischio+(+b.dataset.r)));
