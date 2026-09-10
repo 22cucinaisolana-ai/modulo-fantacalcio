@@ -695,6 +695,24 @@
   .f1-table, .history-table, .compare-table {
     width: 100%; border-collapse: collapse; font-size: 13px;
   }
+  /* Scheda giocatore: un pannello sopra tutto, perche' e' una lettura
+     lunga e va isolata dalla tabella da cui si arriva. */
+  .scheda-link { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--line); }
+  .scheda-link:hover { border-bottom-color: currentColor; }
+  .scheda-overlay {
+    position: fixed; inset: 0; z-index: 120; display: none;
+    align-items: flex-start; justify-content: center;
+    background: rgba(0,0,0,.42); padding: 24px 12px; overflow: auto;
+  }
+  .scheda-box {
+    position: relative; width: 100%; max-width: 780px; background: var(--card, #fff);
+    border: 1px solid var(--line, #ddd); border-radius: 14px; padding: 18px 18px 22px;
+    box-shadow: 0 18px 48px rgba(0,0,0,.24);
+  }
+  .scheda-chiudi { position: absolute; top: 12px; right: 12px; }
+  .scheda-testa { display: flex; align-items: center; gap: 8px; font-size: 17px; margin: 2px 0 14px; padding-right: 80px; }
+  .scheda-corpo h5 { margin: 20px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+  .scheda-corpo h5:first-of-type { margin-top: 6px; }
   /* Glossario: la sottolineatura tratteggiata dice "qui c'e' una
      spiegazione" senza aggiungere icone in una riga gia' fitta. */
   .ordinabile th.ha-glossa { text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px; }
@@ -3510,6 +3528,19 @@
   var STATS_BY_NOME = {};
   var PROFILI_SQ = [];
   var FORZA_SQ = [];
+  // PREVISIONI[nome][giornata] = riga di fmv_teorica
+  var PREVISIONI = {};
+  // Le prossime n giornate a partire da quella impostata.
+  function previsioneProssime(nome, n) {
+    var g0 = parseInt(state.meta.giornata, 10) || 1;
+    var out = [];
+    var m = PREVISIONI[String(nome || "").trim()];
+    if (!m) return out;
+    for (var g = g0; g < g0 + (n || 5); g++) {
+      if (m[String(g)]) out.push(m[String(g)]);
+    }
+    return out;
+  }
   function statsDi(nome) { return STATS_BY_NOME[String(nome || "").trim()] || null; }
   function forzaDi(code) {
     for (var i = 0; i < FORZA_SQ.length; i++) if (FORZA_SQ[i].squadra === code) return FORZA_SQ[i];
@@ -3677,6 +3708,13 @@
     (rif.profiliSquadre || []).forEach(function (r) { PROFILI_SQ.push(r); });
     FORZA_SQ.length = 0;
     (rif.forzaSquadre || []).forEach(function (r) { FORZA_SQ.push(r); });
+    Object.keys(PREVISIONI).forEach(function (k) { delete PREVISIONI[k]; });
+    (rif.previsioni || []).forEach(function (r) {
+      if (!r || !r.nome) return;
+      var n = String(r.nome).trim();
+      if (!PREVISIONI[n]) PREVISIONI[n] = {};
+      PREVISIONI[n][String(r.giornata)] = r;
+    });
 
     // Undici probabili della Serie A. Tre indici perche' servono tre domande
     // diverse: "questo giocatore c'e'?", "la sua squadra ha pubblicato?" (che
@@ -3930,7 +3968,14 @@
           return sb.from("stats_avanzate").select("fc_id,giocatore,ruolo,squadra,squadra_prod,presenze,mv,fmv,perc_voto_6,perc_voto_65,perc_con_bonus,perc_senza_cartellini,bonus_malus,minuti_per_partita,perc_da_titolare,minuti_totali,trend_forma,mv_5,fmv_5,rating_sm,xg,xa,tiri,tiri_in_porta,passaggi_chiave,occasioni_create,occasioni_mancate,perc_conversione,gol_fatti,assist,perc_cross_riusciti,perc_dribbling,perc_passaggi,contrasti,intercetti,spazzate,duelli_vinti,duelli_totali,duelli_aerei_vinti,falli,errori_da_gol,tiri_bloccati,parate,parate_per_partita,clean_sheet,gol_subiti,in_listone").order("giocatore").range(da, a);
         }),
         sb.from("profilo_squadre").select("squadra,giocatori_usati,xg_totale,xg_per_partita,tiri,tiri_per_partita,passaggi_chiave,occasioni_create,contrasti,intercetti,spazzate,duelli_vinti,gf,gs").limit(40),
-        sb.from("forza_corretta").select("squadra,gf_tot,gs_tot,attacco_grezzo,difesa_grezza,attacco_corretto,difesa_corretta,quanto_cambia_difesa").limit(40)
+        sb.from("forza_corretta").select("squadra,gf_tot,gs_tot,attacco_grezzo,difesa_grezza,attacco_corretto,difesa_corretta,quanto_cambia_difesa").limit(40),
+        // La previsione per giornata, calcolata sul database: pagella attesa +
+        // bonus attesi (ritmo di carriera e xG) corretti per l'avversario.
+        // Serve per la stima delle prossime cinque; e' lo stesso numero che
+        // useremo per il test di accuratezza, quindi una fonte sola.
+        tutteLeRighe(function (da, a) {
+          return sb.from("fmv_teorica").select("nome,ruolo,squadra,giornata,avversario,in_casa,pagella_attesa,bonus_attesi,indice_difesa_avv,fmv_se_gioca,p_gioca").order("giornata").order("nome").range(da, a);
+        })
       ]);
       for (var i = 0; i < q.length; i++) if (q[i].error) throw q[i].error;
       var rif = {
@@ -3949,7 +3994,8 @@
         probabili: q[15].data || [],
         stats: q[16].data || [],
         profiliSquadre: q[17].data || [],
-        forzaSquadre: q[18].data || []
+        forzaSquadre: q[18].data || [],
+        previsioni: q[19].data || []
       };
       // I voti si leggono solo da collegati (sono materiale della redazione
       // Fantacalcio.it, non nostro). Da sloggati la query non da' errore:
@@ -9935,6 +9981,205 @@ async function refreshLivePlayerNews() {
   };
   var NOME_REPARTO = { P: "Portieri", D: "Difensori", C: "Centrocampisti", A: "Attaccanti" };
 
+  /* -------------------------------------------------------------------
+     SCHEDA GIOCATORE (10/09/2026, dopo il caso Vlasic)
+
+     Il metodo, che e' la parte che conta piu' della grafica:
+
+     1. SEPARARE PAGELLA E BONUS. La fantamedia li impasta, e sono due
+        cose con rumore diversissimo. Il bonus mancante quasi mai e'
+        una prova: con 0,30 eventi per presenza, in tre partite ne
+        aspetti 0,9 e finisci a zero il 41% delle volte. La pagella
+        invece e' un giudizio su ogni minuto giocato, e su tre partite
+        da titolare ha gia' un errore piccolo.
+     2. TOGLIERE LA SQUADRA, confrontandolo con i compagni. Se tutto il
+        reparto e' sotto, non e' lui.
+     3. TOGLIERE IL CALENDARIO, guardando che difese ha affrontato. Un
+        attacco fermo contro le difese peggiori dice piu' di un attacco
+        fermo contro le migliori.
+
+     Le deviazioni standard del voto sono misurate sui nostri dati, non
+     scelte: attaccanti 0,73 · difensori 0,59 · centrocampisti 0,56 ·
+     portieri 0,54. Su n partite l'errore sulla media e' sd/radice(n),
+     ed e' con quello che si decide se uno scarto e' reale.
+     ------------------------------------------------------------------- */
+  var SD_VOTO_RUOLO = { A: 0.728, D: 0.587, C: 0.562, P: 0.539 };
+
+  function votiPerGiornata(nome) {
+    var out = [];
+    Object.keys(VOTI).forEach(function (g) {
+      var rec = VOTI[g][nome];
+      if (!rec) return;
+      out.push({ g: parseInt(g, 10), voto: rec[0] != null ? Number(rec[0]) : null, fv: rec[1] != null ? Number(rec[1]) : null });
+    });
+    return out.sort(function (a, b) { return a.g - b.g; });
+  }
+
+  // P(zero eventi) con una Poisson di media lambda. Serve a dire se lo zero
+  // alla voce bonus e' una notizia o l'ordinaria amministrazione.
+  function pZeroEventi(lambda) { return Math.exp(-Math.max(0, lambda)); }
+
+  function schedaGiocatoreHtml(nome) {
+    var l = listoneGet(nome);
+    if (!l) return '<p class="lega-note">Giocatore non nel listone.</p>';
+    var ruolo = l[1], code = l[2], fmvExp = l[3], mvCar = l[4], quo = l[7];
+    var s = statsDi(nome);
+    var voti = votiPerGiornata(nome);
+    var nv = voti.filter(function (x) { return x.voto != null; }).length;
+    var mvOra = nv ? voti.reduce(function (a, x) { return a + (x.voto || 0); }, 0) / nv : null;
+    var fvOra = nv ? voti.reduce(function (a, x) { return a + (x.fv != null ? x.fv : 0); }, 0) / nv : null;
+    var sd = SD_VOTO_RUOLO[ruolo] || 0.58;
+    var se = nv ? sd / Math.sqrt(nv) : null;
+    var scarto = (mvOra != null && mvCar != null) ? (mvOra - mvCar) : null;
+    var zeta = (scarto != null && se) ? scarto / se : null;
+
+    // Bonus: quanti eventi ti aspettavi, e quanto e' normale essere a zero.
+    var tassoCar = (l[9] != null ? Number(l[9]) : 0.10) + (l[10] != null ? Number(l[10]) : 0.08);
+    var attesi = tassoCar * nv;
+    var fattiEventi = s ? (Number(s.gol_fatti || 0) + Number(s.assist || 0)) : null;
+    var pZero = pZeroEventi(attesi);
+
+    // Il calendario gia' affrontato: che difese ha trovato.
+    var affrontate = voti.map(function (x) {
+      var a = avversarioDi(code, x.g);
+      if (!a) return null;
+      var f = forzaDi(a.code);
+      return { g: x.g, avv: a.code, casa: a.casa, dif: f ? Number(f.difesa_corretta) : null, voto: x.voto, fv: x.fv };
+    }).filter(Boolean);
+    var difMedia = affrontate.filter(function (x) { return x.dif != null; });
+    var difMediaVal = difMedia.length ? difMedia.reduce(function (a, x) { return a + x.dif; }, 0) / difMedia.length : null;
+
+    // I compagni: stessa squadra dove le statistiche sono state prodotte.
+    var sqProd = s && s.squadra_prod ? s.squadra_prod : code;
+    var compagni = STATS.filter(function (x) {
+      return (x.squadra_prod || x.squadra) === sqProd && Number(x.minuti_totali || 0) >= 90;
+    }).sort(function (a, b) { return Number(b.rating_sm || 0) - Number(a.rating_sm || 0); });
+    var pos = 1;
+    for (var i = 0; i < compagni.length; i++) if (compagni[i].giocatore === nome) { pos = i + 1; break; }
+    var prof = profiloDi(sqProd);
+
+    // Il calendario che viene.
+    var gAttuale = parseInt(state.meta.giornata, 10) || 1;
+    var prossime = [];
+    for (var gg = gAttuale; gg < gAttuale + 5; gg++) {
+      var a2 = avversarioDi(code, gg);
+      if (!a2) continue;
+      var f2 = forzaDi(a2.code);
+      prossime.push({ g: gg, avv: a2.code, casa: a2.casa, dif: f2 ? Number(f2.difesa_corretta) : null });
+    }
+
+    function riga(et, val, nota) {
+      return '<tr><td>' + et + '</td><td><b>' + val + '</b></td><td class="mini">' + (nota || "") + '</td></tr>';
+    }
+    var h = '';
+    h += '<div class="scheda-testa"><span class="prof-ruolo" data-ruolo="' + escapeHtml(ruolo) + '">' + escapeHtml(ruolo) + '</span>' +
+         '<b>' + escapeHtml(nome) + '</b> <span class="mini">' + escapeHtml(code) + (quo != null ? ' &middot; quotazione ' + num(quo, 0) : '') + '</span></div>';
+
+    // 1. la pagella
+    h += '<h5>La pagella — il segnale</h5>';
+    h += '<div class="f1-wrap"><table class="f1-table"><tbody>';
+    h += riga("Media voto adesso", mvOra != null ? num(mvOra, 2) : "—", nv + (nv === 1 ? " partita" : " partite"));
+    h += riga("Media voto di carriera", mvCar != null ? num(mvCar, 2) : "—", l[11] != null ? num(l[11], 0) + " presenze" : "");
+    if (scarto != null) {
+      var verso = scarto >= 0 ? "sopra" : "sotto";
+      var giudizio = Math.abs(zeta) >= 2 ? "<b>oltre il rumore</b> (" + num(Math.abs(zeta), 1) + " errori standard)"
+                   : Math.abs(zeta) >= 1 ? "dentro il rumore (" + num(Math.abs(zeta), 1) + " errori standard)"
+                   : "indistinguibile da zero";
+      h += riga("Scarto", (scarto > 0 ? "+" : "") + num(scarto, 2) + " " + verso, giudizio + " &middot; errore &plusmn;" + num(se, 2));
+    }
+    if (s) h += riga("Partite ≥ 6 &middot; ≥ 6,5", perc(s.perc_voto_6) + " &middot; " + perc(s.perc_voto_65), "");
+    h += '</tbody></table></div>';
+
+    // 2. il bonus
+    h += '<h5>Il bonus — quasi sempre rumore</h5>';
+    h += '<div class="f1-wrap"><table class="f1-table"><tbody>';
+    h += riga("Gol + assist attesi", num(attesi, 2), "dal ritmo di carriera su " + nv + " partite");
+    h += riga("Gol + assist fatti", fattiEventi != null ? num(fattiEventi, 0) : "—", "");
+    h += riga("Probabilità di finire a zero", perc(pZero * 100), fattiEventi === 0 ? "&egrave; questo il caso: " + (pZero > 0.25 ? "<b>non &egrave; una prova</b>" : "comincia a pesare") : "");
+    if (s) h += riga("Prodotto", num(s.xg, 2) + " xG &middot; " + num(s.xa, 2) + " xA", num(s.tiri, 0) + " tiri &middot; " + num(s.passaggi_chiave, 0) + " pass. chiave");
+    h += '</tbody></table></div>';
+
+    // 3. i compagni
+    h += '<h5>Tolta la squadra — dove sta fra i compagni</h5>';
+    if (compagni.length > 1) {
+      h += '<p class="lega-note"><b>' + pos + '&ordm; su ' + compagni.length + '</b> per rating fra chi ha almeno 90 minuti in ' + escapeHtml(sqProd) +
+           (prof ? '. La squadra produce <b>' + num(prof.xg_per_partita, 2) + '</b> xG e <b>' + num(prof.tiri_per_partita, 1) + '</b> tiri a partita.' : '.') + '</p>';
+      h += '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giocatore</th><th>R</th><th>Rating</th><th>MV</th><th>Tiri</th><th>Pass. chiave</th><th>xA</th></tr></thead><tbody>' +
+        compagni.slice(0, 8).map(function (c) {
+          return '<tr' + (c.giocatore === nome ? ' data-tone="warn"' : '') + '><td>' + (c.giocatore === nome ? '<b>' + escapeHtml(c.giocatore) + '</b>' : escapeHtml(c.giocatore)) + '</td>' +
+            '<td>' + escapeHtml(c.ruolo || "") + '</td><td>' + num(c.rating_sm, 2) + '</td><td>' + num(c.mv, 2) + '</td>' +
+            '<td>' + num(c.tiri, 0) + '</td><td>' + num(c.passaggi_chiave, 0) + '</td><td>' + num(c.xa, 2) + '</td></tr>';
+        }).join("") + '</tbody></table></div>';
+    } else h += '<p class="sez-nota">Non ci sono abbastanza compagni con minuti per il confronto.</p>';
+
+    // 4. il calendario
+    h += '<h5>Tolto il calendario — chi ha affrontato, chi affronta</h5>';
+    if (affrontate.length) {
+      h += '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giornata</th><th>Avversario</th><th>Difesa avv.</th><th>Voto</th><th>Fantavoto</th></tr></thead><tbody>' +
+        affrontate.map(function (x) {
+          return '<tr><td>' + x.g + '&ordf;</td><td>' + escapeHtml(x.avv) + ' <span class="mini">' + (x.casa ? "casa" : "fuori") + '</span></td>' +
+            '<td data-tone="' + (x.dif != null && x.dif > 1.1 ? "ok" : x.dif != null && x.dif < 0.85 ? "danger" : "") + '">' + num(x.dif, 2) + '</td>' +
+            '<td>' + num(x.voto, 2) + '</td><td>' + num(x.fv, 2) + '</td></tr>';
+        }).join("") + '</tbody></table></div>';
+      if (difMediaVal != null) {
+        h += '<p class="sez-nota">Difesa media affrontata: <b>' + num(difMediaVal, 2) + '</b>' +
+          (difMediaVal > 1.05 ? ' — ha trovato difese <b>pi&ugrave; deboli</b> della media, quindi il rendimento va letto al ribasso.'
+           : difMediaVal < 0.95 ? ' — ha trovato difese <b>pi&ugrave; forti</b> della media: qualche attenuante ce l&rsquo;ha.'
+           : ' — calendario nella media, nessuna attenuante e nessuna aggravante.') + '</p>';
+      }
+    }
+    // 5. la previsione
+    var prev = previsioneProssime(nome, 5);
+    h += '<h5>Le prossime cinque — stima di fantavoto</h5>';
+    if (prev.length) {
+      var somma = 0, sommaPes = 0;
+      prev.forEach(function (r) {
+        somma += Number(r.fmv_se_gioca || 0);
+        sommaPes += Number(r.fmv_se_gioca || 0) * Number(r.p_gioca != null ? r.p_gioca : 1);
+      });
+      h += '<div class="f1-wrap"><table class="f1-table"><thead><tr><th>Giornata</th><th>Avversario</th><th>Difesa avv.</th><th>Pagella attesa</th><th>Bonus attesi</th><th>Fantavoto stimato</th><th>p gioca</th></tr></thead><tbody>' +
+        prev.map(function (r) {
+          return '<tr><td>' + r.giornata + '&ordf;</td>' +
+            '<td>' + escapeHtml(r.avversario || "") + ' <span class="mini">' + (r.in_casa ? "casa" : "fuori") + '</span></td>' +
+            '<td data-tone="' + (r.indice_difesa_avv > 1.1 ? "ok" : r.indice_difesa_avv < 0.85 ? "danger" : "") + '">' + num(r.indice_difesa_avv, 2) + '</td>' +
+            '<td>' + num(r.pagella_attesa, 2) + '</td><td>' + num(r.bonus_attesi, 2) + '</td>' +
+            '<td><b>' + num(r.fmv_se_gioca, 2) + '</b></td>' +
+            '<td data-tone="' + (r.p_gioca >= 0.9 ? "ok" : r.p_gioca <= 0.3 ? "danger" : "warn") + '">' + num(r.p_gioca, 2) + '</td></tr>';
+        }).join("") +
+        '<tr><td colspan="5"><b>Totale sulle ' + prev.length + '</b></td><td><b>' + num(somma, 1) + '</b></td><td><b>' + num(sommaPes, 1) + '</b></td></tr>' +
+        '</tbody></table></div>';
+      h += '<p class="sez-nota">La colonna <b>Fantavoto stimato</b> vale <i>se gioca</i>; l&rsquo;ultima riga a destra &egrave; il totale gi&agrave; pesato per la probabilit&agrave; di scendere in campo. ' +
+        'La stima parte dalla pagella attesa (carriera pi&ugrave; i voti veri) e ci somma i bonus attesi dal ritmo di carriera e dall&rsquo;xG, corretti per la difesa che affronta. ' +
+        '<b>Non &egrave; il numero che il tool usa per schierare</b>: quello parte dalla fantamedia. Su cinque giornate la deviazione standard di un ' +
+        (ruolo === "A" ? "attaccante &egrave; 0,95" : ruolo === "P" ? "portiere &egrave; 0,87" : ruolo === "C" ? "centrocampista &egrave; 0,62" : "difensore &egrave; 0,47") +
+        ' per giornata: leggi il totale, non il singolo.</p>';
+    } else {
+      h += '<p class="sez-nota">Previsioni non disponibili — servono l&rsquo;accesso e il calendario oltre la giornata impostata.</p>';
+    }
+    if (prossime.length && !prev.length) {
+      h += '<p class="lega-note">Prossime: ' + prossime.map(function (x) {
+        return x.g + '&ordf; ' + escapeHtml(x.avv) + ' <span class="mini">' + (x.casa ? "C" : "T") + '</span> (' + num(x.dif, 2) + ')';
+      }).join(" &middot; ") + '</p>';
+    }
+    return h;
+  }
+
+  function apriScheda(nome) {
+    var ov = document.getElementById("schedaOverlay");
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.id = "schedaOverlay";
+      ov.className = "scheda-overlay";
+      ov.innerHTML = '<div class="scheda-box"><button type="button" class="btn btn-small scheda-chiudi">Chiudi</button><div class="scheda-corpo"></div></div>';
+      document.body.appendChild(ov);
+      ov.addEventListener("click", function (ev) {
+        if (ev.target === ov || ev.target.classList.contains("scheda-chiudi")) ov.style.display = "none";
+      });
+    }
+    ov.querySelector(".scheda-corpo").innerHTML = schedaGiocatoreHtml(nome);
+    ov.style.display = "flex";
+  }
+
   function numeriMieiHtml() {
     if (!STATS.length) return "";
     var g = state.meta.giornata || "";
@@ -9978,19 +10223,23 @@ async function refreshLivePlayerNews() {
       var etichettaForza = (ruolo === "P" || ruolo === "D") ? "Attacco avv." : "Difesa avv.";
       return '<h5>' + NOME_REPARTO[ruolo] + ' <span class="count-badge">' + rr.length + '</span></h5>' +
         '<div class="f1-wrap"><table class="f1-table"><thead><tr>' +
-        '<th>Giocatore</th><th>Partita</th><th>' + etichettaForza + '</th><th>Notizia</th><th>Min/pt</th><th>% tit.</th>' +
+        '<th>Giocatore</th><th>Partita</th><th>' + etichettaForza + '</th><th>Notizia</th><th>Prossime 5</th><th>Min/pt</th><th>% tit.</th>' +
         cols.map(function (c) { return '<th>' + c[1] + '</th>'; }).join("") + '</tr></thead><tbody>' +
         rr.map(function (r) {
           var s = r.s;
           var buono = (ruolo === "P" || ruolo === "D") ? (r.forza != null && r.forza < 0.9) : (r.forza != null && r.forza > 1.1);
           var cattivo = (ruolo === "P" || ruolo === "D") ? (r.forza != null && r.forza > 1.15) : (r.forza != null && r.forza < 0.85);
+          var prev5 = previsioneProssime(r.nome, 5);
+          var tot5 = prev5.reduce(function (a, x) { return a + Number(x.fmv_se_gioca || 0) * Number(x.p_gioca != null ? x.p_gioca : 1); }, 0);
           return '<tr>' +
-            '<td>' + (r.stato === "gioca" ? '<span class="pt-ok">&bull;</span> ' : r.stato === "fuori" ? '<span class="pt-ko">&bull;</span> ' : '') + escapeHtml(r.nome) + '</td>' +
+            '<td><a href="#" class="scheda-link" data-scheda="' + escapeAttr(r.nome) + '">' +
+              (r.stato === "gioca" ? '<span class="pt-ok">&bull;</span> ' : r.stato === "fuori" ? '<span class="pt-ko">&bull;</span> ' : '') + escapeHtml(r.nome) + '</a></td>' +
             '<td>' + escapeHtml(r.code || "") + (r.avv ? ' <span class="mini">' + (r.casa ? "vs" : "a") + ' ' + escapeHtml(r.avv) + '</span>' : '') + '</td>' +
             '<td data-tone="' + (buono ? "ok" : cattivo ? "danger" : "") + '">' + (r.forza == null ? "—" : num(r.forza, 2)) + '</td>' +
             '<td data-tone="' + (r.ind === "out" ? "danger" : r.ind === "dubbio" ? "warn" : r.stato === "gioca" ? "ok" : r.stato === "fuori" ? "danger" : "") + '">' +
               (r.ind === "out" ? "infortunato" : r.stato === "gioca" ? "probabile" : r.stato === "fuori" ? "fuori dagli 11" : "—") +
               (r.ind === "dubbio" ? " (dubbio)" : "") + '</td>' +
+            '<td>' + (prev5.length ? '<b>' + num(tot5, 1) + '</b> <span class="mini">su ' + prev5.length + '</span>' : "—") + '</td>' +
             '<td>' + (s ? num(s.minuti_per_partita, 0) : "—") + '</td>' +
             '<td>' + (s ? perc(s.perc_da_titolare) : "—") + '</td>' +
             cols.map(function (c) {
@@ -10278,7 +10527,8 @@ async function refreshLivePlayerNews() {
       fam.col.map(function (c) { return '<th>' + c[1] + '</th>'; }).join("") + '</tr></thead><tbody>' +
       righe.map(function (s) {
         var o = prop[normalizeNameKey(s.giocatore)] || "";
-        return '<tr><td>' + (miei[String(s.giocatore).trim()] ? '<span class="pt-ok">&bull;</span> ' : '') + escapeHtml(s.giocatore) + '</td>' +
+        return '<tr><td><a href="#" class="scheda-link" data-scheda="' + escapeAttr(s.giocatore) + '">' +
+            (miei[String(s.giocatore).trim()] ? '<span class="pt-ok">&bull;</span> ' : '') + escapeHtml(s.giocatore) + '</a></td>' +
           '<td><span class="prof-ruolo" data-ruolo="' + escapeHtml(s.ruolo || "") + '">' + escapeHtml(s.ruolo || "") + '</span></td>' +
           '<td>' + escapeHtml(s.squadra || "") + '</td>' +
           '<td' + (o === nomeMia ? ' data-tone="ok"' : o === avvGiornata ? ' data-tone="warn"' : '') + '>' +
@@ -12069,6 +12319,12 @@ async function refreshLivePlayerNews() {
     "δ": "Quanto cambia il giudizio sulla difesa una volta tolto il calendario. Negativo = e' migliore di come sembra, ha affrontato attacchi forti.",
     "giocatore": "Nome come sta nel listone. Il punto verde davanti vuol dire che e' tuo.",
     "r": "Ruolo: portiere, difensore, centrocampista, attaccante.",
+    "prossime 5": "Somma del fantavoto stimato sulle prossime cinque giornate, gia' pesata per la probabilita' di scendere in campo. E' il numero da guardare per decidere se tenere o scambiare: la singola giornata non si prevede, cinque un po' di piu'.",
+    "pagella attesa": "Il voto in pagella che ci si aspetta: media di carriera pesata dieci partite piu' i voti veri di quest'anno.",
+    "bonus attesi": "Gol e assist attesi tradotti in punti, corretti per la difesa che affronta.",
+    "fantavoto stimato": "Pagella attesa piu' bonus attesi meno i malus da cartellino. Vale SE gioca.",
+    "difesa avv.": "Quanto concede la difesa che affronta, corretta per il calendario che ha gia' fatto. 1,00 e' la media: sopra 1 concede di piu'.",
+    "attacco avv.": "Quanto produce l'attacco che affronta, corretto per il calendario. Conta per portieri e difensori.",
     "proprietario": "La squadra della lega che ce l'ha in rosa. Vuoto vuol dire svincolato, cioe' prendibile. Con il filtro qui sopra si guarda la rosa dell'avversario di giornata con gli stessi numeri della propria.",
     // le altre schede
     "#": "Posizione in classifica.",
@@ -12301,6 +12557,8 @@ async function refreshLivePlayerNews() {
     wireGlossario();
     document.addEventListener("click", function (ev) {
       glossaNascondi();
+      var lk = ev.target.closest ? ev.target.closest("[data-scheda]") : null;
+      if (lk) { ev.preventDefault(); apriScheda(lk.dataset.scheda); return; }
       var th = ev.target.closest ? ev.target.closest("th[data-ord-col]") : null;
       // Se il clic e' finito su un controllo suo, e' roba di quella tabella.
       if (th && ev.target.closest("button, a, input, select, label")) th = null;
