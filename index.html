@@ -4721,7 +4721,45 @@ async function refreshLivePlayerNews() {
   // si sposta verso i dati reali man mano che le giornate si accumulano
   // (a 5 giornate pesano metà, a 15 tre quarti). Una fantamedia attuale scritta
   // a mano, invece, viene rispettata così com'è: è una scelta esplicita.
-  var FANTAMEDIA_SHRINK = 5;
+  // FANTAMEDIA_SHRINK — rifatto 10/09/2026. Prima era 5 per tutti e ogni voto
+  // contava uno, che sia arrivato in novanta minuti o in un quarto d'ora.
+  //
+  // Misurato sui 271 fantavoti veri della 3a giornata, prevedendoli dal listone
+  // piu' i fantavoti delle giornate 1-2 (errore quadratico medio, peso in
+  // minuti gia' applicato):
+  //
+  //   K          3      5      8     12     20     40    200(=ignora i voti)
+  //   A       2,586  2,552  2,534  2,525  2,520  2,517  2,515
+  //   C       1,261  1,241  1,232  1,229  1,227  1,226  1,226
+  //   D       1,104  1,093  1,089  **1,088**  1,088  1,089  1,091
+  //   P       1,214  1,183  **1,174**  1,177  1,183  1,193  1,203
+  //
+  // Il minimo si sposta col rumore del ruolo, ed e' esattamente quello che ci
+  // si aspetta: il fantavoto di un attaccante ha deviazione standard 2,13 a
+  // partita, quello di un difensore 1,06. Piu' rumore c'e' nel dato, piu' a
+  // lungo bisogna credere alla proiezione. Per l'attaccante il minimo non
+  // esiste proprio: due giornate di fantavoto non dicono niente di utile.
+  //
+  // Scelta: il minimo misurato dove c'e' (P 8, D 12), il bordo BASSO della zona
+  // piatta dove non c'e' (C e A: 20, non 200). Prendere il bordo basso e' una
+  // scelta, e la ragione e' che il test ha visto due giornate con un listone
+  // fresco di luglio: a giornata 20 quella proiezione sara' vecchia di sei mesi
+  // e i dati veri dovranno pesare di piu'. **Da rimisurare alla 10a.**
+  var FANTAMEDIA_SHRINK_RUOLO = { P: 8, D: 12, C: 20, A: 20 };
+  var FANTAMEDIA_SHRINK = 12;   // usato solo se il ruolo non si conosce
+  function shrinkDiRuolo(r) {
+    return FANTAMEDIA_SHRINK_RUOLO[r] != null ? FANTAMEDIA_SHRINK_RUOLO[r] : FANTAMEDIA_SHRINK;
+  }
+  // Peso di un fantavoto in base ai minuti medi giocati: un 7,5 preso in venti
+  // minuti non e' la stessa prova di un 7,5 in novanta. Samardzic (39 minuti a
+  // partita) e' il caso di scuola: fantamedia 7,33 costruita su spezzoni.
+  // Il minimo a 0,20 evita che un solo dato sparisca del tutto.
+  function pesoMinuti(nome) {
+    var s = statsDi(nome);
+    var m = s && s.minuti_per_partita != null ? Number(s.minuti_per_partita) : null;
+    if (m == null || !isFinite(m) || m <= 0) return 1;
+    return Math.max(0.20, Math.min(1, m / 90));
+  }
   // La fantamedia attesa dei giocatori gia' in rosa e' stata scritta dal
   // riempimento automatico quando il bonus imbattibilita' ancora mancava.
   // Invece di riscrivere lo stato salvato — e rischiare di cancellare un numero
@@ -4742,8 +4780,9 @@ async function refreshLivePlayerNews() {
     var attesa = att != null ? att : 6.0;
     if (p.fantamediaAttuale != null && p.fantamediaAttuale !== "") {
       var attuale = Number(p.fantamediaAttuale);
-      var n = countFantavoti(p);
-      if (n > 0) return (n * attuale + FANTAMEDIA_SHRINK * attesa) / (n + FANTAMEDIA_SHRINK);
+      var n = countFantavoti(p) * pesoMinuti(p.name);
+      var K = shrinkDiRuolo(p.role);
+      if (n > 0) return (n * attuale + K * attesa) / (n + K);
       return attuale;
     }
     return attesa;
@@ -5199,7 +5238,47 @@ async function refreshLivePlayerNews() {
   //   2) il campo "Voto reale" dell'ultima giornata;
   //   3) fantamedia corretta per ruolo (stima, si autocorregge da sola appena
   //      arrivano i primi voti veri).
-  var MEDIA_VOTO_CORR = { P: 1.00, D: -0.15, C: -0.25, A: -0.55 };
+  // MV_PRIOR — sostituisce MEDIA_VOTO_CORR (10/09/2026). Prima qui c'era uno
+  // scarto per ruolo scelto a mano, e nel percorso delle rose avversarie
+  // c'era un ancora piu' grezzo "fantamedia meno 0,2" uguale per tutti. Il
+  // problema non e' teorico: **200 dei 537 giocatori attivi del listone non
+  // hanno una media voto di carriera** (arrivano dall'estero o dalla B), e per
+  // loro quel numero inventato e' l'ancora dello smorzamento — cioe' pesa
+  // piu' dei voti veri finche' le giornate sono poche.
+  //
+  // Adesso il prior e' MISURATO, non scelto: regressione della media voto
+  // vera sulla fantamedia attesa, sui 337 giocatori che hanno tutte e due.
+  // Errore quadratico medio a confronto (fuori campione, meta' dei dati per
+  // stimare e meta' per verificare, in parentesi il dentro-campione):
+  //
+  //   ruolo   n    "fmv-0,2"     scarto a mano     regressione
+  //     A    55   0,643 (0,665)  0,429 in campione   0,135 (0,140)
+  //     C   133   0,259 (0,296)  0,275               0,136 (0,159)
+  //     D    61   0,204 (0,225)  0,200               0,146 (0,147)
+  //     P    27   1,441 (1,518)  0,479               0,233 (0,317)
+  //
+  // Il caso grosso e' il portiere: la sua fantamedia e' bassa perche' ogni gol
+  // subito vale -1 (-1,11 a partita in media, misurato), ma la sua PAGELLA e'
+  // la piu' alta di tutti i ruoli (6,18 contro 5,93-6,05). Dire "fantamedia
+  // meno 0,2" su Vicario significa metterlo nel Modificatore a 5,07 invece che
+  // a 6,18: un errore di **1,5 voti** su un numero le cui fasce sono larghe
+  // 0,25. Per il portiere la fantamedia non dice comunque nulla sulla pagella
+  // (correlazione 0,08), quindi il prior e' la media secca del ruolo.
+  var MV_PRIOR = { A: [3.898, 0.316], C: [3.479, 0.396], D: [2.443, 0.581], P: [6.176, 0] };
+  var MV_PRIOR_MIN = 5.0, MV_PRIOR_MAX = 7.2;
+  // Errore quadratico medio del prior, per ruolo: si mostra accanto alla stima
+  // cosi' si sa quanto vale prima di usarla per giudicare qualcuno.
+  var MV_PRIOR_RMSE = { A: 0.14, C: 0.16, D: 0.15, P: 0.32 };
+  // Tassi di bonus per presenza quando la carriera non c'e': medie di ruolo del
+  // listone, non piu' 0,10 gol + 0,08 assist uguali per tutti (che per un
+  // attaccante e' meno della meta' del vero e per un difensore quasi il doppio).
+  var BONUS_PRIOR = { A: [0.237, 0.090], C: [0.103, 0.080], D: [0.059, 0.058], P: [0.005, 0.005] };
+  function mediaVotoStimata(ruolo, fmvExp) {
+    var c = MV_PRIOR[ruolo] || MV_PRIOR.C;
+    if (fmvExp == null || !isFinite(Number(fmvExp))) return c[0] + c[1] * 6.2;
+    var v = c[0] + c[1] * Number(fmvExp);
+    return Math.max(MV_PRIOR_MIN, Math.min(MV_PRIOR_MAX, v));
+  }
   // Media voto "di riferimento" del giocatore, stimata dalla sola fantamedia e
   // quindi indipendente dai voti reali già inseriti: serve come metro di
   // paragone per capire se sta rendendo sopra o sotto il suo standard.
@@ -5220,8 +5299,12 @@ async function refreshLivePlayerNews() {
     // (chi arriva dall'estero o dalla B: Mastantuono, Yeboah, Schmid).
     var l = listoneGet(p.name);
     if (l && l[4] != null) return l[4];
-    var corr = MEDIA_VOTO_CORR[p.role];
-    return effectiveFantamedia(p) + (corr != null ? corr : 0);
+    // Nessun passato in Serie A: si usa il prior misurato per ruolo. Base di
+    // partenza la fantamedia attesa del listone quando c'e' (e' su quella che
+    // la regressione e' stata stimata); solo se manca si ripiega sulla
+    // fantamedia effettiva, che i voti veri hanno gia' spostato.
+    var base = (l && l[3] != null) ? Number(l[3]) : effectiveFantamedia(p);
+    return mediaVotoStimata(p.role, base);
   }
   // VOTO_SHRINK — corretto 02/09/2026. Prima qui c'era la media secca degli
   // ultimi 3 voti reali: al primo voto inserito il tool buttava via la media
@@ -8753,21 +8836,30 @@ async function refreshLivePlayerNews() {
     });
     return { fanta: f, voto: v };
   }
-  function fantamediaEffettivaListone(nome, attesa) {
+  function fantamediaEffettivaListone(nome, attesa, ruolo) {
     if (attesa == null) return attesa;
     var f = votiRealiDi(nome).fanta;
     if (!f.length) return attesa;
     var media = f.reduce(function (a, b) { return a + b; }, 0) / f.length;
-    return (f.length * media + FANTAMEDIA_SHRINK * attesa) / (f.length + FANTAMEDIA_SHRINK);
+    var n = f.length * pesoMinuti(nome);
+    var K = shrinkDiRuolo(ruolo);
+    return (n * media + K * attesa) / (n + K);
   }
   // Stessa cosa per la media voto, che è quella che alimenta i modificatori.
-  function mediaVotoEffettivaListone(nome, mvListone, attesa) {
-    var base = mvListone != null ? mvListone : (attesa != null ? attesa - 0.2 : null);
+  function mediaVotoEffettivaListone(nome, mvListone, attesa, ruolo) {
+    // Il vecchio "attesa - 0,2" era la stima peggiore che avessimo: vedi
+    // MV_PRIOR. Sui portieri sbagliava di un voto e mezzo.
+    var base = mvListone != null ? mvListone : mediaVotoStimata(ruolo, attesa);
     if (base == null) return base;
     var v = votiRealiDi(nome).voto;
     if (!v.length) return base;
     var media = v.reduce(function (a, b) { return a + b; }, 0) / v.length;
-    return (v.length * media + FANTAMEDIA_SHRINK * base) / (v.length + FANTAMEDIA_SHRINK);
+    // Qui si smorza la PAGELLA, non il fantavoto: il suo rumore e' quattro
+    // volte piu' piccolo (0,58 contro 1,4-2,1 a partita) e la costante giusta
+    // e' quella misurata per la pagella, VOTO_SHRINK = 3. Prima si usava per
+    // sbaglio la costante del fantavoto: il mio percorso e quello delle rose
+    // avversarie smorzavano lo stesso numero in due modi diversi.
+    return (v.length * media + VOTO_SHRINK * base) / (v.length + VOTO_SHRINK);
   }
 
   // moduloForzato (06/09/2026): la scheda Avversari lascia scegliere il modulo
@@ -8791,7 +8883,7 @@ async function refreshLivePlayerNews() {
       // un avversario che non esiste. Chi e' in dubbio resta, pesato meno.
       var ind = indisponibile(rp.n);
       if (ind && ind.grado === "out") { esclusi.push({ n: rp.n, r: rp.r, nota: ind.nota, rientro: ind.rientro }); return; }
-      var team = l[2], exp = fantamediaEffettivaListone(rp.n, l[3]), mv = mediaVotoEffettivaListone(rp.n, l[4], l[3]), tit = l[5] || 3, flags = l[6] || 0;
+      var team = l[2], exp = fantamediaEffettivaListone(rp.n, l[3], rp.r), mv = mediaVotoEffettivaListone(rp.n, l[4], l[3], rp.r), tit = l[5] || 3, flags = l[6] || 0;
       var round = FIXTURES[gn - 1] || [];
       var avvCode = null, casa = true;
       for (var i = 0; i < round.length; i++) {
@@ -8819,7 +8911,7 @@ async function refreshLivePlayerNews() {
       if (ppAvv != null) prob = ppAvv;
       // mv arriva già con il fallback e con i voti veri applicati da
       // mediaVotoEffettivaListone; qui resta solo l'ultima rete di sicurezza.
-      pool[rp.r].push({ nome: rp.n, raw: raw, prob: prob, ev: raw * prob, mv: (mv != null ? mv : exp - 0.2) });
+      pool[rp.r].push({ nome: rp.n, raw: raw, prob: prob, ev: raw * prob, mv: (mv != null ? mv : mediaVotoStimata(rp.r, exp)) });
     });
     Object.keys(pool).forEach(function (r) { pool[r].sort(function (a, b) { return b.ev - a.ev; }); });
 
@@ -9655,7 +9747,7 @@ async function refreshLivePlayerNews() {
 
      UNA TRAPPOLA, evitata di proposito. Nel resto del tool la
      fantamedia attesa e' gia' MISCHIATA coi voti veri
-     (fantamediaEffettivaListone, shrinkage 5): serve a fare previsioni
+     (fantamediaEffettivaListone, shrinkage per ruolo): serve a fare previsioni
      migliori. Ma usarla come metro per misurare l'over-performance
      sarebbe circolare — la stima insegue il rendimento e lo scarto si
      chiude da solo. Qui il confronto e' contro il valore GREZZO del
@@ -10030,11 +10122,19 @@ async function refreshLivePlayerNews() {
     var fvOra = nv ? voti.reduce(function (a, x) { return a + (x.fv != null ? x.fv : 0); }, 0) / nv : null;
     var sd = SD_VOTO_RUOLO[ruolo] || 0.58;
     var se = nv ? sd / Math.sqrt(nv) : null;
-    var scarto = (mvOra != null && mvCar != null) ? (mvOra - mvCar) : null;
+    // Se la carriera in Serie A non c'e' (200 giocatori su 537: estero, B,
+    // esordienti) il metro non sparisce, diventa un prior dichiarato — quello
+    // misurato in MV_PRIOR. Va detto a schermo che e' una stima: uno scarto
+    // contro un numero stimato non ha lo stesso peso di uno contro 30 partite.
+    var mvRif = mvCar != null ? Number(mvCar) : mediaVotoStimata(ruolo, fmvExp);
+    var mvStimata = (mvCar == null);
+    var scarto = (mvOra != null && mvRif != null) ? (mvOra - mvRif) : null;
     var zeta = (scarto != null && se) ? scarto / se : null;
 
     // Bonus: quanti eventi ti aspettavi, e quanto e' normale essere a zero.
-    var tassoCar = (l[9] != null ? Number(l[9]) : 0.10) + (l[10] != null ? Number(l[10]) : 0.08);
+    var bp = BONUS_PRIOR[ruolo] || BONUS_PRIOR.C;
+    var tassoCar = (l[9] != null ? Number(l[9]) : bp[0]) + (l[10] != null ? Number(l[10]) : bp[1]);
+    var tassoStimato = (l[9] == null || l[10] == null);
     var attesi = tassoCar * nv;
     var fattiEventi = s ? (Number(s.gol_fatti || 0) + Number(s.assist || 0)) : null;
     var pZero = pZeroEventi(attesi);
@@ -10079,13 +10179,17 @@ async function refreshLivePlayerNews() {
     h += '<h5>La pagella — il segnale</h5>';
     h += '<div class="f1-wrap"><table class="f1-table"><tbody>';
     h += riga("Media voto adesso", mvOra != null ? num(mvOra, 2) : "—", nv + (nv === 1 ? " partita" : " partite"));
-    h += riga("Media voto di carriera", mvCar != null ? num(mvCar, 2) : "—", l[11] != null ? num(l[11], 0) + " presenze" : "");
+    h += riga(mvStimata ? "Media voto attesa <i>(stima)</i>" : "Media voto di carriera",
+              mvRif != null ? num(mvRif, 2) : "—",
+              mvStimata ? "nessuna carriera in Serie A &middot; prior di ruolo dalla fantamedia (errore &plusmn;" + num(MV_PRIOR_RMSE[ruolo] || 0.16, 2) + ")"
+                        : (l[11] != null ? num(l[11], 0) + " presenze" : ""));
     if (scarto != null) {
       var verso = scarto >= 0 ? "sopra" : "sotto";
       var giudizio = Math.abs(zeta) >= 2 ? "<b>oltre il rumore</b> (" + num(Math.abs(zeta), 1) + " errori standard)"
                    : Math.abs(zeta) >= 1 ? "dentro il rumore (" + num(Math.abs(zeta), 1) + " errori standard)"
                    : "indistinguibile da zero";
-      h += riga("Scarto", (scarto > 0 ? "+" : "") + num(scarto, 2) + " " + verso, giudizio + " &middot; errore &plusmn;" + num(se, 2));
+      h += riga("Scarto", (scarto > 0 ? "+" : "") + num(scarto, 2) + " " + verso,
+                giudizio + " &middot; errore &plusmn;" + num(se, 2) + (mvStimata ? " &middot; <b>contro una stima</b>" : ""));
     }
     if (s) h += riga("Partite ≥ 6 &middot; ≥ 6,5", perc(s.perc_voto_6) + " &middot; " + perc(s.perc_voto_65), "");
     h += '</tbody></table></div>';
@@ -10093,7 +10197,8 @@ async function refreshLivePlayerNews() {
     // 2. il bonus
     h += '<h5>Il bonus — quasi sempre rumore</h5>';
     h += '<div class="f1-wrap"><table class="f1-table"><tbody>';
-    h += riga("Gol + assist attesi", num(attesi, 2), "dal ritmo di carriera su " + nv + " partite");
+    h += riga("Gol + assist attesi", num(attesi, 2),
+              (tassoStimato ? "<i>ritmo medio del ruolo</i>" : "dal ritmo di carriera") + " su " + nv + " partite");
     h += riga("Gol + assist fatti", fattiEventi != null ? num(fattiEventi, 0) : "—", "");
     h += riga("Probabilità di finire a zero", perc(pZero * 100), fattiEventi === 0 ? "&egrave; questo il caso: " + (pZero > 0.25 ? "<b>non &egrave; una prova</b>" : "comincia a pesare") : "");
     if (s) h += riga("Prodotto", num(s.xg, 2) + " xG &middot; " + num(s.xa, 2) + " xA", num(s.tiri, 0) + " tiri &middot; " + num(s.passaggi_chiave, 0) + " pass. chiave");
